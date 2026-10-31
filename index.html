@@ -1,0 +1,2482 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Utopía Comandas</title>
+<meta name="theme-color" content="#f1e9db" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1b0d10" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Utopía">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="store.js"></script>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: estilo de las cartas de Utopía (papel crema, granate, Bebas + Barlow Condensed, filetes). Seis vistas bajo una barra de pestañas fija */
+:root{
+  --bg:#f1e9db; --surface:#faf5ec; --ink:#5e0f1c; --text:#3b0a12; --muted:#8a4a52; --line:#dcc6bd; --rule:#b98f90;
+  --accent:#5e0f1c; --accent-ink:#f8f1e6; --accent-soft:#ecdcd6;
+  --cocina:#8a4a52; --cocina-soft:#efe1db;
+  --ready:#066d77; --ready-ink:#f8f1e6; --ready-soft:#d9ebe9; --danger:#c2360f; --danger-soft:#f7ddd2;
+  --gold:#a8680f; --gold-soft:#f4e4c6;
+  --display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#1b0d10; --surface:#271519; --ink:#f1e9db; --text:#efe5d6; --muted:#c79ca3; --line:#43262c; --rule:#6b3d45;
+  --accent:#e8b4bb; --accent-ink:#1b0d10; --accent-soft:#3a1d23;
+  --cocina:#d6a1a8; --cocina-soft:#35201f;
+  --ready:#4fb6bf; --ready-ink:#0e1d1f; --ready-soft:#123236; --danger:#ff8a6b; --danger-soft:#3d1c14;
+  --gold:#e3ad55; --gold-soft:#3a2a12; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#1b0d10; --surface:#271519; --ink:#f1e9db; --text:#efe5d6; --muted:#c79ca3; --line:#43262c; --rule:#6b3d45;
+  --accent:#e8b4bb; --accent-ink:#1b0d10; --accent-soft:#3a1d23;
+  --cocina:#d6a1a8; --cocina-soft:#35201f;
+  --ready:#4fb6bf; --ready-ink:#0e1d1f; --ready-soft:#123236; --danger:#ff8a6b; --danger-soft:#3d1c14;
+  --gold:#e3ad55; --gold-soft:#3a2a12; color-scheme:dark }
+
+body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:17px;font-weight:500;line-height:1.35;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 120px;font-variant-numeric:tabular-nums}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1,h2,h3{font-family:var(--display);font-weight:400;color:var(--ink);text-wrap:balance;margin:0}
+b,strong{font-weight:700}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;gap:8px 12px;flex-wrap:wrap;padding-block:12px 10px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto;color:var(--ink)}
+.brand .word{font-family:var(--display);font-size:2rem;line-height:.9;letter-spacing:.04em}
+.brand .club{display:inline-block;margin-left:4px;font-family:var(--display);font-size:.95rem;letter-spacing:.2em;line-height:1}
+.brand small{display:block;font-size:.8rem;color:var(--muted);letter-spacing:.04em;margin-top:2px}
+.brand svg{width:22px;height:22px;flex:none}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;max-width:100%;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{border:0;background:none;padding:7px 13px;border-radius:999px;font-weight:700;font-size:.9rem;color:var(--muted);white-space:nowrap;flex:none}
+.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.notice{font-size:.85rem;color:var(--muted);width:100%}
+.notice.warn{color:var(--danger)}
+
+main{max-width:1200px;margin:0 auto}
+section{margin-top:22px}
+.sec-h{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.sec-h h2{font-size:1.65rem;letter-spacing:.07em;line-height:1}
+.sec-h::after{content:"";flex:1 1 40px;height:1.5px;background:var(--ink);opacity:.8;order:5}
+.sec-h .aside{order:6}
+.sec-h .aside{margin-left:auto}
+.count{font-weight:700;color:var(--muted)}
+.empty{color:var(--muted);padding:14px;border:1px dashed var(--line);border-radius:var(--r);font-size:.95rem}
+.hint{margin:0;color:var(--muted);max-width:62ch}
+
+/* Pedidos: para entregar */
+.ready-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.ready{background:var(--ready-soft);border:2px solid var(--ready);border-radius:var(--r);padding:14px;display:grid;gap:8px}
+.ready .who{display:flex;align-items:baseline;gap:10px}
+.num{font-family:var(--display);font-weight:400;letter-spacing:.03em;color:var(--muted);font-size:1rem}
+.name{font-family:var(--display);font-weight:400;letter-spacing:.03em;font-size:2.1rem;line-height:1;overflow-wrap:anywhere}
+.lines{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+.lines li{display:flex;gap:8px}
+.lines .q{font-weight:700;min-width:2.2ch}
+.note{font-style:italic;color:var(--muted);font-size:.9rem}
+.tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border-radius:999px;align-self:center;white-space:nowrap}
+.tag.food{background:var(--cocina-soft);color:var(--cocina)}
+.tag.sp{background:var(--gold-soft);color:var(--gold)}
+.tag.off{background:var(--danger-soft);color:var(--danger)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.deliver{background:var(--ready);border-color:var(--ready);color:var(--ready-ink);flex:1;font-size:1.05rem;padding:12px}
+.btn.ghost{background:none;border-color:transparent;color:var(--muted);padding:8px 10px}
+.btn.danger{color:var(--danger)}
+.btn.small{padding:7px 10px;font-size:.88rem}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* Pedidos: carta para pulsar */
+.group-h{font-family:var(--display);font-size:1.2rem;letter-spacing:.08em;color:var(--muted);margin:14px 0 6px}
+.group-h.sp{color:var(--gold)}
+.grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.prod{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;min-height:68px;display:grid;align-content:space-between;gap:4px;border-left:5px solid var(--accent)}
+.prod.cocina{border-left-color:var(--cocina)}
+.prod.sp{border-left-color:var(--gold);background:var(--gold-soft)}
+.prod .pn{font-weight:700;line-height:1.2}
+.prod .pp{color:var(--muted);font-size:.9rem}
+.prod .badge{position:absolute;top:-8px;right:-6px;background:var(--ink);color:var(--bg);border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;font-weight:700;font-size:.85rem;padding:0 6px}
+.prod:active{transform:scale(.98)}
+.soldout{margin-top:10px;font-size:.88rem;color:var(--muted)}
+
+/* Ticket */
+.ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.tline{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.tline input{grid-column:1/-1}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-weight:700;font-size:1.1rem}
+.stepper span{min-width:2ch;text-align:center;font-weight:700}
+.field{display:grid;gap:4px;min-width:0}
+.field label,.lbl{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],select{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px 12px;min-width:0}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:10px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--display);font-weight:400;letter-spacing:.04em;font-size:2rem}
+.err{color:var(--danger);font-weight:700;font-size:.9rem}
+.check{display:flex;gap:8px;align-items:center;font-weight:700;font-size:.92rem}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
+
+.cartbar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--ink);color:var(--bg);
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;gap:12px}
+.cartbar .sum{margin-right:auto;font-weight:700}
+.cartbar button{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:10px 16px;font-weight:700}
+
+.pending{display:grid;gap:6px}
+.pend{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.pend .pname{font-weight:700;margin-right:auto;min-width:0;overflow-wrap:anywhere}
+.mins{color:var(--muted);font-size:.85rem;white-space:nowrap}
+
+/* Barra (iPad) */
+.bar-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));align-items:start}
+.btk{background:var(--surface);border:1px solid var(--line);border-top:6px solid var(--accent);border-radius:var(--r);padding:14px;display:grid;gap:10px}
+.btk.late{border-top-color:var(--ready)}
+.btk .who{display:flex;align-items:baseline;gap:10px;justify-content:space-between}
+.btk .name{font-size:2.5rem}
+.bitem{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:12px;font-size:1.15rem}
+.bitem .q{font-family:var(--display);font-weight:400;letter-spacing:.03em;min-width:2.4ch}
+.bitem .t{display:grid;gap:2px}
+.bitem.done{opacity:.45}
+.bitem.done .t>span:first-child{text-decoration:line-through}
+.btk .foodnote{font-size:.85rem;color:var(--muted)}
+.btn.go{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:1.15rem;padding:14px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:.92rem}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.off{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);text-decoration:line-through}
+
+/* Efectivo */
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.quick button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 12px;font-weight:700;min-width:62px}
+.quick button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.change{display:flex;justify-content:space-between;align-items:baseline;background:var(--accent-soft);border-radius:10px;padding:12px 14px;font-weight:700}
+.change b{font-family:var(--display);font-weight:400;font-size:2.6rem;line-height:1;letter-spacing:.03em}
+.change.short{background:var(--ready-soft)}
+.change.short b{color:var(--danger)}
+.banner{margin-top:14px;background:var(--ready-soft);border:1px solid var(--ready);border-radius:10px;padding:10px 12px;font-weight:700;font-size:.92rem}
+.banner a{color:inherit}
+.kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.kpi b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;line-height:1.05;letter-spacing:.03em;color:var(--ink)}
+.kpi span{color:var(--muted);font-size:.82rem}
+.kpi.key{border:2px solid var(--accent)}
+.kpi.neg b{color:var(--danger)}
+.kpi.pos b{color:var(--accent)}
+.movform{display:grid;gap:10px;grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.mov{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.mov .c{margin-right:auto;min-width:0;overflow-wrap:anywhere}
+.mov .in{color:var(--accent);font-weight:700;white-space:nowrap}
+.mov .out{color:var(--danger);font-weight:700;white-space:nowrap}
+.denoms{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+.denom{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:6px 8px}
+.denom label{font-weight:700;min-width:4.2ch}
+.denom input{padding:8px;text-align:right}
+.denom small{grid-column:1/-1;color:var(--muted);text-align:right;font-size:.8rem}
+.arqueo{display:grid;gap:4px;background:var(--bg);border-radius:10px;padding:12px 14px}
+.arqueo div{display:flex;justify-content:space-between}
+.arqueo .diff{font-family:var(--display);font-weight:400;letter-spacing:.03em;font-size:1.3rem}
+.ok{color:var(--accent)}
+.bad{color:var(--danger)}
+.list-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:8px;align-items:center}
+.list-row .meta{color:var(--muted);font-size:.85rem;grid-column:1/-1}
+
+/* Sugerencias */
+.sugs{display:grid;gap:10px}
+.sug{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:var(--r);padding:12px 14px;display:grid;gap:4px}
+.sug.warn{border-left-color:var(--ready)}
+.sug.alert{border-left-color:var(--danger)}
+.sug b{font-family:var(--display);font-weight:400;font-size:1.35rem;letter-spacing:.05em;color:var(--ink)}
+.sug p{margin:0;color:var(--muted)}
+
+/* Datos: gráficas */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.two{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.hbars{display:grid;gap:8px}
+.hbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;font-size:.92rem}
+.hbar .track{grid-column:1/-1;height:10px;background:var(--bg);border-radius:999px;overflow:hidden}
+.hbar .fill{height:100%;background:var(--accent);border-radius:999px}
+.hbar .fill.cocina{background:var(--cocina)}
+.hbar .fill.sp{background:var(--gold)}
+.hbar .fill.cost{background:var(--ready)}
+.vchart{overflow-x:auto}
+.vbars{display:flex;align-items:flex-end;gap:4px;height:160px;min-width:100%;padding-top:18px}
+.vbar{flex:1 0 18px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px}
+.vbar .col{width:100%;background:var(--accent);border-radius:5px 5px 0 0;min-height:2px;position:relative}
+.vbar .col.peak{background:var(--ready)}
+.vbar .v{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.vbar .x{font-size:.7rem;color:var(--muted);white-space:nowrap}
+.monthnav{display:flex;align-items:center;gap:8px}
+.monthnav b{min-width:9ch;text-align:center;text-transform:capitalize}
+
+/* Ajustes */
+.pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;margin-bottom:10px;border-left:5px solid var(--accent)}
+.pcard.cocina{border-left-color:var(--cocina)}
+.pcard.sp{border-left-color:var(--gold)}
+.pcard.off{opacity:.7;border-left-color:var(--danger)}
+.pgrid{display:grid;gap:8px;grid-template-columns:minmax(0,2.4fr) minmax(0,1fr) minmax(0,1.3fr) minmax(0,1.1fr)}
+@media (max-width:640px){ .pgrid{grid-template-columns:1fr 1fr} .pgrid .wide{grid-column:1/-1} }
+.toggles{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sw{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:6px 12px 6px 6px;font-weight:700;font-size:.88rem}
+.sw::before{content:"";width:30px;height:18px;border-radius:999px;background:var(--line);box-shadow:inset -12px 0 0 0 var(--surface);transition:box-shadow .15s,background .15s}
+.sw[aria-pressed="true"]::before{background:var(--accent);box-shadow:inset 12px 0 0 0 var(--surface)}
+.sw.spsw[aria-pressed="true"]::before{background:var(--gold)}
+.recipe{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));background:var(--bg);border-radius:10px;padding:10px}
+.addform{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));align-items:end}
+.irow{display:grid;gap:8px;grid-template-columns:minmax(0,1.6fr) minmax(0,.8fr) minmax(0,1fr) minmax(0,1.3fr) auto;align-items:end;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px}
+@media (max-width:640px){ .irow{grid-template-columns:1fr 1fr} .irow .wide{grid-column:1/-1} }
+.irow .est{grid-column:1/-1;font-size:.85rem;color:var(--muted)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:700;z-index:20;max-width:calc(100% - 32px)}
+body.flash::after{content:"";position:fixed;inset:0;border:8px solid var(--ready);pointer-events:none;z-index:30;animation:fl 1.2s ease-out forwards}
+@keyframes fl{from{opacity:1}to{opacity:0}}
+@media (prefers-reduced-motion:reduce){body.flash::after{animation:none;opacity:.8}}
+
+/* Configuración inicial */
+.setup{max-width:720px;margin:0 auto;padding-block:20px 40px;display:grid;gap:16px}
+.setup .lockup{text-align:center;color:var(--ink);display:grid;justify-items:center;gap:4px}
+.setup .lockup .word{font-family:var(--display);font-size:clamp(3.4rem,16vw,5.5rem);line-height:.86;letter-spacing:.03em}
+.setup .lockup .club{font-family:var(--display);font-size:1.5rem;letter-spacing:.2em}
+.beanrule{display:flex;align-items:center;gap:10px;width:min(60%,240px)}
+.beanrule::before,.beanrule::after{content:"";flex:1;height:1.5px;background:var(--ink)}
+.beanrule svg{width:18px;height:18px}
+.steps{display:flex;gap:6px;justify-content:center}
+.steps i{width:28px;height:4px;border-radius:2px;background:var(--line)}
+.steps i.on{background:var(--ink)}
+.setup h2{font-size:2.2rem;letter-spacing:.05em}
+.setup .card{display:grid;gap:12px}
+.qgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+.role{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.role button{border:1.5px solid var(--line);background:var(--surface);border-radius:var(--r);padding:16px;text-align:left;display:grid;gap:4px}
+.role button b{font-family:var(--display);font-weight:400;font-size:1.6rem;letter-spacing:.05em;color:var(--ink)}
+.role button span{color:var(--muted)}
+.role button[aria-pressed="true"]{border-color:var(--ink);background:var(--accent-soft)}
+.srow{display:grid;grid-template-columns:minmax(0,1fr) 110px auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line)}
+.srow:last-child{border-bottom:0}
+.navrow{display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap}
+.navrow .btn{min-width:130px}
+body.in-setup .top .tabs,body.in-setup .cartbar{display:none!important}
+.legal{font-size:.9rem;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin-top:6px}
+.notechips{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.notechips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:.88rem;font-weight:600;color:var(--muted)}
+.kpi b,.change b,.sug b,.role b{font-weight:400}
+/* Fidelidad y sin conexión */
+.loyal{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--gold-soft);border:1.5px solid var(--gold);border-radius:var(--r);padding:10px 12px}
+.loyal.on{background:var(--accent-soft);border-color:var(--accent)}
+.loyal.soft{background:none;border:1px dashed var(--line);color:var(--muted);font-size:.95rem}
+.banner.off{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+#cartTotal s{margin-right:6px}
+/* Suministros */
+.icard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;margin-bottom:10px}
+.icard .est{margin:0;color:var(--muted);font-size:.95rem}
+.icard .est b{color:var(--text)}
+.tablewrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+table.t{border-collapse:collapse;width:100%;min-width:560px;font-size:.98rem}
+table.t th{font-family:var(--display);font-weight:400;font-size:1.05rem;letter-spacing:.06em;color:var(--ink);text-align:left;padding:8px 10px;border-bottom:1.5px solid var(--ink);white-space:nowrap}
+table.t td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+table.t td.n,table.t th.n{text-align:right;white-space:nowrap}
+table.t tr:last-child td{border-bottom:0}
+.up{color:var(--danger);font-weight:700}
+.okc{color:var(--accent);font-weight:700}
+/* Modos Cobrar / Entregar */
+.modebar{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.modebar button{border:0;background:none;border-radius:9px;padding:10px;font-family:var(--display);font-size:1.5rem;letter-spacing:.06em;color:var(--muted);display:flex;align-items:center;justify-content:center;gap:8px}
+.modebar button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.mbadge{min-width:26px;height:26px;border-radius:999px;background:var(--line);color:var(--ink);font-family:var(--body);font-weight:700;font-size:.95rem;display:inline-grid;place-items:center;padding:0 7px;letter-spacing:0}
+.mbadge.hot{background:var(--ready);color:var(--ready-ink);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.15)}}
+@media (prefers-reduced-motion:reduce){.mbadge.hot{animation:none}}
+#v-pedidos[data-mode="cobrar"] .m-entregar,#v-pedidos[data-mode="entregar"] .m-cobrar{display:none!important}
+#v-pedidos section{margin-top:14px}
+.donebox summary{cursor:pointer;color:var(--muted);font-weight:700}
+.ready .name{font-size:2.4rem}
+/* Cabecera compacta en móvil para ganar pantalla */
+@media (max-width:700px){
+  .top{padding-block:6px 6px;gap:6px}
+  .brand .club,.brand small{display:none}
+  .brand .word{font-size:1.45rem}
+  .brand svg{width:16px;height:16px}
+  .tabs{width:100%;order:3}
+  .tabs button{padding:6px 10px;font-size:.88rem}
+  section{margin-top:16px}
+}
+/* Entregas por producto */
+.lines li{align-items:center}
+.lines .iname{display:grid;gap:1px;margin-right:auto;min-width:0}
+.lines .iname small{color:var(--muted);font-size:.85rem}
+.lines li.dlv .iname{text-decoration:line-through;opacity:.55}
+.lines li .btn.small{padding:6px 12px}
+.tag.ok{background:var(--accent-soft);color:var(--accent);border:0;cursor:pointer}
+.tag.bar{background:var(--ready-soft);color:var(--ready)}
+.lines.inorder{flex-basis:100%;margin-top:4px;padding-top:6px;border-top:1px solid var(--line);gap:6px}
+/* Habituales */
+.regular{margin-top:6px;width:100%;text-align:left;border:1.5px dashed var(--ink);background:var(--accent-soft);border-radius:var(--r);padding:10px 12px;display:grid;gap:2px}
+.regular b{font-family:var(--display);font-weight:400;font-size:1.3rem;letter-spacing:.05em;color:var(--ink)}
+.regular small{color:var(--muted)}
+#useNum[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* Preparación */
+.pend.wrap{flex-wrap:wrap}
+.cups{flex-basis:100%;margin:2px 0 0;padding:8px 10px;list-style:none;display:grid;gap:4px;background:var(--bg);border-radius:8px;font-size:.95rem}
+.cups span{color:var(--muted)}
+.pend [data-cups]{flex-basis:100%}
+.prodpanel{background:var(--surface);border:1.5px solid var(--ink);border-radius:var(--r);padding:12px 14px}
+.ptiles{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(120px,1fr))}
+.ptile{background:var(--accent-soft);border-radius:8px;padding:10px;display:grid;gap:0}
+.ptile b{font-family:var(--display);font-weight:400;font-size:2.6rem;line-height:.95;color:var(--ink)}
+.ptile span{font-family:var(--display);font-size:1.15rem;letter-spacing:.05em;color:var(--ink)}
+.ptile small{color:var(--muted);font-size:.85rem}
+.ptips{margin:10px 0 0;padding-left:20px;display:grid;gap:3px;color:var(--text)}
+.ptips:empty{display:none}
+.bitem .add{font-size:.9rem;color:var(--ready);font-weight:700}
+.tag.rd{background:var(--ready-soft);color:var(--ready);justify-self:start}
+.mise{margin:0;padding-left:20px;display:grid;gap:6px}
+</style>
+
+<header class="top">
+  <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(35 12 12)" fill="currentColor"/><path d="M12 2.5c-3 3.5 3 6.5 0 10s3 6 0 9" transform="rotate(35 12 12)" stroke="var(--bg)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+    <div><span class="word">UTOPÍA</span> <span class="club">COFFEE CLUB</span><small id="sub">Pedidos · tomar, cobrar y entregar</small></div></div>
+  <nav class="tabs" aria-label="Vista">
+    <button type="button" data-view="pedidos">Pedidos</button>
+    <button type="button" data-view="barra">Barra</button>
+    <button type="button" data-view="caja">Caja</button>
+    <button type="button" data-view="gastos">Gastos</button>
+    <button type="button" data-view="datos">Datos</button>
+    <button type="button" data-view="ajustes">Ajustes</button>
+  </nav>
+  <div class="notice" id="notice">Conectando…</div>
+</header>
+
+<main>
+  <!-- CONFIGURACIÓN INICIAL -->
+  <div id="v-setup" hidden><div class="setup" id="setupBox"></div></div>
+
+  <!-- PEDIDOS -->
+  <div id="v-pedidos" hidden>
+    <div class="banner row" id="shiftBanner" hidden><span id="bannerTxt" style="flex:1;min-width:200px"></span><button type="button" class="btn small" id="bannerBtn"></button></div>
+    <div class="banner off" id="outboxBanner" role="status" hidden></div>
+    <div class="modebar" role="tablist" aria-label="Modo">
+      <button type="button" role="tab" data-mode="cobrar" aria-selected="true">Cobrar</button>
+      <button type="button" role="tab" data-mode="entregar" aria-selected="false">Entregar <span class="mbadge" id="modeBadge" hidden></span></button>
+    </div>
+
+    <section id="readySec" class="m-entregar">
+      <div class="sec-h"><h2>Para entregar</h2><span class="count" id="readyCount"></span></div>
+      <div class="ready-list" id="readyList"></div>
+    </section>
+
+    <section class="m-cobrar">
+      <div id="menuGrid"></div>
+    </section>
+
+    <section id="ticketSec" class="m-cobrar">
+      <div class="ticket">
+        <div id="cartLines"></div>
+        <div class="field"><label for="cust">Nombre del cliente</label>
+          <div class="row" style="flex-wrap:nowrap"><input type="text" id="cust" autocomplete="off" placeholder="Ej. Lucía" maxlength="40" list="custList" enterkeyhint="send" style="flex:1">
+          <button type="button" class="btn small" id="useNum" title="Sin nombre: usar el número de pedido">Usar nº</button></div>
+          <datalist id="custList"></datalist>
+          <div id="regularBox"></div></div>
+        <div id="loyalBox"></div>
+        <div class="total"><span>Total</span><span id="cartTotal">0,00 €</span></div>
+        <div class="toggles">
+          <button type="button" class="sw" id="invBtn" aria-pressed="false">Invitación</button>
+          <button type="button" class="sw" id="casaBtn" aria-pressed="false">Consumo propio</button>
+        </div>
+        <div id="cashArea" style="display:grid;gap:12px">
+          <div class="field"><label for="recv">Te da (efectivo)</label>
+            <input type="text" id="recv" inputmode="decimal" autocomplete="off" placeholder="Importe exacto">
+            <div class="quick" id="quickCash"></div></div>
+          <div class="change" id="changeBox"><span>Vueltas</span><b id="changeAmt">0,00 €</b></div>
+          <label class="check" id="tipRow" hidden><input type="checkbox" id="tipChk"> Se deja las vueltas de propina</label>
+        </div>
+        <div class="err" id="sendErr" hidden></div>
+        <button type="button" class="btn primary" id="sendBtn" style="padding:14px;font-size:1.05rem">Cobrado · enviar a barra</button>
+      </div>
+    </section>
+
+    <section class="m-entregar">
+      <div class="sec-h"><h2>Esperando a la barra</h2><span class="count" id="pendCount"></span></div>
+      <div class="pending" id="pendList"></div>
+    </section>
+
+    <section id="doneSec" class="m-entregar" hidden>
+      <details class="donebox"><summary id="doneSum">Entregados hace poco</summary>
+      <div class="pending" id="doneList" style="margin-top:8px"></div></details>
+    </section>
+  </div>
+
+  <!-- BARRA -->
+  <div id="v-barra" hidden>
+    <section>
+      <div class="prodpanel" id="prodPanel" hidden>
+        <div class="sec-h"><h2>Ahora toca</h2></div>
+        <div class="ptiles" id="prodTiles"></div>
+        <ul class="ptips" id="prodTips"></ul>
+      </div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Bebidas por preparar</h2><span class="count" id="barCount"></span><span class="mins aside" id="barWait"></span></div>
+      <div class="bar-grid" id="barGrid"></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Para tener listo hoy</h2></div>
+      <div id="miseBox"></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>¿Se ha acabado algo?</h2></div>
+      <p class="hint" style="margin-bottom:10px">Toca un producto para marcarlo agotado. Desaparece al momento de la pantalla de pedidos.</p>
+      <div class="chips" id="barStock"></div>
+    </section>
+  </div>
+
+  <!-- CAJA -->
+  <div id="v-caja" hidden>
+    <section id="openSec" hidden>
+      <div class="sec-h"><h2>Abrir caja</h2></div>
+      <div class="ticket">
+        <p class="hint">Cuenta el cambio con el que empiezas el turno.</p>
+        <div class="field"><label for="fondo">Fondo de cambio (€)</label><input type="text" id="fondo" inputmode="decimal" placeholder="Ej. 100" autocomplete="off"></div>
+        <button type="button" class="btn primary" id="openBtn">Abrir caja</button>
+      </div>
+    </section>
+
+    <div id="shiftSec" hidden>
+      <section>
+        <div class="sec-h"><h2>Turno abierto</h2><span class="count" id="shiftSince"></span></div>
+        <div class="kpis" id="cashStats"></div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>Propinas</h2><span class="count" id="tipTotal"></span></div>
+        <div class="ticket" style="margin-bottom:14px">
+          <p class="hint">Si os dejan propina y va al cajón, apúntala: así la caja cuadra y sabéis cuánto sacáis. Las vueltas que se dejan al cobrar se suman solas.</p>
+          <div class="quick" id="tipQuick"><button type="button" data-tip="20">+0,20 €</button><button type="button" data-tip="50">+0,50 €</button><button type="button" data-tip="100">+1 €</button><button type="button" data-tip="200">+2 €</button></div>
+        </div>
+        <div class="sec-h"><h2>Entradas y salidas</h2></div>
+        <div class="ticket">
+          <div class="seg" id="movSeg">
+            <button type="button" data-mov="salida" aria-pressed="true">Sale dinero</button>
+            <button type="button" data-mov="entrada" aria-pressed="false">Entra dinero</button>
+          </div>
+          <div class="movform">
+            <div class="field"><label for="movAmt">Importe (€)</label><input type="text" id="movAmt" inputmode="decimal" autocomplete="off" placeholder="20,00"></div>
+            <div class="field"><label for="movTxt">Concepto</label><input type="text" id="movTxt" autocomplete="off" placeholder="Leche, hielo, retirada…" maxlength="60"></div>
+          </div>
+          <div id="movGastoBox" class="row">
+            <label class="check"><input type="checkbox" id="movGasto" checked> Apuntar también como gasto</label>
+            <select id="movCat" aria-label="Categoría del gasto" style="width:auto;flex:1;min-width:180px"></select>
+          </div>
+          <button type="button" class="btn" id="movBtn">Apuntar</button>
+          <div id="movList"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="sec-h"><h2>Cerrar caja</h2></div>
+        <div class="ticket">
+          <div class="seg" id="closeMode"><button type="button" data-cm="full" aria-pressed="true">Billete a billete</button><button type="button" data-cm="express" aria-pressed="false">Solo el total</button></div>
+          <div class="field" id="expressBox" hidden><label for="closeTotal">Total contado en el cajón (€)</label><input type="text" id="closeTotal" inputmode="decimal" placeholder="Ej. 245,30" autocomplete="off"></div>
+          <p class="hint" id="denomHint">Cuenta cuántos billetes y monedas hay en el cajón.</p>
+          <div class="denoms" id="denoms"></div>
+          <div class="arqueo" id="arqueo"></div>
+          <button type="button" class="btn primary" id="closeBtn">Cerrar caja y guardar</button>
+        </div>
+      </section>
+    </div>
+
+    <section>
+      <div class="sec-h"><h2>Sugerencias de caja</h2></div>
+      <div class="sugs" id="cajaSugs"></div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Cierres anteriores</h2></div>
+      <div id="closesList"></div>
+    </section>
+  </div>
+
+  <!-- GASTOS -->
+  <div id="v-gastos" hidden>
+    <section>
+      <div class="sec-h"><h2>Beneficio</h2>
+        <div class="monthnav aside"><button type="button" class="btn small" id="mPrev" aria-label="Mes anterior">‹</button><b id="mLabel"></b><button type="button" class="btn small" id="mNext" aria-label="Mes siguiente">›</button></div>
+      </div>
+      <div class="kpis" id="profitKpis"></div>
+    </section>
+    <section class="two">
+      <div class="card"><div class="sec-h"><h2>Gasto por categoría</h2></div><div class="hbars" id="catBars"></div></div>
+      <div><div class="sec-h"><h2>Sugerencias</h2></div><div class="sugs" id="profitSugs"></div></div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Precios</h2></div>
+      <div class="sugs" id="priceSugs" style="margin-bottom:10px"></div>
+      <div class="tablewrap"><table class="t" id="priceTable"></table></div>
+      <p class="hint" style="margin-top:8px">Coste = ingredientes según la receta y el precio de cada suministro. «Te queda» descuenta además la parte de gastos fijos que le toca a cada producto vendido. El sugerido deja el ingrediente en un 30% del precio y cubre los fijos.</p>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Informe para el dueño</h2></div>
+      <div class="card row" style="justify-content:space-between">
+        <p class="hint" style="flex:1;min-width:220px">Excel con resumen por meses, cada cierre de caja, ventas por producto con su margen y todos los gastos.</p>
+        <button type="button" class="btn primary" id="xlsBtn">Descargar Excel</button>
+      </div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Apuntar gasto</h2></div>
+      <form class="addform" id="gastoForm">
+        <div class="field"><label for="gFecha">Fecha</label><input type="date" id="gFecha" required></div>
+        <div class="field"><label for="gConcepto">Concepto</label><input type="text" id="gConcepto" required placeholder="Ej. Matcha 1 kg" maxlength="60"></div>
+        <div class="field"><label for="gCat">Categoría</label><select id="gCat"></select></div>
+        <div class="field"><label for="gImporte">Importe (€)</label><input type="text" id="gImporte" inputmode="decimal" required placeholder="45,00"></div>
+        <button class="btn primary" type="submit">Apuntar</button>
+      </form>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Gastos del mes</h2><span class="count" id="gastosTotal"></span></div>
+      <div id="gastosList"></div>
+    </section>
+
+    <section>
+      <div class="sec-h"><h2>Gastos fijos al mes</h2><span class="count" id="fijosTotal"></span></div>
+      <p class="hint" style="margin-bottom:10px">Alquiler, autónomos, luz, gestoría… Se restan enteros en cada mes.</p>
+      <div id="fijosList"></div>
+      <form class="addform" id="fijoForm" style="margin-top:10px">
+        <div class="field"><label for="fConcepto">Concepto</label><input type="text" id="fConcepto" required placeholder="Alquiler" maxlength="60"></div>
+        <div class="field"><label for="fCat">Categoría</label><select id="fCat"></select></div>
+        <div class="field"><label for="fImporte">Al mes (€)</label><input type="text" id="fImporte" inputmode="decimal" required placeholder="600"></div>
+        <button class="btn" type="submit">Añadir fijo</button>
+      </form>
+    </section>
+  </div>
+
+  <!-- DATOS -->
+  <div id="v-datos" hidden>
+    <section>
+      <div class="sec-h"><h2>Ventas</h2>
+        <div class="chips aside" id="periodChips">
+          <button type="button" class="chip" data-p="hoy">Hoy</button>
+          <button type="button" class="chip" data-p="7">7 días</button>
+          <button type="button" class="chip" data-p="30">30 días</button>
+          <button type="button" class="chip" data-p="mes">Este mes</button>
+        </div>
+      </div>
+      <div class="kpis" id="statKpis"></div>
+    </section>
+    <section class="card">
+      <div class="sec-h"><h2>Ventas por día</h2></div>
+      <div class="vchart"><div class="vbars" id="dayBars"></div></div>
+    </section>
+    <section class="two">
+      <div class="card"><div class="sec-h"><h2>Lo más vendido</h2></div><div class="hbars" id="topBars"></div></div>
+      <div class="card"><div class="sec-h"><h2>Horas punta</h2></div><div class="vchart"><div class="vbars" id="hourBars"></div></div>
+        <div class="sec-h" style="margin-top:14px"><h2>Por tipo</h2></div><div class="hbars" id="groupBars"></div>
+        <div class="sec-h" style="margin-top:14px"><h2>Espera por hora</h2></div><div class="hbars" id="waitBars"></div></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Compras sugeridas</h2></div>
+      <p class="hint" style="margin-bottom:10px">Calculado con lo que vendéis cada día y las recetas de Ajustes. Cuenta el stock en Ajustes para saber cuántos días te quedan.</p>
+      <div class="sugs" id="supplySugs"></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Cuánto os dura cada suministro</h2></div>
+      <div class="tablewrap"><table class="t" id="durTable"></table></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Combos que podríais probar</h2></div>
+      <p class="hint" style="margin-bottom:10px">Solo son ideas: no están en la carta. Si os convence alguno, añadidlo en Ajustes como fuera de carta.</p>
+      <div class="sugs" id="comboSugs"></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Se venden poco</h2></div>
+      <div class="sugs" id="slowSugs"></div>
+    </section>
+  </div>
+
+  <!-- AJUSTES -->
+  <div id="v-ajustes" hidden>
+    <section>
+      <div class="sec-h"><h2>Temporada</h2></div>
+      <div class="card" style="display:grid;gap:10px;margin-bottom:16px">
+        <p class="hint">Activa o desactiva de golpe las bebidas frías o calientes. La repostería no se toca.</p>
+        <div class="seg" id="seasonSeg">
+          <button type="button" data-season="todo">Todo</button>
+          <button type="button" data-season="invierno">Invierno (sin frías)</button>
+          <button type="button" data-season="verano">Verano (sin calientes)</button>
+        </div>
+      </div>
+      <div class="sec-h"><h2>Carta y stock</h2></div>
+      <p class="hint" style="margin-bottom:12px"><b>Disponible</b> apagado = agotado, no sale en pedidos. <b>Fuera de carta</b> = sale arriba del todo, destacado. Los cambios se guardan al salir de cada casilla.</p>
+      <div id="menuEdit"></div>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Añadir producto</h2></div>
+      <form class="addform" id="addForm">
+        <div class="field"><label for="nName">Nombre</label><input type="text" id="nName" required placeholder="Ej. Matcha fresa"></div>
+        <div class="field"><label for="nPrice">Precio (€)</label><input type="text" id="nPrice" inputmode="decimal" required placeholder="3,80"></div>
+        <div class="field"><label for="nGroup">Grupo</label><input type="text" id="nGroup" list="groupsList" placeholder="Matcha"></div>
+        <div class="field"><label for="nStation">Sale en</label><select id="nStation"><option value="barra">Barra (iPad)</option><option value="cocina">Caja (lo sirves tú)</option></select></div>
+        <label class="check"><input type="checkbox" id="nSpecial"> Fuera de carta</label>
+        <button class="btn primary" type="submit">Añadir</button>
+      </form>
+      <datalist id="groupsList"></datalist>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Suministros</h2></div>
+      <p class="hint" style="margin-bottom:12px">Cuenta lo que tienes y pulsa <b>Guardar conteo</b>. Desde ese momento la app resta lo que se gasta con cada venta.</p>
+      <div id="insEdit"></div>
+      <form class="addform" id="insForm" style="margin-top:10px">
+        <div class="field"><label for="iName">Suministro</label><input type="text" id="iName" required placeholder="Ej. Puré de mango"></div>
+        <div class="field"><label for="iUnit">Unidad</label><select id="iUnit"><option value="g">gramos</option><option value="ml">ml</option><option value="ud">unidades</option></select></div>
+        <div class="field"><label for="iMin">Mínimo</label><input type="text" id="iMin" inputmode="decimal" placeholder="500"></div>
+        <button class="btn" type="submit">Añadir suministro</button>
+      </form>
+    </section>
+    <section>
+      <div class="sec-h"><h2>Este dispositivo y la cuenta</h2></div>
+      <div class="card" style="display:grid;gap:10px">
+        <p class="hint" id="roleTxt"></p>
+        <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en caja mientras cobro</button>
+          <button type="button" class="sw" id="autoToggle" aria-pressed="true">Avisar a caja solo al tachar la última bebida</button></div>
+        <div class="toggles"><button type="button" class="sw" id="fidToggle" aria-pressed="true">Fidelidad: una bebida gratis</button>
+          <label class="check" for="fidCada">cada <input type="number" id="fidCada" min="2" max="30" step="1" style="width:70px"> visitas</label></div>
+        <div class="qgrid">
+          <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
+          <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
+        </div>
+        <p class="hint">Activado: tú dejas el vaso con hielo, leche fría y nombre, y en la barra solo se añade el espresso o el matcha.</p>
+        <div class="row"><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button></div>
+        <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<div class="cartbar" id="cartBar" hidden>
+  <span class="sum" id="cartSum"></span>
+  <button type="button" id="toTicket">Ver comanda</button>
+</div>
+
+
+<style>
+.login{position:fixed;inset:0;z-index:50;background:var(--bg);display:grid;place-items:center;padding:24px max(16px,env(safe-area-inset-left,0px)) 24px max(16px,env(safe-area-inset-right,0px));overflow:auto}
+.loginbox{width:100%;max-width:380px;display:grid;gap:14px}
+.loginbox .lockup{text-align:center;color:var(--ink);display:grid;justify-items:center;gap:2px;margin-bottom:6px}
+.loginbox .word{font-family:var(--display);font-size:4.2rem;line-height:.86;letter-spacing:.03em}
+.loginbox .club{font-family:var(--display);font-size:1.3rem;letter-spacing:.2em}
+input[type=email],input[type=password]{width:100%;box-sizing:border-box;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:12px;min-width:0;font:inherit;color:inherit}
+</style>
+<div id="login" class="login" hidden>
+  <form id="loginForm" class="loginbox" autocomplete="on">
+    <div class="lockup"><span class="word">UTOPÍA</span><span class="club">COFFEE CLUB</span></div>
+    <p class="hint" style="text-align:center">Entra con tu correo. Solo pueden entrar los correos del equipo.</p>
+    <div class="field"><label for="lEmail">Correo</label><input type="email" id="lEmail" required autocomplete="username" inputmode="email"></div>
+    <div class="field"><label for="lPass">Contraseña</label><input type="password" id="lPass" required minlength="6" autocomplete="current-password"></div>
+    <p class="err" id="loginErr" hidden></p>
+    <button type="submit" class="btn primary" data-mode="login" style="padding:14px">Entrar</button>
+    <button type="submit" class="btn ghost" data-mode="signup">Es mi primera vez: crear mi cuenta</button>
+  </form>
+</div>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur = n => (Number(n)||0).toLocaleString("es-ES",{style:"currency",currency:"EUR"});
+const eurC = c => eur((c||0)/100);
+const cents = n => Math.round((Number(n)||0)*100);
+const pad = n => String(n).padStart(3,"0");
+const dayKey = (t=Date.now()) => { const d=new Date(t); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const startOfDay = (t=Date.now()) => { const d=new Date(t); d.setHours(0,0,0,0); return d.getTime(); };
+const mins = t => Math.max(0, Math.floor((Date.now()-t)/60000));
+const minsTxt = t => { const m=mins(t); return m<1 ? "ahora" : "hace "+m+" min"; };
+const hhmm = t => new Date(t).toLocaleTimeString("es-ES", {hour:"2-digit", minute:"2-digit"});
+const dmy = t => new Date(t).toLocaleDateString("es-ES", {weekday:"short", day:"numeric", month:"short"});
+const num1 = n => (Math.round(n*10)/10).toLocaleString("es-ES");
+function parseMoney(v){ const s = String(v ?? "").trim(); if (!s) return NaN; const n = parseFloat(s.replace(",", ".").replace(/[^\d.\-]/g, "")); return isFinite(n) ? n : NaN; }
+
+const GROUP_ORDER = ["Matcha","Cafés","Repostería"];
+const VIEWS = ["pedidos","barra","caja","gastos","datos","ajustes"];
+const SUBS = {pedidos:"Pedidos · tomar, cobrar y entregar", barra:"Barra · cafés y matcha", caja:"Caja · efectivo del turno", gastos:"Gastos · beneficio del mes", datos:"Datos · ventas y compras", ajustes:"Ajustes · carta, stock y suministros"};
+const DENOMS = [50,20,10,5,2,1,0.5,0.2,0.1,0.05,0.02,0.01];
+const DENOMS_C = DENOMS.map(d => Math.round(d*100));
+const CATS = ["Café y matcha","Leche y bebidas vegetales","Repostería","Vasos y envases","Limpieza","Alquiler","Luz, agua e internet","Autónomos y gestoría","Otros"];
+const WEEKDAYS = ["dom","lun","mar","mié","jue","vie","sáb"];
+const WEEKDAYS_L = ["domingos","lunes","martes","miércoles","jueves","viernes","sábados"];
+const fmtWait = ms => { const t = Math.round(ms/1000); return Math.floor(t/60) + ":" + String(t%60).padStart(2,"0") + " min"; };
+
+let db = null;
+let menu = [], orders = [], shift = null, closes = [], gastos = [], fijos = [], insumos = [];
+let gotMenu = false, gotOrders = false, gotShift = false, primed = false;
+let prevStatus = new Map();
+const cart = new Map();
+const ticks = new Set();
+const counts = {};
+const openRecipes = new Set();
+let movType = "salida";
+let view = "pedidos";
+let period = "7";
+let monthOffset = 0;
+let config = null, gotConfig = false, inSetup = false, setupStep = 0, setupForced = false;
+const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
+let role = lsGet("rol");            // "caja" | "barra" | "ambos" (por dispositivo)
+const cfg = (k, d) => (config && config[k] !== undefined && config[k] !== null && config[k] !== "") ? Number(config[k]) : d;
+const ACTIVE = o => o.status !== "anulado";
+
+/* ---------- vistas ---------- */
+function pickView(){
+  const h = location.hash.replace("#","");
+  if (VIEWS.includes(h)) return h;
+  const s = lsGet("vista2"); if (VIEWS.includes(s)) return s;
+  return role === "barra" ? "barra" : "pedidos";
+}
+function setView(v){
+  if (inSetup) return;
+  view = v;
+  lsSet("vista2", v);
+  $("#v-setup").hidden = true;
+  VIEWS.forEach(x => { $("#v-"+x).hidden = x !== v; });
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+  const act = document.querySelector('.tabs button[aria-pressed="true"]'); if (act) act.scrollIntoView({block:"nearest", inline:"nearest"});
+  $("#sub").textContent = SUBS[v];
+  renderAll();
+  keepAwake();
+}
+document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+  if (location.hash !== "#"+b.dataset.view) location.hash = b.dataset.view; else setView(b.dataset.view);
+}));
+addEventListener("hashchange", () => setView(pickView()));
+
+/* ---------- avisos ---------- */
+let actx = null;
+function unlockAudio(){ try { actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if (actx.state !== "running") actx.resume(); } catch(e){} }
+document.addEventListener("pointerdown", unlockAudio);
+function beep(kind){
+  try {
+    if (!actx || actx.state !== "running") return;
+    (kind === "ready" ? [880, 1175] : [660, 660]).forEach((f,i) => {
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.frequency.value = f; o.type = "sine";
+      const t = actx.currentTime + i*0.22;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.35, t+0.02); g.gain.exponentialRampToValueAtTime(0.0001, t+0.2);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t+0.22);
+    });
+  } catch(e){}
+}
+function alertUser(kind){
+  beep(kind);
+  try { navigator.vibrate && navigator.vibrate(kind === "ready" ? [200,100,200] : 150); } catch(e){}
+  document.body.classList.remove("flash"); void document.body.offsetWidth; document.body.classList.add("flash");
+  setTimeout(() => document.body.classList.remove("flash"), 1300);
+}
+let toastT;
+function toast(msg){
+  let el = $(".toast"); if (!el){ el = document.createElement("div"); el.className = "toast"; el.setAttribute("role","status"); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => el.hidden = true, 2200);
+}
+let wl = null;
+async function keepAwake(){ try { if ("wakeLock" in navigator && document.visibilityState === "visible" && !wl){ wl = await navigator.wakeLock.request("screen"); wl.addEventListener("release", () => wl = null); } } catch(e){} }
+document.addEventListener("visibilitychange", keepAwake);
+function setNotice(text, warn){ const n = $("#notice"); n.textContent = text || ""; n.hidden = !text; n.classList.toggle("warn", !!warn); }
+const armed = new Map();
+function confirmTap(btn, key, label, fn){
+  if (armed.get(key)){ armed.delete(key); fn(); return; }
+  const old = btn.textContent; btn.textContent = label; armed.set(key, true);
+  setTimeout(() => { if (armed.get(key)){ armed.delete(key); btn.textContent = old; } }, 3000);
+}
+
+/* ---------- carta ---------- */
+const isOn = m => m.disponible !== false;
+function sortMenu(list){
+  const gi = g => { const i = GROUP_ORDER.indexOf(g); return i < 0 ? 99 : i; };
+  return list.slice().sort((a,b) => (b.especial?1:0)-(a.especial?1:0) || gi(a.group)-gi(b.group) || String(a.group).localeCompare(String(b.group)) || (a.order??0)-(b.order??0) || String(a.name).localeCompare(String(b.name)));
+}
+function groupsOf(list){
+  const m = new Map();
+  list.forEach(it => { const g = it.especial ? "Fuera de carta" : (it.group || "Otros"); if (!m.has(g)) m.set(g, []); m.get(g).push(it); });
+  return m;
+}
+const today = () => orders.filter(o => o.day === dayKey());
+
+/* ---------- agregados de ventas ---------- */
+function changeBreakdown(cc){ const r = {}; DENOMS_C.forEach(d => { while (cc >= d){ r[d] = (r[d]||0)+1; cc -= d; } }); return r; }
+function aggregate(list){
+  const a = {ventas:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}};
+  list.filter(ACTIVE).forEach(o => {
+    const tc = cents(o.total); a.n++; a.ventas += tc;
+    a.propinas += cents(o.propina);
+    (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
+    // Productos que se piden juntos (para sugerir combos)
+    if (!o.invitacion){ const ids = [...new Set((o.items||[]).map(i => i.id).filter(Boolean))].sort(); for (let x = 0; x < ids.length; x++) for (let y = x+1; y < ids.length; y++){ const k = ids[x] + "|" + ids[y]; a.pares[k] = (a.pares[k]||0) + 1; } }
+    const h = new Date(o.createdAt).getHours(); const hh = a.horas[h] || (a.horas[h] = {n:0, c:0}); hh.n++; hh.c += tc;
+    // Tiempo desde que cobras hasta que la barra lo marca listo
+    if (o.readyAt && (o.items||[]).some(i => i.station !== "cocina")){
+      const w = o.readyAt - o.createdAt;
+      if (w > 0 && w < 3*3600000){ a.espera.n++; a.espera.s += w; a.espera.max = Math.max(a.espera.max, w); if (w > 300000) a.espera.over++; hh.wn = (hh.wn||0)+1; hh.ws = (hh.ws||0)+w; }
+    }
+    (o.items||[]).forEach(i => {
+      const key = i.id || i.name; const m = menu.find(x => x.id === i.id);
+      const p = a.productos[key] || (a.productos[key] = {name:i.name, group: i.group || m?.group || "", station:i.station || "barra", qty:0, c:0});
+      p.qty += i.qty; p.c += cents(i.price)*i.qty;
+    });
+    if (o.change) Object.entries(changeBreakdown(cents(o.change))).forEach(([d,n]) => a.vueltas[d] = (a.vueltas[d]||0)+n);
+  });
+  return a;
+}
+const shiftOrders = () => (shift && shift.open) ? orders.filter(o => (o.createdAt||0) >= shift.openedAt) : [];
+// Registros por turno: cierres guardados + turno abierto en vivo
+function records(fromT){
+  const recs = closes.filter(c => (c.closedAt||0) >= fromT).map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:c.horas||{}, vueltas:c.vueltas||{}, espera:c.espera||{n:0, s:0, over:0, max:0}, invit:c.invit||{n:0,c:0}, fidel:c.fidel||{n:0,c:0}, propinas:cents(c.propinas), pares:c.pares||{}}));
+  if (shift && shift.open){ const a = aggregate(shiftOrders()); recs.push({day:dayKey(shift.openedAt), t:shift.openedAt, live:true, ...a}); }
+  return recs;
+}
+function merge(recs){
+  const m = {ventas:0, n:0, productos:{}, horas:{}, days:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0,c:0}, fidel:{n:0,c:0}, propinas:0, pares:{}};
+  recs.forEach(r => {
+    m.ventas += r.ventas; m.n += r.n;
+    if (r.invit){ m.invit.n += r.invit.n||0; m.invit.c += r.invit.c||0; }
+    if (r.fidel){ m.fidel.n += r.fidel.n||0; m.fidel.c += r.fidel.c||0; }
+    m.propinas += r.propinas||0;
+    Object.entries(r.pares||{}).forEach(([k,v]) => m.pares[k] = (m.pares[k]||0) + v);
+    const e = r.espera || {}; m.espera.n += e.n||0; m.espera.s += e.s||0; m.espera.over += e.over||0; m.espera.max = Math.max(m.espera.max, e.max||0);
+    const d = m.days[r.day] || (m.days[r.day] = {ventas:0, n:0, t:r.t}); d.ventas += r.ventas; d.n += r.n;
+    Object.entries(r.productos).forEach(([k,p]) => { const x = m.productos[k] || (m.productos[k] = {name:p.name, group:p.group, station:p.station, qty:0, c:0}); x.qty += p.qty; x.c += p.c; });
+    Object.entries(r.horas).forEach(([h,v]) => { const x = m.horas[h] || (m.horas[h] = {n:0, c:0, wn:0, ws:0}); x.n += v.n; x.c += v.c; x.wn += v.wn||0; x.ws += v.ws||0; });
+  });
+  return m;
+}
+
+/* ---------- pedidos ---------- */
+/* ---------- modos de la pantalla de pedidos ---------- */
+let pedMode = lsGet("pedMode") === "entregar" ? "entregar" : "cobrar";
+function pendingForMe(){
+  const ready = orders.filter(o => o.status === "listo").length;
+  const mineOpen = orders.filter(o => o.status === "nuevo" && (o.items||[]).some((it,i) => mine(it) && !deliveredSet(o).has(i))).length;
+  return {ready, mineOpen, total: ready + mineOpen};
+}
+function setMode(m){
+  pedMode = m; lsSet("pedMode", m);
+  $("#v-pedidos").dataset.mode = m;
+  document.querySelectorAll(".modebar [data-mode]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.mode === m)));
+  $("#cartBar").hidden = !(view === "pedidos" && m === "cobrar" && cartTotal().n > 0);
+  window.scrollTo({top:0});
+}
+function updateModeBadge(){
+  const p = pendingForMe(), b = $("#modeBadge");
+  b.hidden = !p.total; b.textContent = p.total;
+  b.classList.toggle("hot", p.ready > 0);
+}
+document.querySelectorAll(".modebar [data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+/* ---------- lo que entregas tú, producto a producto ---------- */
+const mine = it => it.station === "cocina";
+const deliveredSet = o => new Set(Array.isArray(o.entregados) ? o.entregados : []);
+// Chuleta para lo que preparas tú en caja
+function myHint(it){
+  const m = itemMenu(it), r = m?.receta || {}, k = prepKind(m, it.name);
+  if (k === "matcha"){
+    const vaso = isCold(m, it.name) ? `vaso con ${/sin hielo/i.test(it.note||"") ? "sin hielo" : /poco hielo/i.test(it.note||"") ? "poco hielo" : "hielo"}${Number(r.coco) ? ` + ${r.coco} ml coco` : ""}` : "vaso caliente";
+    return `${Number(r.matcha) || 3} g matcha + 35 ml agua, batir · ${vaso}`;
+  }
+  if (k === "coldbrew") return "vaso con hielo + cold brew";
+  if (k === "batch") return "vaso caliente + batch";
+  return "";
+}
+function itemLine(o, it, i){
+  const done = o.status === "entregado" || deliveredSet(o).has(i);
+  const name = `<span class="iname"><span>${esc(it.name)}${it.note ? ` <span class="note">· ${esc(it.note)}</span>` : ""}</span>${mine(it) && !done && myHint(it) ? `<small>${esc(myHint(it))}</small>` : ""}</span>`;
+  if (mine(it)) return `<li class="${done ? "dlv" : ""}"><span class="q">${it.qty}×</span>${name}
+    ${done ? `<button type="button" class="tag ok" data-ungive="${o.id}" data-i="${i}" title="Tocar si no se entregó">✓ Entregado</button>`
+           : `<button type="button" class="btn small primary" data-give="${o.id}" data-i="${i}">Entregar</button>`}</li>`;
+  return `<li class="${done ? "dlv" : ""}"><span class="q">${it.qty}×</span>${name}<span class="tag bar">${o.status === "nuevo" ? "En barra" : "De barra"}</span></li>`;
+}
+function backToCobrarIfDone(){
+  setTimeout(() => { if (view === "pedidos" && pedMode === "entregar" && pendingForMe().total === 0){ setMode("cobrar"); toast("Todo entregado"); } }, 600);
+}
+async function giveItem(oid, i, on){
+  const o = orders.find(x => x.id === oid); if (!o || !db) return;
+  const set = deliveredSet(o); on ? set.add(i) : set.delete(i);
+  const ch = {entregados:[...set].sort((a,b) => a-b)};
+  const hasBarItems = (o.items||[]).some(it => !mine(it));
+  const allMine = (o.items||[]).every((it,j) => !mine(it) || set.has(j));
+  if (on && !hasBarItems && allMine){ ch.status = "entregado"; ch.deliveredAt = Date.now(); }
+  const it = (o.items||[])[i];
+  await upd(oid, ch, on ? `${it ? it.name : "Producto"} entregado` : "Marcado como no entregado");
+  if (on) backToCobrarIfDone();
+}
+function renderReady(){
+  const list = orders.filter(o => o.status === "listo").sort((a,b) => (a.readyAt||a.createdAt)-(b.readyAt||b.createdAt));
+  $("#readyCount").textContent = list.length || "";
+  $("#readyList").innerHTML = !list.length ? `<div class="empty" style="grid-column:1/-1">Nada para entregar ahora.</div>` : list.map(o => {
+    const lines = (o.items||[]).map((it,i) => itemLine(o, it, i)).join("");
+    const some = deliveredSet(o).size > 0, hasBarItems = (o.items||[]).some(it => !mine(it));
+    return `<article class="ready">
+      <div class="who"><span class="num">#${pad(o.num)}</span><span class="name">${esc(o.customer)}</span></div>
+      <ul class="lines">${lines}</ul>
+      <div class="row"><button type="button" class="btn deliver" data-deliver="${o.id}">${some ? "Entregar el resto" : "Entregado"}</button>
+      ${hasBarItems ? `<button type="button" class="btn ghost" data-back="${o.id}">Volver a barra</button>` : ""}
+      <button type="button" class="btn ghost danger" data-cancel="${o.id}">Anular</button></div>
+    </article>`;
+  }).join("");
+}
+// Los 4 más vendidos de las últimas dos semanas, para no buscarlos en la carta
+function topProducts(avail){
+  const m = merge(records(Date.now() - 14*86400000));
+  const total = Object.values(m.productos).reduce((a,p) => a + p.qty, 0);
+  if (total < 15 || avail.length < 8) return [];
+  return Object.entries(m.productos).sort((a,b) => b[1].qty - a[1].qty)
+    .map(([k]) => avail.find(x => x.id === k)).filter(Boolean).slice(0, 4);
+}
+function renderMenuGrid(){
+  const box = $("#menuGrid");
+  const avail = menu.filter(isOn), off = menu.filter(m => !isOn(m));
+  if (!avail.length){ box.innerHTML = `<div class="empty">${gotMenu ? (menu.length ? 'Todo está marcado como agotado. Actívalo en <b>Ajustes</b>.' : 'La carta está vacía. Añade tus productos en <b>Ajustes</b>.') : 'Cargando la carta…'}</div>`; return; }
+  let html = "";
+  const groups = groupsOf(sortMenu(avail));
+  const top = topProducts(avail);
+  if (top.length) groups.set("Más pedidos", top);
+  const order = top.length ? ["Más pedidos", ...[...groups.keys()].filter(g => g !== "Más pedidos")] : [...groups.keys()];
+  order.map(g => [groups.get(g), g]).forEach(([items, g]) => {
+    const sp = g === "Fuera de carta";
+    html += `<div class="group-h ${sp?"sp":""}">${esc(g)}</div><div class="grid">` + items.map(it => {
+      const q = cart.get(it.id)?.qty || 0;
+      return `<button type="button" class="prod ${it.station==="cocina"?"cocina":""} ${it.especial?"sp":""}" data-add="${it.id}" aria-label="Añadir ${esc(it.name)}">
+        <span class="pn">${esc(it.name)}</span><span class="pp">${eur(it.price)}</span>${q?`<span class="badge">${q}</span>`:""}</button>`;
+    }).join("") + `</div>`;
+  });
+  if (off.length) html += `<div class="soldout">Agotado: ${off.map(m => esc(m.name)).join(", ")}</div>`;
+  box.innerHTML = html;
+}
+let invMode = null, freeItemId = null;   // invitación / consumo propio, y producto gratis por fidelidad
+function cartTotal(){
+  let full = 0, n = 0;
+  cart.forEach((c,id) => { const m = menu.find(x => x.id === id); if (m){ full += c.qty*(Number(m.price)||0); n += c.qty; } });
+  const freeM = freeItemId && cart.has(freeItemId) ? menu.find(x => x.id === freeItemId) : null;
+  const disc = freeM ? Number(freeM.price)||0 : 0;
+  const t = invMode ? 0 : Math.max(0, full - disc);
+  return {t, n, full, disc};
+}
+function renderCart(){
+  [...cart.keys()].forEach(id => { if (gotMenu && !menu.find(m => m.id === id)) cart.delete(id); });
+  const box = $("#cartLines");
+  if (!cart.size) box.innerHTML = `<div class="empty">Toca productos de la carta para añadirlos a la comanda.</div>`;
+  else box.innerHTML = [...cart].map(([id,c]) => {
+    const m = menu.find(x => x.id === id); if (!m) return "";
+    return `<div class="tline">
+      <div><b>${esc(m.name)}</b> <span class="note" style="font-style:normal">${eur(m.price*c.qty)}</span></div>
+      <div class="stepper"><button type="button" data-dec="${id}" aria-label="Quitar uno">−</button><span>${c.qty}</span><button type="button" data-inc="${id}" aria-label="Añadir uno">+</button></div>
+      <input type="text" id="note-${id}" data-note="${id}" value="${esc(c.note)}" placeholder="Nota (sin hielo, extra matcha…)" autocomplete="off">
+      ${m.station !== "cocina" ? `<div class="notechips">${NOTE_CHIPS.filter(t => !(c.note||"").includes(t)).map(t => `<button type="button" data-chip="${id}" data-t="${esc(t)}">+ ${esc(t)}</button>`).join("")}</div>` : ""}
+    </div>`;
+  }).join("");
+  const {t, n, full, disc} = cartTotal();
+  $("#cartTotal").innerHTML = (invMode || disc) && full ? `<s class="mins">${eur(full)}</s> ${eur(t)}` : eur(t);
+  $("#invBtn").setAttribute("aria-pressed", String(invMode === "invitacion"));
+  $("#casaBtn").setAttribute("aria-pressed", String(invMode === "casa"));
+  $("#cashArea").hidden = !!invMode;
+  renderLoyal();
+  $("#cartSum").textContent = `${n} ${n===1?"artículo":"artículos"} · ${eur(t)}`;
+  $("#cartBar").hidden = !(view === "pedidos" && pedMode === "cobrar" && n > 0);
+  renderCash();
+}
+function receivedCents(){ const v = parseMoney($("#recv").value); return isNaN(v) ? cents(cartTotal().t) : cents(v); }
+function renderCash(){
+  const tc = cents(cartTotal().t), typed = $("#recv").value.trim() !== "", r = receivedCents();
+  const opts = [];
+  if (tc > 0) [100, 500, 1000, 2000, 5000].forEach(step => { const v = Math.ceil(tc/step)*step; if (v > tc && !opts.includes(v)) opts.push(v); });
+  $("#quickCash").innerHTML = tc > 0
+    ? `<button type="button" data-cash="exact" aria-pressed="${!typed}">Justo</button>` + opts.map(v => `<button type="button" data-cash="${v}" aria-pressed="${typed && r === v}">${eurC(v)}</button>`).join("")
+    : "";
+  const ch = r - tc, box = $("#changeBox");
+  $("#tipRow").hidden = !(ch > 0);
+  if (!(ch > 0)) $("#tipChk").checked = false;
+  box.classList.toggle("short", ch < 0);
+  box.firstElementChild.textContent = ch < 0 ? "Faltan" : "Vueltas";
+  $("#changeAmt").textContent = eurC(Math.abs(ch));
+}
+$("#recv").addEventListener("input", renderCash);
+$("#quickCash").addEventListener("click", e => {
+  const b = e.target.closest("[data-cash]"); if (!b) return;
+  $("#recv").value = b.dataset.cash === "exact" ? "" : (Number(b.dataset.cash)/100).toFixed(2).replace(".", ",");
+  renderCash();
+});
+function renderPending(){
+  const list = orders.filter(o => o.status === "nuevo").sort((a,b) => a.createdAt-b.createdAt);
+  $("#pendCount").textContent = list.length || "";
+  const cups = vasosCaja();
+  $("#pendList").innerHTML = list.length ? list.map(o => {
+    const bar = (o.items||[]).filter(i => !mine(i));
+    return `<div class="pend wrap">
+      <span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
+      <span class="mins" data-t="${o.createdAt}">${minsTxt(o.createdAt)}</span>
+      <button type="button" class="btn ghost danger" data-cancel="${o.id}">Anular</button>
+      <ul class="lines inorder">${(o.items||[]).map((it,i) => itemLine(o, it, i)).join("")}</ul>
+      ${cups && bar.length ? `<ul class="cups">${bar.map(i => `<li><b>Vaso para ${esc(i.name)}</b> <span>${esc(cupPrep(i))}</span></li>`).join("")}</ul>
+      <button type="button" class="btn small ${o.vasos ? "" : "primary"}" data-cups="${o.id}" aria-pressed="${!!o.vasos}">${o.vasos ? "Vasos en barra ✓" : "Vasos listos, pasar a barra"}</button>` : ""}
+    </div>`; }).join("")
+    : `<div class="empty">No hay pedidos esperando a la barra.</div>`;
+  // Entregados en los últimos 15 minutos, por si te equivocas al tocar
+  const done = orders.filter(o => o.status === "entregado" && (o.deliveredAt||0) > Date.now() - 15*60000).sort((a,b) => b.deliveredAt-a.deliveredAt).slice(0, 4);
+  $("#doneSec").hidden = !done.length;
+  $("#doneSum").textContent = `Entregados hace poco (${done.length})`;
+  updateModeBadge();
+  $("#doneList").innerHTML = done.map(o => `<div class="pend"><span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
+    <span class="mins">${hhmm(o.deliveredAt)}</span><button type="button" class="btn ghost small" data-undo="${o.id}">Deshacer</button></div>`).join("");
+}
+$("#menuGrid").addEventListener("click", e => {
+  const b = e.target.closest("[data-add]"); if (!b) return;
+  const id = b.dataset.add, c = cart.get(id) || {qty:0, note:""}; c.qty++; cart.set(id, c);
+  renderMenuGrid(); renderCart();
+});
+$("#cartLines").addEventListener("click", e => {
+  const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]"), chip = e.target.closest("[data-chip]");
+  if (chip){ const c = cart.get(chip.dataset.chip); if (!c) return; c.note = [c.note, chip.dataset.t].filter(s => s && s.trim()).join(", "); renderCart(); return; }
+  if (inc) cart.get(inc.dataset.inc).qty++;
+  else if (dec){ const c = cart.get(dec.dataset.dec); c.qty--; if (c.qty <= 0) cart.delete(dec.dataset.dec); }
+  else return;
+  renderMenuGrid(); renderCart();
+});
+$("#cartLines").addEventListener("input", e => { const id = e.target.dataset.note; if (id && cart.has(id)) cart.get(id).note = e.target.value; });
+$("#toTicket").addEventListener("click", () => { $("#ticketSec").scrollIntoView({behavior:"smooth", block:"start"}); setTimeout(() => { if (!$("#cust").value) $("#cust").focus({preventScroll:true}); }, 400); });
+
+function showErr(msg){ const e = $("#sendErr"); e.textContent = msg; e.hidden = !msg; }
+/* Clientes habituales: su último pedido a un toque */
+let clientes = [], useNumber = false;
+const slug = t => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+function findRegular(name){ const k = slug(name); return k ? clientes.find(c => c.id === k) : null; }
+async function saveRegular(name, items, now){
+  const k = slug(name); if (!k || !db) return;
+  const prev = clientes.find(c => c.id === k);
+  try { await db.collection("clientes").doc(k).set({nombre:name, ultimo: items.map(i => ({id:i.id, name:i.name, qty:i.qty, note:i.note||""})), veces:(prev?.veces||0)+1, t:now}); } catch(e){}
+}
+function renderRegular(){
+  const box = $("#regularBox"), c = findRegular($("#cust").value.trim());
+  $("#custList").innerHTML = clientes.slice(0, 200).map(x => `<option value="${esc(x.nombre)}"></option>`).join("");
+  if (!c || !Array.isArray(c.ultimo) || !c.ultimo.length){ box.innerHTML = ""; return; }
+  const ok = c.ultimo.filter(i => menu.find(m => m.id === i.id && isOn(m)));
+  box.innerHTML = ok.length ? `<button type="button" class="regular" id="loadRegular"><b>Lo de siempre</b><span>${ok.map(i => `${i.qty}× ${esc(i.name)}${i.note ? " (" + esc(i.note) + ")" : ""}`).join(", ")}</span><small>${c.veces} ${c.veces === 1 ? "visita" : "visitas"}</small></button>` : "";
+}
+$("#cust").addEventListener("input", () => { renderRegular(); renderLoyal(); });
+const fidOn = () => !(config && config.fidelidad === false);
+const fidCada = () => Math.max(2, cfg("fidelidadCada", 10));
+function renderLoyal(){
+  const box = $("#loyalBox");
+  const c = fidOn() && !invMode ? findRegular($("#cust").value.trim()) : null;
+  if (!c){ box.innerHTML = ""; if (freeItemId && !invMode) { freeItemId = null; } return; }
+  const visit = (c.veces || 0) + 1, cada = fidCada(), due = visit % cada === 0;
+  if (!due){ freeItemId = null; box.innerHTML = `<div class="loyal soft">${esc(c.nombre)}: visita ${visit}. Le ${cada - visit % cada === 1 ? "falta 1" : "faltan " + (cada - visit % cada)} para la gratis.</div>`; return; }
+  const inCart = [...cart.keys()].map(id => menu.find(m => m.id === id)).filter(Boolean);
+  const drinks = inCart.filter(m => prepKind(m, m.name) !== "otro");
+  const cand = (drinks.length ? drinks : inCart).sort((a,b) => (Number(a.price)||0) - (Number(b.price)||0))[0];
+  if (freeItemId && cart.has(freeItemId)){ const fm = menu.find(m => m.id === freeItemId); box.innerHTML = `<div class="loyal on"><span><b>Gratis por fidelidad:</b> ${esc(fm?.name || "")}</span><button type="button" class="btn small" data-loyal="off">Quitar</button></div>`; return; }
+  box.innerHTML = `<div class="loyal"><span><b>A ${esc(c.nombre)} le toca gratis</b> (visita ${visit})</span>${cand ? `<button type="button" class="btn small primary" data-loyal="${cand.id}">Regalar ${esc(cand.name)}</button>` : `<span class="mins">Añade su bebida y te dejo regalarla</span>`}</div>`;
+}
+$("#loyalBox").addEventListener("click", e => {
+  const b = e.target.closest("[data-loyal]"); if (!b) return;
+  freeItemId = b.dataset.loyal === "off" ? null : b.dataset.loyal; renderCart();
+});
+["invBtn","casaBtn"].forEach(id => $("#"+id).addEventListener("click", () => {
+  const mode = id === "invBtn" ? "invitacion" : "casa";
+  invMode = invMode === mode ? null : mode; if (invMode) freeItemId = null;
+  renderCart(); if (invMode) toast(invMode === "casa" ? "Consumo propio: 0 €, cuenta para el stock" : "Invitación: 0 €, cuenta para el stock");
+}));
+$("#cust").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#sendBtn").click(); } });
+$("#regularBox").addEventListener("click", e => {
+  if (!e.target.closest("#loadRegular")) return;
+  const c = findRegular($("#cust").value.trim()); if (!c) return;
+  cart.clear();
+  c.ultimo.forEach(i => { if (menu.find(m => m.id === i.id && isOn(m))) cart.set(i.id, {qty:i.qty, note:i.note||""}); });
+  renderMenuGrid(); renderCart(); toast("Cargado lo de siempre");
+});
+$("#useNum").addEventListener("click", () => {
+  useNumber = !useNumber; $("#useNum").setAttribute("aria-pressed", String(useNumber));
+  if (useNumber){ $("#cust").value = ""; $("#cust").placeholder = "Se usará el número del pedido"; } else $("#cust").placeholder = "Ej. Lucía";
+  renderRegular();
+});
+$("#sendBtn").addEventListener("click", async () => {
+  showErr("");
+  if (!db){ showErr("No hay conexión con la base de datos. Abre la página con tu cuenta de claude.ai."); return; }
+  if (!cart.size){ showErr("La comanda está vacía."); return; }
+  const nextNum = today().reduce((mx,o) => Math.max(mx, o.num||0), 0) + 1;
+  const name = $("#cust").value.trim() || (useNumber ? "Nº " + nextNum : invMode === "casa" ? "Casa" : invMode === "invitacion" ? "Invitación" : "");
+  if (!name){ showErr("Escribe el nombre del cliente o pulsa «Usar nº»."); $("#cust").focus(); return; }
+  const items = [...cart].flatMap(([id,c]) => {
+    const m = menu.find(x => x.id === id); if (!m) return [];
+    const base = {id, name:m.name, group:m.especial ? "Fuera de carta" : (m.group||""), station:m.station||"barra", note:(c.note||"").trim()}, price = Number(m.price)||0;
+    if (invMode) return [{...base, qty:c.qty, price:0, precioCarta:price, gratis:invMode}];
+    if (freeItemId === id){
+      const arr = []; if (c.qty > 1) arr.push({...base, qty:c.qty-1, price});
+      arr.push({...base, qty:1, price:0, precioCarta:price, gratis:"fidelidad", note:[base.note, "Gratis por fidelidad"].filter(Boolean).join(", ")});
+      return arr;
+    }
+    return [{...base, qty:c.qty, price}];
+  });
+  const total = Math.round(items.reduce((s,i) => s + i.qty*i.price, 0)*100)/100;
+  const rc = invMode ? 0 : receivedCents(), tc = cents(total);
+  if (rc < tc){ showErr(`Faltan ${eurC(tc-rc)}. Revisa lo que te ha dado.`); $("#recv").focus(); return; }
+  const tip = !invMode && $("#tipChk").checked ? rc - tc : 0;
+  const hasBar = items.some(i => i.station !== "cocina");
+  // Si lleva algo que preparas tú (matcha), queda en Para entregar; si es solo servir, se entrega en el acto
+  const needsPrep = items.some(i => i.station === "cocina" && prepKind(itemMenu(i), i.name) === "matcha");
+  const st = hasBar ? "nuevo" : needsPrep ? "listo" : "entregado";
+  const num = nextNum;
+  const now = Date.now();
+  const btn = $("#sendBtn"); btn.disabled = true;
+  try {
+    const res = await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{num, customer:name, items, total, pay:"efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null, createdAt:now, day:dayKey(now),
+      status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]}});
+    if (!useNumber && invMode !== "casa") saveRegular(name, items, now);
+    cart.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null;
+    useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
+    renderMenuGrid(); renderCart();
+    window.scrollTo({top:0, behavior:"smooth"});
+    toast(res === "queued" ? `#${pad(num)} ${name} · sin conexión: guardado, se envía solo al volver` : `#${pad(num)} ${name} · ${hasBar ? "enviado a barra" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}${tip ? " · propina " + eurC(tip) : ""}${shift && shift.open ? "" : " · ¡abre la caja!"}`);
+  } catch(err){
+    showErr(saveErrMsg(err, "No se pudo enviar. Revisa la conexión y vuelve a intentarlo."));
+  } finally { btn.disabled = false; }
+});
+async function upd(id, data, okMsg){
+  try { const r = await writeOrQueue({k:"update", col:"orders", id, data}); if (r === "queued") toast("Sin conexión: se guardará al volver"); else if (okMsg) toast(okMsg); }
+  catch(e){ toast(saveErrMsg(e, "No se pudo guardar. Revisa la conexión.")); }
+}
+
+/* ---------- sin conexión: cola en el móvil ---------- */
+let outbox = []; try { outbox = JSON.parse(lsGet("outbox") || "[]"); if (!Array.isArray(outbox)) outbox = []; } catch(e){ outbox = []; }
+let flushing = false, ordersRaw = [];
+const saveOutbox = () => lsSet("outbox", JSON.stringify(outbox));
+const withTimeout = (p, ms = 8000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej({code:"timeout"}), ms))]);
+const isNetErr = e => !e || !e.code || ["unavailable", "timeout"].includes(e.code);
+function doOp(op){ const ref = db.collection(op.col).doc(op.id); return op.k === "set" ? ref.set(op.data) : ref.update(op.data); }
+async function writeOrQueue(op){
+  if (!navigator.onLine || outbox.length){ queueOp(op); flushOutbox(); return "queued"; }
+  try { await withTimeout(doOp(op)); return "ok"; }
+  catch(e){ if (isNetErr(e)){ queueOp(op); return "queued"; } throw e; }
+}
+function queueOp(op){ outbox.push({...op, t:Date.now()}); saveOutbox(); applyOrders(); }
+async function flushOutbox(){
+  if (!db || flushing || !outbox.length || !navigator.onLine) return;
+  flushing = true;
+  while (outbox.length){
+    const op = outbox[0];
+    try {
+      // Un alta que llegó a guardarse antes de cortarse no se repite
+      if (op.k === "set"){ const snap = await withTimeout(db.collection(op.col).doc(op.id).get()); if (!snap.exists) await withTimeout(doOp(op)); }
+      else await withTimeout(doOp(op));
+      outbox.shift(); saveOutbox();
+    } catch(e){ if (isNetErr(e)) break; outbox.shift(); saveOutbox(); }
+  }
+  flushing = false; applyOrders();
+  if (!outbox.length) toast("Conexión recuperada: todo enviado");
+}
+addEventListener("online", flushOutbox);
+setInterval(flushOutbox, 15000);
+// Lo que está en cola se ve ya en pantalla, marcado como pendiente de enviar
+function applyOrders(){
+  const map = new Map(ordersRaw.map(o => [o.id, {...o}]));
+  outbox.filter(op => op.col === "orders").forEach(op => {
+    if (op.k === "set"){ if (!map.has(op.id)) map.set(op.id, {id:op.id, ...op.data, _local:true}); }
+    else if (map.has(op.id)) map.set(op.id, {...map.get(op.id), ...op.data, _local:true});
+  });
+  orders = [...map.values()];
+  const n = outbox.length, b = $("#outboxBanner");
+  b.hidden = !n; b.textContent = n ? `Sin conexión: ${n} ${n === 1 ? "cambio guardado" : "cambios guardados"} en el móvil. Se envían solos al volver la cobertura.` : "";
+  softRender();
+}
+$("#v-pedidos").addEventListener("click", e => {
+  const d = e.target.closest("[data-deliver]"), bk = e.target.closest("[data-back]"), cn = e.target.closest("[data-cancel]"), un = e.target.closest("[data-undo]");
+  if (!db) return;
+  const gv = e.target.closest("[data-give]"), ug = e.target.closest("[data-ungive]");
+  if (gv){ gv.disabled = true; giveItem(gv.dataset.give, Number(gv.dataset.i), true); return; }
+  if (ug){ giveItem(ug.dataset.ungive, Number(ug.dataset.i), false); return; }
+  if (d){ d.disabled = true; upd(d.dataset.deliver, {status:"entregado", deliveredAt:Date.now()}).then(backToCobrarIfDone); }
+  else if (un){ upd(un.dataset.undo, {status:"listo", deliveredAt:null}, "Vuelve a Para entregar"); }
+  else if (e.target.closest("[data-cups]")){ const b = e.target.closest("[data-cups]"); const o = orders.find(x => x.id === b.dataset.cups); if (o) upd(o.id, {vasos: !o.vasos}, o.vasos ? "" : "La barra ve que el vaso está listo"); }
+  else if (bk){ upd(bk.dataset.back, {status:"nuevo", readyAt:null}, "Devuelto a barra"); }
+  else if (cn){ confirmTap(cn, "c"+cn.dataset.cancel, "¿Anular? Toca otra vez", async () => {
+    const o = orders.find(x => x.id === cn.dataset.cancel);
+    try { await db.collection("orders").doc(cn.dataset.cancel).update({status:"anulado", cancelledAt:Date.now()}); toast(`Pedido anulado${o ? " · devuelve " + eur(o.total) : ""}`); } catch(e){ toast("No se pudo anular."); } }); }
+});
+// Notas rápidas para las bebidas
+const NOTE_CHIPS = ["Sin hielo", "Poco hielo", "Extra matcha", "Sin azúcar"];
+
+/* ---------- barra ---------- */
+/* ---------- preparación ---------- */
+const vasosCaja = () => !(config && config.vasosCaja === false);
+const itemMenu = it => menu.find(x => x.id === it.id) || menu.find(x => x.name === it.name);
+function prepKind(m, name){
+  const r = m?.receta || {}, n = String(m?.name || name || "").toLowerCase();
+  if (Number(r.matcha) > 0 || n.includes("matcha")) return "matcha";
+  if (n.includes("cold brew")) return "coldbrew";
+  if (n.includes("batch")) return "batch";
+  if (Number(r.cafe) > 0 || n.includes("latte") || n.includes("espresso")) return "espresso";
+  return "otro";
+}
+function isCold(m, name){
+  const r = m?.receta || {};
+  if (Number(r["vaso-frio"]) > 0) return true;
+  if (Number(r["vaso-caliente"]) > 0) return false;
+  return /iced|cold|fr[ií]o/i.test(String(m?.name || name || ""));
+}
+// Lo que puede dejar hecho la caja mientras cobra: vaso, hielo y la leche fría
+function cupPrep(it){
+  const m = itemMenu(it), r = m?.receta || {}, cold = isCold(m, it.name), note = it.note || "";
+  const parts = [cold ? "vaso frío" : "vaso caliente"];
+  if (cold) parts.push(/sin hielo/i.test(note) ? "sin hielo" : /poco hielo/i.test(note) ? "poco hielo" : "hielo");
+  if (cold && Number(r.leche) > 0) parts.push(`${r.leche} ml leche`);
+  if (cold && Number(r.coco) > 0) parts.push(`${r.coco} ml coco`);
+  parts.push("nombre");
+  return parts.join(" + ");
+}
+function barAdds(it, o){
+  if (!o.vasos) return "";
+  const m = itemMenu(it), k = prepKind(m, it.name), cold = isCold(m, it.name);
+  if (!cold) return "";
+  return k === "espresso" ? "Vaso listo: solo el espresso" : k === "matcha" ? "Vaso listo: solo el matcha" : "Vaso listo";
+}
+// Jarras para vaporizar: la grande sirve para 2 bebidas y la pequeña para 1 (configurable en Ajustes)
+const jugCap = () => ({g: Math.max(1, cfg("jarraGrande", 2)), p: Math.max(1, cfg("jarraPequena", 1))});
+function jugPlan(n){
+  const {g, p} = jugCap(); if (!n) return {big:0, small:0};
+  let big = Math.floor(n/g), rest = n - big*g, small = 0;
+  if (rest > 0){ if (rest <= p) small = 1; else big++; }
+  return {big, small};
+}
+const jugTxt = j => [j.big && `${j.big} grande${j.big > 1 ? "s" : ""}`, j.small && `${j.small} pequeña`].filter(Boolean).join(" + ");
+const jugSeq = j => { const {g, p} = jugCap(); const seq = []; for (let i = 0; i < j.big; i++) seq.push(`grande (${g})`); if (j.small) seq.push(`pequeña (${p})`); return seq.join(" → "); };
+function renderProduction(list){
+  const t = {espresso:{c:0, h:0}, matcha:{c:0, h:0}, coldbrew:0, batch:0, leche:0, coco:0, nLeche:0, nCoco:0, otros:{}};
+  list.forEach(o => (o.items||[]).forEach((it, i) => {
+    if (it.station === "cocina" || ticks.has(o.id+":"+i)) return;
+    const m = itemMenu(it), k = prepKind(m, it.name), cold = isCold(m, it.name), r = m?.receta || {};
+    if (k === "espresso" || k === "matcha"){ t[k][cold ? "c" : "h"] += it.qty; if (!cold){ t.leche += (Number(r.leche)||0)*it.qty; t.coco += (Number(r.coco)||0)*it.qty; if (Number(r.leche) > 0) t.nLeche += it.qty; if (Number(r.coco) > 0) t.nCoco += it.qty; } }
+    else if (k === "coldbrew" || k === "batch") t[k] += it.qty;
+    else t.otros[it.name] = (t.otros[it.name]||0) + it.qty;
+  }));
+  const tiles = [];
+  const esp = t.espresso.c + t.espresso.h, mat = t.matcha.c + t.matcha.h;
+  if (esp) tiles.push(`<div class="ptile"><b>${esp}</b><span>espresso${esp > 1 ? "s" : ""}</span><small>${[t.espresso.c && t.espresso.c+" frío"+(t.espresso.c>1?"s":""), t.espresso.h && t.espresso.h+" caliente"+(t.espresso.h>1?"s":"")].filter(Boolean).join(" · ")}</small></div>`);
+  if (mat) tiles.push(`<div class="ptile"><b>${mat}</b><span>matcha${mat > 1 ? "s" : ""}</span><small>${[t.matcha.c && t.matcha.c+" frío"+(t.matcha.c>1?"s":""), t.matcha.h && t.matcha.h+" caliente"+(t.matcha.h>1?"s":"")].filter(Boolean).join(" · ")}</small></div>`);
+  const jl = jugPlan(t.nLeche), jc = jugPlan(t.nCoco);
+  if (t.nLeche) tiles.push(`<div class="ptile"><b>${jl.big + jl.small}</b><span>${jl.big + jl.small > 1 ? "jarras" : "jarra"} de leche</span><small>${jugTxt(jl)} · ${t.nLeche} caliente${t.nLeche > 1 ? "s" : ""}</small></div>`);
+  if (t.nCoco) tiles.push(`<div class="ptile"><b>${jc.big + jc.small}</b><span>${jc.big + jc.small > 1 ? "jarras" : "jarra"} de coco</span><small>${jugTxt(jc)} · ${t.nCoco} matcha${t.nCoco > 1 ? "s" : ""}</small></div>`);
+  if (t.coldbrew) tiles.push(`<div class="ptile"><b>${t.coldbrew}</b><span>cold brew</span><small>servir</small></div>`);
+  if (t.batch) tiles.push(`<div class="ptile"><b>${t.batch}</b><span>batch</span><small>servir</small></div>`);
+  Object.entries(t.otros).forEach(([n,q]) => tiles.push(`<div class="ptile"><b>${q}</b><span>${esc(n)}</span></div>`));
+  const tips = [];
+  if (esp >= 2) tips.push(`Saca los ${esp} espressos seguidos, sin parar entre pedidos.`);
+  if (t.nLeche >= 2) tips.push(`Leche: ${jugSeq(jl)}. La grande da casi para dos: llénala hasta la marca y reparte entre los dos vasos.`);
+  if (t.nCoco >= 2) tips.push(`Coco: ${jugSeq(jc)}.`);
+  if (mat >= 2) tips.push(`Bate los ${mat} matchas uno detrás de otro, o usa concentrado si lo tienes hecho.`);
+  if (t.coldbrew + t.batch) tips.push("Cold brew y batch primero: son solo servir y vacían la cola.");
+  $("#prodPanel").hidden = !tiles.length;
+  $("#prodTiles").innerHTML = tiles.join("");
+  $("#prodTips").innerHTML = tips.map(x => `<li>${x}</li>`).join("");
+}
+function renderMise(){
+  const since = Date.now() - 28*86400000;
+  const recent = closes.filter(c => (c.closedAt||0) >= since && c.productos);
+  if (!recent.length){ $("#miseBox").innerHTML = `<div class="empty">Tras unos días cerrando caja te diré qué dejar preparado antes de abrir y cuál es vuestra hora punta.</div>`; return; }
+  const wd = new Date().getDay();
+  const same = recent.filter(c => new Date(c.openedAt).getDay() === wd);
+  const base = same.length >= 2 ? same : recent;
+  const days = new Set(base.map(c => dayKey(c.openedAt))).size || 1;
+  const sum = {matcha:0, coldbrew:0, batch:0, espresso:0, leche:0, coco:0, cocina:{}};
+  const hours = {};
+  base.forEach(c => {
+    Object.entries(c.productos).forEach(([pid, p]) => {
+      const m = menu.find(x => x.id === pid) || menu.find(x => x.name === p.name), r = m?.receta || {};
+      const k = prepKind(m, p.name);
+      if (k === "otro"){ if (p.station === "cocina") sum.cocina[p.name] = (sum.cocina[p.name]||0) + p.qty; return; }
+      if (sum[k] !== undefined) sum[k] += p.qty;
+      sum.leche += (Number(r.leche)||0)*p.qty; sum.coco += (Number(r.coco)||0)*p.qty;
+    });
+    Object.entries(c.horas||{}).forEach(([h,v]) => hours[h] = (hours[h]||0) + v.n);
+  });
+  const per = v => Math.ceil(v/days);
+  const peak = Object.entries(hours).sort((a,b) => b[1]-a[1])[0];
+  const lines = [];
+  if (sum.matcha) lines.push(`<li><b>${per(sum.matcha)} matchas</b>: si hacéis concentrado, prepara para la mañana antes de abrir.</li>`);
+  if (sum.coldbrew) lines.push(`<li><b>${per(sum.coldbrew)} cold brew</b>: deja la jarra llena y fría.</li>`);
+  if (sum.batch) lines.push(`<li><b>${per(sum.batch)} batch</b>: ten el termo hecho antes de la hora punta.</li>`);
+  if (sum.espresso) lines.push(`<li><b>${per(sum.espresso)} lattes</b>: molino lleno y la máquina ajustada antes de abrir.</li>`);
+  const liq = [sum.leche && `<b>${fmtUnits(sum.leche/days, "ml")} de leche</b>`, sum.coco && `<b>${fmtUnits(sum.coco/days, "ml")} de bebida de coco</b>`].filter(Boolean);
+  if (liq.length) lines.push(`<li>${liq.join(" y ")} en la nevera de barra.</li>`);
+  Object.entries(sum.cocina).forEach(([n,q]) => lines.push(`<li><b>${per(q)} × ${esc(n)}</b> listos en el expositor.</li>`));
+  $("#miseBox").innerHTML = `<p class="hint" style="margin-bottom:8px">Media de ${same.length >= 2 ? "los " + WEEKDAYS_L[wd] : "los últimos días abiertos"}${peak ? `. Hora punta: <b>${peak[0]}:00–${Number(peak[0])+1}:00</b>, tenlo todo listo antes` : ""}.</p><ul class="mise">${lines.join("")}</ul>`;
+}
+function renderBarra(){
+  const list = orders.filter(o => o.status === "nuevo").sort((a,b) => a.createdAt-b.createdAt);
+  $("#barCount").textContent = list.length || "";
+  renderProduction(list); renderMise();
+  const sa = aggregate(shiftOrders()).espera;
+  $("#barWait").textContent = sa.n ? `espera media hoy ${fmtWait(sa.s/sa.n)}` : "";
+  if (!list.length) $("#barGrid").innerHTML = `<div class="empty" style="grid-column:1/-1">${gotOrders ? "Sin comandas. Las nuevas aparecen aquí solas, con un aviso." : "Cargando comandas…"}</div>`;
+  else $("#barGrid").innerHTML = list.map(o => {
+    const items = (o.items||[]).map((it,i) => ({...it, i}));
+    const bar = items.filter(i => i.station !== "cocina"), food = items.filter(i => i.station === "cocina");
+    return `<article class="btk ${mins(o.createdAt) >= 5 ? "late" : ""}">
+      <div class="who"><div><span class="num">#${pad(o.num)}</span><div class="name">${esc(o.customer)}</div></div><span class="mins" data-t="${o.createdAt}">${minsTxt(o.createdAt)}</span></div>
+      ${o.vasos ? `<span class="tag rd">Vasos preparados por caja</span>` : ""}
+      ${bar.map(it => { const k = o.id+":"+it.i, add = barAdds(it, o); return `<button type="button" class="bitem ${ticks.has(k)?"done":""}" data-tick="${k}" aria-pressed="${ticks.has(k)}">
+        <span class="q">${it.qty}×</span><span class="t"><span>${esc(it.name)}</span>${it.note?`<span class="note">${esc(it.note)}</span>`:""}${add ? `<span class="add">${add}</span>` : ""}</span></button>`; }).join("")}
+      ${food.length ? `<div class="foodnote">Lo sirve caja: ${food.map(f => f.qty + "× " + esc(f.name) + (deliveredSet(o).has(f.i) ? " ✓" : "")).join(", ")}</div>` : ""}
+      <button type="button" class="btn go" data-done="${o.id}">Listo · avisar caja</button>
+    </article>`;
+  }).join("");
+  const barItems = sortMenu(menu.filter(m => m.station !== "cocina"));
+  $("#barStock").innerHTML = barItems.length ? barItems.map(m => `<button type="button" class="chip ${isOn(m)?"":"off"}" data-stock="${m.id}" aria-pressed="false">${esc(m.name)}</button>`).join("") : `<div class="empty">Sin productos de barra.</div>`;
+}
+const autoT = {};
+const autoReady = () => !(config && config.autoListo === false);
+$("#barGrid").addEventListener("click", e => {
+  const t = e.target.closest("[data-tick]"), d = e.target.closest("[data-done]");
+  if (t){
+    const k = t.dataset.tick; ticks.has(k) ? ticks.delete(k) : ticks.add(k); t.classList.toggle("done"); t.setAttribute("aria-pressed", String(ticks.has(k)));
+    renderProduction(orders.filter(o => o.status === "nuevo"));
+    // Al tachar la última bebida, se avisa a caja solo (2 s para deshacer el toque)
+    const oid = k.split(":")[0], o = orders.find(x => x.id === oid);
+    if (o && autoReady()){
+      const all = (o.items||[]).every((it,i) => it.station === "cocina" || ticks.has(oid+":"+i));
+      clearTimeout(autoT[oid]);
+      if (all){ toast("Todo hecho: aviso a caja en 2 s"); autoT[oid] = setTimeout(() => {
+        const still = (o.items||[]).every((it,i) => it.station === "cocina" || ticks.has(oid+":"+i));
+        const cur = orders.find(x => x.id === oid);
+        if (still && cur && cur.status === "nuevo" && db) upd(oid, {status:"listo", readyAt:Date.now()}, "Avisado en caja");
+      }, 2000); }
+    }
+  }
+  else if (d && db){ d.disabled = true; upd(d.dataset.done, {status:"listo", readyAt:Date.now()}, "Avisado en caja"); }
+});
+async function setAvail(id, on){
+  const m = menu.find(x => x.id === id); if (!m || !db) return;
+  try { await db.collection("menu").doc(id).update({disponible:on}); toast(`${m.name}: ${on ? "disponible" : "agotado"}`); } catch(e){ toast(saveErrMsg(e, "No se pudo cambiar. Revisa la conexión.")); }
+}
+$("#barStock").addEventListener("click", e => { const b = e.target.closest("[data-stock]"); if (!b) return; const m = menu.find(x => x.id === b.dataset.stock); if (m) setAvail(m.id, !isOn(m)); });
+
+/* ---------- caja ---------- */
+function shiftSummary(){
+  if (!shift || !shift.open) return null;
+  const a = aggregate(shiftOrders());
+  const movs = Array.isArray(shift.movs) ? shift.movs : [];
+  const entradas = movs.filter(m => m.tipo === "entrada").reduce((s,m) => s + cents(m.importe), 0);
+  const salidas = movs.filter(m => m.tipo === "salida").reduce((s,m) => s + cents(m.importe), 0);
+  const fondo = cents(shift.fondo);
+  const propManual = (Array.isArray(shift.propinas) ? shift.propinas : []).reduce((s,p) => s + cents(p.importe), 0);
+  const propTot = a.propinas + propManual;
+  return {...a, entradas, salidas, fondo, movs, propManual, propTot, esperado: fondo + a.ventas + propTot + entradas - salidas};
+}
+let closeExpress = false;
+function countedCents(){
+  if (closeExpress){ const v = parseMoney($("#closeTotal").value); return isNaN(v) ? 0 : cents(v); }
+  return DENOMS_C.reduce((s,d,i) => s + (counts[i]||0)*d, 0);
+}
+$("#closeMode").addEventListener("click", e => {
+  const b = e.target.closest("[data-cm]"); if (!b) return;
+  closeExpress = b.dataset.cm === "express";
+  $("#closeMode").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("#expressBox").hidden = !closeExpress; $("#denoms").hidden = closeExpress; $("#denomHint").hidden = closeExpress;
+  renderArqueo();
+});
+$("#closeTotal").addEventListener("input", () => renderArqueo());
+$("#tipQuick").addEventListener("click", async e => {
+  const b = e.target.closest("[data-tip]"); if (!b || !db || !shift || !shift.open) return;
+  const p = {t:Date.now(), importe:Number(b.dataset.tip)/100};
+  try { await db.doc("turno/actual").update({propinas:[...(Array.isArray(shift.propinas) ? shift.propinas : []), p]}); toast("Propina apuntada: " + eur(p.importe)); }
+  catch(err){ toast(saveErrMsg(err, "No se pudo apuntar.")); }
+});
+$("#denoms").innerHTML = DENOMS.map((d,i) => `<div class="denom">
+  <label for="d-${i}">${d >= 1 ? d + " €" : Math.round(d*100) + " c"}</label>
+  <input type="number" id="d-${i}" data-d="${i}" min="0" step="1" inputmode="numeric" placeholder="0">
+  <small id="ds-${i}">${eur(0)}</small></div>`).join("");
+$("#denoms").addEventListener("input", e => {
+  const i = e.target.dataset.d; if (i === undefined) return;
+  const n = Math.max(0, parseInt(e.target.value, 10) || 0); counts[i] = n;
+  $("#ds-"+i).textContent = eurC(n*DENOMS_C[i]);
+  renderArqueo();
+});
+function renderArqueo(){
+  const s = shiftSummary(); if (!s){ $("#arqueo").innerHTML = ""; return; }
+  const c = countedCents(), diff = c - s.esperado;
+  const txt = diff === 0 ? "Cuadra" : (diff > 0 ? "Sobran " : "Faltan ") + eurC(Math.abs(diff));
+  $("#arqueo").innerHTML = `<div><span>Contado</span><b>${eurC(c)}</b></div>
+    <div><span>Debe haber</span><b>${eurC(s.esperado)}</b></div>
+    <div><span>Diferencia</span><span class="diff ${diff === 0 ? "ok" : "bad"}">${txt}</span></div>`;
+}
+const catOptions = sel => `${CATS.map(c => `<option${c === sel ? " selected" : ""}>${esc(c)}</option>`).join("")}`;
+$("#movCat").innerHTML = catOptions("Leche y bebidas vegetales");
+$("#gCat").innerHTML = catOptions("Café y matcha");
+$("#fCat").innerHTML = catOptions("Alquiler");
+function renderCaja(){
+  const open = !!(shift && shift.open);
+  $("#openSec").hidden = open || !gotShift;
+  $("#shiftSec").hidden = !open;
+  if (open){
+    const s = shiftSummary();
+    $("#shiftSince").textContent = "desde las " + hhmm(shift.openedAt);
+    $("#tipTotal").textContent = s.propTot ? eurC(s.propTot) : "";
+    $("#cashStats").innerHTML = `
+      <div class="kpi"><b>${eurC(s.fondo)}</b><span>fondo inicial</span></div>
+      <div class="kpi"><b>${eurC(s.ventas)}</b><span>ventas · ${s.n} ${s.n === 1 ? "pedido" : "pedidos"}</span></div>
+      <div class="kpi"><b>${eurC(s.entradas)}</b><span>entradas</span></div>
+      <div class="kpi"><b>${eurC(s.salidas)}</b><span>salidas</span></div>
+      <div class="kpi"><b>${eurC(s.propTot)}</b><span>propinas</span></div>
+      ${s.invit.n + s.fidel.n ? `<div class="kpi"><b>${s.invit.n + s.fidel.n}</b><span>gratis (${eurC(s.invit.c + s.fidel.c)} de carta)</span></div>` : ""}
+      <div class="kpi key"><b>${eurC(s.esperado)}</b><span>debe haber en el cajón</span></div>`;
+    $("#movList").innerHTML = s.movs.length ? s.movs.slice().sort((a,b) => b.t-a.t).map(m => `<div class="mov">
+        <span class="mins">${hhmm(m.t)}</span><span class="c">${esc(m.concepto || (m.tipo === "salida" ? "Salida" : "Entrada"))}${m.gastoId ? ' <span class="tag food">Gasto</span>' : ""}</span>
+        <span class="${m.tipo === "salida" ? "out" : "in"}">${m.tipo === "salida" ? "−" : "+"}${eur(m.importe)}</span>
+        <button type="button" class="btn ghost danger" data-delmov="${m.t}">Quitar</button></div>`).join("")
+      : `<div class="empty">Sin movimientos. Apunta aquí lo que sacas para compras o lo que metes de cambio.</div>`;
+    renderArqueo();
+  }
+  $("#movGastoBox").hidden = movType !== "salida";
+  renderCajaSugs();
+  const list = closes.slice().sort((a,b) => (b.closedAt||0)-(a.closedAt||0)).slice(0, 15);
+  $("#closesList").innerHTML = list.length ? list.map(c => {
+    const d = cents(c.diferencia);
+    return `<div class="list-row"><b>${dmy(c.closedAt)} · ${hhmm(c.openedAt)}–${hhmm(c.closedAt)}</b><b>${eur(c.ventas)}</b>
+      <span class="meta">${c.pedidos} pedidos · fondo ${eur(c.fondo)} · contado ${eur(c.contado)} · <span class="${d === 0 ? "ok" : "bad"}">${d === 0 ? "cuadró" : (d > 0 ? "sobraron " : "faltaron ") + eurC(Math.abs(d))}</span></span></div>`;
+  }).join("") : `<div class="empty">Aquí aparecerá cada cierre de caja con sus ventas y si cuadró.</div>`;
+}
+function sug(level, title, text){ return `<div class="sug ${level}"><b>${title}</b><p>${text}</p></div>`; }
+function renderCajaSugs(){
+  const out = [];
+  const s = shiftSummary();
+  // Retirada de efectivo
+  if (s){
+    const sobra = s.esperado - s.fondo;
+    if (sobra >= cents(cfg("retiradaUmbral", 200))) out.push(sug("warn", `Retira unos ${eurC(Math.floor(sobra/5000)*5000)} del cajón`, `Hay ${eurC(s.esperado)} y solo necesitas el fondo de ${eurC(s.fondo)}. Guarda lo demás fuera del cajón y apúntalo como salida sin marcar gasto.`));
+  }
+  // Fondo recomendado según las vueltas dadas
+  const recent = closes.filter(c => c.vueltas && (c.closedAt||0) > Date.now() - 30*86400000);
+  if (recent.length){
+    const tot = {}; recent.forEach(c => Object.entries(c.vueltas).forEach(([d,n]) => tot[d] = (tot[d]||0)+n));
+    const plan = DENOMS_C.filter(d => d <= 2000).map(d => ({d, n: Math.ceil((tot[d]||0)/recent.length*1.3)})).filter(x => x.n > 0);
+    const totalFondo = plan.reduce((a,x) => a + x.d*x.n, 0);
+    if (plan.length) out.push(sug("", `Fondo recomendado: ${eurC(totalFondo)}`, `Según las vueltas de tus últimos ${recent.length} ${recent.length === 1 ? "turno" : "turnos"}, con margen: ${plan.map(x => `${x.n} × ${x.d >= 100 ? x.d/100 + " €" : x.d + " c"}`).join(" · ")}.`));
+  } else {
+    out.push(sug("", `Fondo para empezar: ${eur(cfg("fondoHabitual", 100))}`, "Con precios entre 2,20 € y 4 € darás muchas vueltas en monedas. Para 100 €: 1 × 20 €, 4 × 10 €, 4 × 5 €, 5 × 2 €, 5 × 1 € y 5 € en monedas de 50 c, 20 c y 10 c. Tras unos cierres, la app lo ajusta a tus vueltas reales."));
+  }
+  // Precios que obligan a monedas pequeñas
+  const odd = menu.filter(m => isOn(m) && cents(m.price) % 50 !== 0);
+  if (odd.length) out.push(sug("", "Monedas de 10 y 20 céntimos", `${odd.map(m => esc(m.name)).join(", ")} ${odd.length === 1 ? "tiene un precio que no acaba" : "tienen precios que no acaban"} en ,00 o ,50. Ten siempre monedas de 10 c y 20 c, o redondea esos precios para dar las vueltas más rápido.`));
+  // Descuadres repetidos
+  const last = closes.slice().sort((a,b) => (b.closedAt||0)-(a.closedAt||0)).slice(0, 7);
+  const bad = last.filter(c => Math.abs(cents(c.diferencia)) >= 100);
+  if (bad.length >= 2) out.push(sug("alert", `${bad.length} descuadres en los últimos ${last.length} cierres`, "Apunta cada salida en el momento, cuenta las vueltas delante del cliente y no mezcles dinero personal con el cajón."));
+  $("#cajaSugs").innerHTML = out.join("") || `<div class="empty">Todo en orden.</div>`;
+}
+$("#movSeg").addEventListener("click", e => {
+  const b = e.target.closest("[data-mov]"); if (!b) return; movType = b.dataset.mov;
+  $("#movSeg").querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  $("#movGastoBox").hidden = movType !== "salida";
+});
+async function openShift(fondo, btn){
+  if (!db) return;
+  if (btn) btn.disabled = true;
+  try { await db.doc("turno/actual").set({open:true, openedAt:Date.now(), fondo, movs:[]}); $("#fondo").value = ""; toast("Caja abierta con " + eur(fondo)); }
+  catch(e){ toast(saveErrMsg(e, "No se pudo abrir la caja. Revisa la conexión.")); } finally { if (btn) btn.disabled = false; }
+}
+$("#openBtn").addEventListener("click", () => {
+  const v = parseMoney($("#fondo").value);
+  openShift(isNaN(v) ? cfg("fondoHabitual", 0) : cents(v)/100, $("#openBtn"));
+});
+$("#bannerBtn").addEventListener("click", () => {
+  if (shift && shift.open){ location.hash = "caja"; return; }
+  openShift(cfg("fondoHabitual", 100), $("#bannerBtn"));
+});
+$("#movBtn").addEventListener("click", async () => {
+  if (!db || !shift || !shift.open) return;
+  const v = parseMoney($("#movAmt").value);
+  if (isNaN(v) || v <= 0){ toast("Pon un importe"); return; }
+  const now = Date.now(), importe = cents(v)/100, concepto = $("#movTxt").value.trim();
+  const mov = {t:now, tipo:movType, importe, concepto};
+  const btn = $("#movBtn"); btn.disabled = true;
+  try {
+    if (movType === "salida" && $("#movGasto").checked){
+      const ref = await db.collection("gastos").add({fecha:dayKey(now), concepto: concepto || "Compra pagada de caja", categoria:$("#movCat").value, importe, origen:"caja", t:now});
+      mov.gastoId = ref.id;
+    }
+    await db.doc("turno/actual").update({movs:[...(shift.movs||[]), mov]});
+    $("#movAmt").value = ""; $("#movTxt").value = ""; toast(mov.gastoId ? "Apuntado en caja y en gastos" : "Apuntado");
+  } catch(e){ toast("No se pudo apuntar."); } finally { btn.disabled = false; }
+});
+$("#movList").addEventListener("click", e => {
+  const b = e.target.closest("[data-delmov]"); if (!b || !db) return;
+  const t = Number(b.dataset.delmov), mv = (shift.movs||[]).find(m => m.t === t);
+  confirmTap(b, "mv"+t, "¿Quitar?", async () => {
+    try {
+      await db.doc("turno/actual").update({movs:(shift.movs||[]).filter(m => m.t !== t)});
+      if (mv && mv.gastoId) await db.collection("gastos").doc(mv.gastoId).delete();
+    } catch(err){ toast("No se pudo quitar."); }
+  });
+});
+$("#closeBtn").addEventListener("click", e => {
+  if (!db || !shift || !shift.open) return;
+  const btn = e.currentTarget;
+  if (countedCents() === 0 && (shiftSummary()?.esperado || 0) > 0){ toast("Cuenta el cajón antes de cerrar"); (closeExpress ? $("#closeTotal") : $("#d-0")).focus(); return; }
+  confirmTap(btn, "close", "¿Cerrar la caja? Toca otra vez", async () => {
+    const s = shiftSummary(), c = countedCents(), now = Date.now();
+    btn.disabled = true;
+    try {
+      const desglose = {}; DENOMS.forEach((d,i) => { if (counts[i]) desglose[String(d)] = counts[i]; });
+      await db.collection("cierres").add({openedAt:shift.openedAt, closedAt:now, fondo:s.fondo/100, ventas:s.ventas/100, pedidos:s.n,
+        entradas:s.entradas/100, salidas:s.salidas/100, esperado:s.esperado/100, contado:c/100, diferencia:(c-s.esperado)/100,
+        movs:s.movs, desglose, productos:s.productos, horas:s.horas, vueltas:s.vueltas, espera:s.espera,
+        propinas:s.propTot/100, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
+      await db.doc("turno/actual").set({open:false, closedAt:now});
+      DENOMS.forEach((d,i) => { counts[i] = 0; $("#d-"+i).value = ""; $("#ds-"+i).textContent = eur(0); }); $("#closeTotal").value = "";
+      toast("Caja cerrada");
+    } catch(err){ toast("No se pudo cerrar. Revisa la conexión."); }
+    finally { btn.disabled = false; btn.textContent = "Cerrar caja y guardar"; }
+  });
+});
+
+/* ---------- gastos y beneficio ---------- */
+function monthRange(off){
+  const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); d.setMonth(d.getMonth() + off);
+  const from = d.getTime(); const e = new Date(d); e.setMonth(e.getMonth()+1);
+  return {from, to:e.getTime(), key:dayKey(from).slice(0,7), label:d.toLocaleDateString("es-ES", {month:"long", year:"numeric"}), days:Math.round((e-d)/86400000)};
+}
+function monthSales(r){
+  const recs = records(r.from).filter(x => x.t < r.to);
+  return merge(recs);
+}
+function renderGastos(){
+  const r = monthRange(monthOffset);
+  $("#mLabel").textContent = r.label;
+  $("#mNext").disabled = monthOffset >= 0;
+  const ms = monthSales(r);
+  const gm = gastos.filter(g => String(g.fecha||"").slice(0,7) === r.key);
+  const variable = gm.reduce((a,g) => a + cents(g.importe), 0);
+  const fijo = fijos.reduce((a,f) => a + cents(f.importe), 0);
+  const ben = ms.ventas - variable - fijo;
+  const margen = ms.ventas ? Math.round(ben/ms.ventas*100) : null;
+  $("#profitKpis").innerHTML = `
+    <div class="kpi"><b>${eurC(ms.ventas)}</b><span>ventas · ${ms.n} pedidos</span></div>
+    <div class="kpi"><b>${eurC(variable)}</b><span>gastos del mes</span></div>
+    <div class="kpi"><b>${eurC(fijo)}</b><span>gastos fijos</span></div>
+    <div class="kpi key ${ben < 0 ? "neg" : "pos"}"><b>${eurC(ben)}</b><span>beneficio${margen !== null ? ` · ${margen}% de las ventas` : ""}</span></div>`;
+  // Por categoría (gastos del mes + fijos)
+  const byCat = {};
+  gm.forEach(g => byCat[g.categoria||"Otros"] = (byCat[g.categoria||"Otros"]||0) + cents(g.importe));
+  fijos.forEach(f => byCat[f.categoria||"Otros"] = (byCat[f.categoria||"Otros"]||0) + cents(f.importe));
+  const cats = Object.entries(byCat).sort((a,b) => b[1]-a[1]);
+  const maxC = Math.max(1, ...cats.map(c => c[1]));
+  $("#catBars").innerHTML = cats.length ? cats.map(([c,v]) => `<div class="hbar"><span>${esc(c)}</span><b>${eurC(v)}${ms.ventas ? ` <span class="mins">${Math.round(v/ms.ventas*100)}%</span>` : ""}</b><div class="track"><div class="fill cost" style="width:${v/maxC*100}%"></div></div></div>`).join("")
+    : `<div class="empty">Aún no hay gastos este mes.</div>`;
+  // Sugerencias de beneficio
+  const out = [];
+  const openDays = Object.keys(ms.days).length;
+  const ticket = ms.n ? ms.ventas/ms.n : 0;
+  if (fijo > 0 && ms.ventas > 0 && ticket > 0){
+    const ratio = Math.min(.95, variable/ms.ventas), contrib = 1 - ratio;
+    const needV = fijo / contrib, perDay = needV / Math.max(Math.round(cfg("diasSemana", 6)*4.33), 1);
+    const pedDay = Math.ceil(perDay / ticket);
+    out.push(sug(ben < 0 ? "warn" : "", `Punto de equilibrio: ${eurC(Math.round(needV))} al mes`, `Con lo que te cuesta cada venta este mes (${Math.round(ratio*100)}%) y tus fijos, necesitas vender unos ${eurC(Math.round(perDay))} por día abierto, unos ${pedDay} pedidos con tu ticket medio de ${eurC(Math.round(ticket))}.`));
+  } else if (!fijos.length){
+    out.push(sug("", "Añade tus gastos fijos", "Con el alquiler, autónomos y suministros del local la app te dice cuánto tienes que vender al día para no perder dinero."));
+  }
+  const prod = gm.filter(g => ["Café y matcha","Leche y bebidas vegetales","Repostería","Vasos y envases"].includes(g.categoria)).reduce((a,g) => a + cents(g.importe), 0);
+  if (ms.ventas > 0 && prod > 0){
+    const pct = Math.round(prod/ms.ventas*100);
+    out.push(sug(pct > 35 ? "warn" : "", `Producto y envases: ${pct}% de lo vendido`, pct > 35 ? "Es alto para una cafetería de takeaway (lo habitual ronda el 25–35%). Revisa precios de matcha y bebida vegetal, o sube algún precio." : "Está en un rango sano para takeaway (alrededor del 25–35%)."));
+  }
+  if (ms.ventas > 0){
+    const top = Object.values(ms.productos).sort((a,b) => b.c-a.c)[0];
+    if (top) out.push(sug("", `${esc(top.name)} es lo que más factura`, `${top.qty} vendidos, ${eurC(top.c)} este mes. Que nunca falte: revisa su stock en Datos.`));
+  }
+  $("#profitSugs").innerHTML = out.join("") || `<div class="empty">Cuando haya ventas y gastos este mes verás sugerencias aquí.</div>`;
+  // Lista de gastos
+  $("#gastosTotal").textContent = gm.length ? eurC(variable) : "";
+  $("#gastosList").innerHTML = gm.length ? gm.slice().sort((a,b) => String(b.fecha).localeCompare(String(a.fecha)) || (b.t||0)-(a.t||0)).map(g => `<div class="list-row">
+      <span><b>${esc(g.concepto)}</b>${g.origen === "caja" ? ' <span class="tag food">De caja</span>' : ""}</span><b>${eur(g.importe)}</b>
+      <span class="meta row" style="justify-content:space-between">${new Date(g.fecha+"T12:00").toLocaleDateString("es-ES",{day:"numeric",month:"short"})} · ${esc(g.categoria)}
+      <button type="button" class="btn ghost danger small" data-delgasto="${g.id}">Borrar</button></span></div>`).join("")
+    : `<div class="empty">Apunta aquí lo que compras: matcha, café, leche, vasos… Las salidas de caja marcadas como gasto aparecen solas.</div>`;
+  $("#fijosTotal").textContent = fijos.length ? eurC(fijo) + " / mes" : "";
+  $("#fijosList").innerHTML = fijos.length ? fijos.map(f => `<div class="list-row"><span><b>${esc(f.concepto)}</b> <span class="mins">${esc(f.categoria||"")}</span></span>
+      <span class="row"><b>${eur(f.importe)}</b><button type="button" class="btn ghost danger small" data-delfijo="${f.id}">Borrar</button></span></div>`).join("")
+    : `<div class="empty">Sin gastos fijos.</div>`;
+}
+$("#mPrev").addEventListener("click", () => { monthOffset--; renderGastos(); });
+$("#mNext").addEventListener("click", () => { if (monthOffset < 0){ monthOffset++; renderGastos(); } });
+$("#gFecha").value = dayKey();
+$("#gastoForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!db) return;
+  const importe = parseMoney($("#gImporte").value), concepto = $("#gConcepto").value.trim();
+  if (isNaN(importe) || importe <= 0 || !concepto){ toast("Pon concepto e importe"); return; }
+  try {
+    await db.collection("gastos").add({fecha:$("#gFecha").value || dayKey(), concepto, categoria:$("#gCat").value, importe:cents(importe)/100, origen:"manual", t:Date.now()});
+    $("#gConcepto").value = ""; $("#gImporte").value = ""; toast("Gasto apuntado");
+  } catch(err){ toast("No se pudo guardar."); }
+});
+$("#fijoForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!db) return;
+  const importe = parseMoney($("#fImporte").value), concepto = $("#fConcepto").value.trim();
+  if (isNaN(importe) || importe <= 0 || !concepto){ toast("Pon concepto e importe"); return; }
+  try { await db.collection("fijos").add({concepto, categoria:$("#fCat").value, importe:cents(importe)/100}); e.target.reset(); $("#fCat").innerHTML = catOptions("Alquiler"); toast("Gasto fijo añadido"); }
+  catch(err){ toast("No se pudo guardar."); }
+});
+$("#v-gastos").addEventListener("click", e => {
+  const g = e.target.closest("[data-delgasto]"), f = e.target.closest("[data-delfijo]");
+  if (!db) return;
+  if (g) confirmTap(g, "g"+g.dataset.delgasto, "¿Seguro?", async () => { try { await db.collection("gastos").doc(g.dataset.delgasto).delete(); toast("Gasto borrado"); } catch(err){ toast("No se pudo borrar."); } });
+  if (f) confirmTap(f, "f"+f.dataset.delfijo, "¿Seguro?", async () => { try { await db.collection("fijos").doc(f.dataset.delfijo).delete(); toast("Fijo borrado"); } catch(err){ toast("No se pudo borrar."); } });
+});
+
+/* ---------- datos ---------- */
+function periodFrom(){
+  const now = Date.now();
+  if (period === "hoy") return startOfDay(now);
+  if (period === "mes") return monthRange(0).from;
+  return startOfDay(now - (Number(period)-1)*86400000);
+}
+function renderDatos(){
+  document.querySelectorAll("#periodChips .chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.p === period)));
+  const from = periodFrom(), m = merge(records(from));
+  const dayList = Object.entries(m.days).sort((a,b) => a[0].localeCompare(b[0]));
+  const best = dayList.slice().sort((a,b) => b[1].ventas - a[1].ventas)[0];
+  const units = Object.values(m.productos).reduce((a,p) => a + p.qty, 0);
+  $("#statKpis").innerHTML = `
+    <div class="kpi key"><b>${eurC(m.ventas)}</b><span>ventas</span></div>
+    <div class="kpi"><b>${m.n}</b><span>pedidos · ${units} productos</span></div>
+    <div class="kpi"><b>${eurC(m.n ? Math.round(m.ventas/m.n) : 0)}</b><span>ticket medio</span></div>
+    <div class="kpi"><b>${dayList.length ? eurC(Math.round(m.ventas/dayList.length)) : eur(0)}</b><span>media por día abierto</span></div>
+    ${best && dayList.length > 1 ? `<div class="kpi"><b>${eurC(best[1].ventas)}</b><span>mejor día · ${dmy(best[1].t)}</span></div>` : ""}
+    ${m.espera.n ? `<div class="kpi ${m.espera.over/m.espera.n > .2 ? "neg" : ""}"><b>${fmtWait(m.espera.s/m.espera.n)}</b><span>espera media en barra · ${Math.round(m.espera.over/m.espera.n*100)}% más de 5 min</span></div>` : ""}
+    ${m.propinas ? `<div class="kpi"><b>${eurC(m.propinas)}</b><span>propinas</span></div>` : ""}
+    ${m.invit.n + m.fidel.n ? `<div class="kpi"><b>${m.invit.n + m.fidel.n}</b><span>gratis: ${m.invit.n} invitación/propio · ${m.fidel.n} fidelidad (${eurC(m.invit.c + m.fidel.c)})</span></div>` : ""}`;
+  const wh = Object.entries(m.horas).filter(([h,v]) => v.wn).sort((a,b) => a[0]-b[0]);
+  $("#waitBars").innerHTML = wh.length ? wh.map(([h,v]) => { const avg = v.ws/v.wn; return `<div class="hbar"><span>${h}:00</span><b>${fmtWait(avg)}</b><div class="track"><div class="fill ${avg > 300000 ? "cost" : ""}" style="width:${Math.min(100, avg/600000*100)}%"></div></div></div>`; }).join("")
+    : `<div class="empty">Cuando la barra marque pedidos como listos verás aquí cuánto esperan los clientes en cada hora.</div>`;
+  // Ventas por día
+  if (!dayList.length) $("#dayBars").innerHTML = `<div class="empty" style="flex:1">Aún no hay ventas en este periodo. El turno abierto cuenta en directo y cada cierre de caja se guarda aquí.</div>`;
+  else {
+    const maxD = Math.max(...dayList.map(d => d[1].ventas), 1);
+    $("#dayBars").innerHTML = dayList.map(([k,d]) => { const dt = new Date(k+"T12:00"); return `<div class="vbar" title="${dmy(dt)}: ${eurC(d.ventas)}">
+      <span class="v">${Math.round(d.ventas/100)}</span><div class="col ${best && k === best[0] && dayList.length > 1 ? "peak" : ""}" style="height:${Math.max(2, d.ventas/maxD*100)}%"></div>
+      <span class="x">${WEEKDAYS[dt.getDay()]} ${dt.getDate()}</span></div>`; }).join("");
+  }
+  // Top productos
+  const prods = Object.values(m.productos).sort((a,b) => b.qty-a.qty || b.c-a.c);
+  const maxQ = Math.max(1, ...prods.map(p => p.qty));
+  $("#topBars").innerHTML = prods.length ? prods.slice(0, 12).map(p => `<div class="hbar"><span>${esc(p.name)}</span><b>${p.qty} · ${eurC(p.c)}</b><div class="track"><div class="fill ${p.station === "cocina" ? "cocina" : ""} ${p.group === "Fuera de carta" ? "sp" : ""}" style="width:${p.qty/maxQ*100}%"></div></div></div>`).join("")
+    : `<div class="empty">Sin ventas todavía.</div>`;
+  // Horas
+  const hrs = Object.keys(m.horas).map(Number);
+  if (!hrs.length) $("#hourBars").innerHTML = `<div class="empty" style="flex:1">Sin datos de horas.</div>`;
+  else {
+    const h0 = Math.min(...hrs), h1 = Math.max(...hrs), maxH = Math.max(1, ...Object.values(m.horas).map(h => h.n));
+    let html = ""; for (let h = h0; h <= h1; h++){ const v = m.horas[h]?.n || 0; html += `<div class="vbar" title="${h}:00 – ${v} pedidos"><span class="v">${v||""}</span><div class="col ${v === maxH ? "peak" : ""}" style="height:${Math.max(2, v/maxH*100)}%"></div><span class="x">${h}h</span></div>`; }
+    $("#hourBars").innerHTML = html;
+  }
+  // Por tipo
+  const byG = {}; prods.forEach(p => { const g = p.group || "Otros"; const x = byG[g] || (byG[g] = {qty:0, c:0, st:p.station}); x.qty += p.qty; x.c += p.c; });
+  const gl = Object.entries(byG).sort((a,b) => b[1].c-a[1].c);
+  $("#groupBars").innerHTML = gl.length ? gl.map(([g,x]) => `<div class="hbar"><span>${esc(g)}</span><b>${m.ventas ? Math.round(x.c/m.ventas*100) : 0}% · ${eurC(x.c)}</b><div class="track"><div class="fill ${x.st === "cocina" ? "cocina" : ""} ${g === "Fuera de carta" ? "sp" : ""}" style="width:${m.ventas ? x.c/m.ventas*100 : 0}%"></div></div></div>`).join("")
+    : `<div class="empty">Sin ventas todavía.</div>`;
+  renderSupply();
+}
+$("#periodChips").addEventListener("click", e => { const c = e.target.closest("[data-p]"); if (!c) return; period = c.dataset.p; renderDatos(); });
+
+/* ---------- suministros ---------- */
+function fmtUnits(v, u){
+  if (u === "g") return v >= 1000 ? num1(v/1000) + " kg" : Math.round(v) + " g";
+  if (u === "ml") return v >= 1000 ? num1(v/1000) + " l" : Math.round(v) + " ml";
+  return Math.ceil(v) + " ud";
+}
+function useOf(insId, productos){
+  let u = 0;
+  Object.entries(productos||{}).forEach(([pid,p]) => { const m = menu.find(x => x.id === pid) || menu.find(x => x.name === p.name); const q = Number(m?.receta?.[insId]) || 0; if (q) u += q*p.qty; });
+  return u;
+}
+function insState(ins){
+  const window14 = Date.now() - 14*86400000;
+  const recent = closes.filter(c => (c.closedAt||0) >= window14);
+  const days = new Set(recent.map(c => dayKey(c.openedAt))).size;
+  const used14 = recent.reduce((a,c) => a + useOf(ins.id, c.productos), 0);
+  const perDay = days ? used14/days : null;
+  let left = null;
+  if (ins.stockContado !== null && ins.stockContado !== undefined && ins.fechaConteo){
+    let used = closes.filter(c => (c.closedAt||0) > ins.fechaConteo).reduce((a,c) => a + useOf(ins.id, c.productos), 0);
+    if (shift && shift.open) used += useOf(ins.id, aggregate(orders.filter(o => o.createdAt >= Math.max(shift.openedAt, ins.fechaConteo))).productos);
+    left = Number(ins.stockContado) - used;
+  }
+  const usedBy = menu.filter(m => Number(m.receta?.[ins.id]) > 0).length;
+  return {perDay, left, days, usedBy};
+}
+const costUnit = ins => (Number(ins.paquete) > 0 && Number(ins.precioPaquete) > 0) ? Number(ins.precioPaquete)/Number(ins.paquete) : null;
+function fmtCost(cu, u){
+  if (u === "g") return `${eur(cu*1000)}/kg`;
+  if (u === "ml") return `${eur(cu*1000)}/l`;
+  return `${eur(cu)}/ud`;
+}
+function insDur(ins, st){
+  const pk = Number(ins.paquete);
+  const perPack = (pk > 0 && st.perDay > 0) ? pk/st.perDay : null;
+  const ts = (Array.isArray(ins.compras) ? ins.compras : []).map(c => c.t).sort((a,b) => a-b);
+  const between = ts.length >= 2 ? (ts[ts.length-1] - ts[0]) / (ts.length-1) / 86400000 : null;
+  return {perPack, between};
+}
+function catForIns(ins){
+  const n = String(ins.id + " " + ins.nombre).toLowerCase();
+  if (/matcha|caf[eé]/.test(n)) return "Café y matcha";
+  if (/leche|coco|avena|bebida/.test(n)) return "Leche y bebidas vegetales";
+  if (/vaso|tapa|pajit|bolsa|envase/.test(n)) return "Vasos y envases";
+  if (/cookie|cake|bizcoch|reposter|bolle/.test(n)) return "Repostería";
+  return "Otros";
+}
+// Coste de ingredientes de un producto según su receta y los precios de suministros
+function productCost(m){
+  let c = 0, missing = [];
+  Object.entries(m.receta || {}).forEach(([iid, q]) => {
+    q = Number(q); if (!(q > 0)) return;
+    const ins = insumos.find(x => x.id === iid); const cu = ins && costUnit(ins);
+    if (cu) c += q*cu; else missing.push(ins ? ins.nombre : iid);
+  });
+  return {c, missing};
+}
+function renderSupply(){
+  const out = [];
+  const sorted = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre)));
+  const rows = sorted.map(ins => {
+    const st = insState(ins);
+    if (!st.usedBy) return null;
+    const u = ins.unidad, min = Number(ins.minimo)||0;
+    if (st.perDay === null){
+      return {order:3, html:sug("", esc(ins.nombre), st.left !== null ? `Te quedan unos ${fmtUnits(Math.max(0,st.left), u)}. Tras el primer cierre de caja calcularé cuánto gastáis al día.` : "Tras el primer cierre de caja calcularé cuánto gastáis al día.")};
+    }
+    const week = st.perDay*7;
+    if (st.left === null){
+      return {order:2, html:sug("", `${esc(ins.nombre)}: ${fmtUnits(st.perDay, u)} al día`, `Para una semana de apertura necesitas unos ${fmtUnits(week, u)}. Cuenta el stock en Ajustes y te diré cuántos días te quedan.`)};
+    }
+    const daysLeft = st.perDay > 0 ? st.left/st.perDay : Infinity;
+    const buy = Math.max(0, week + min - st.left);
+    const level = (st.left <= min || daysLeft < 3) ? "alert" : daysLeft < 6 ? "warn" : "";
+    const head = level === "alert" ? `Compra ya ${esc(ins.nombre)}` : level === "warn" ? `${esc(ins.nombre)} se acaba pronto` : `${esc(ins.nombre)}: bien`;
+    const daysTxt = isFinite(daysLeft) ? `unos ${Math.max(0, Math.floor(daysLeft))} días` : "muchos días";
+    const du = insDur(ins, st);
+    return {order: level === "alert" ? 0 : level === "warn" ? 1 : 4, html:sug(level, head, `Quedan ${fmtUnits(Math.max(0,st.left), u)}, para ${daysTxt} (gastáis ${fmtUnits(st.perDay, u)} al día${du.perPack ? `; un paquete os dura ${num1(du.perPack)} días` : ""}).${buy > 0 && level ? ` Compra unos ${fmtUnits(buy, u)} para cubrir una semana.` : ""}`)};
+  }).filter(Boolean).sort((a,b) => a.order-b.order);
+  rows.forEach(r => out.push(r.html));
+  const noRecipe = menu.filter(m => isOn(m) && !Object.values(m.receta||{}).some(v => Number(v) > 0));
+  if (noRecipe.length) out.push(sug("warn", "Productos sin receta", `${noRecipe.map(m => esc(m.name)).join(", ")}. Añade su receta en Ajustes para que cuenten en las compras.`));
+  $("#supplySugs").innerHTML = out.join("") || `<div class="empty">Añade suministros y recetas en Ajustes para ver aquí qué comprar.</div>`;
+}
+
+/* ---------- ajustes ---------- */
+const parsePrice = v => { const n = parseMoney(v); return isNaN(n) ? NaN : Math.round(n*100)/100; };
+function renderAjustes(){
+  const box = $("#menuEdit");
+  const sorted = sortMenu(menu);
+  const groups = [...new Set([...GROUP_ORDER, ...menu.map(m => m.group).filter(Boolean)])];
+  $("#groupsList").innerHTML = groups.map(g => `<option value="${esc(g)}"></option>`).join("");
+  const insSorted = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre)));
+  box.innerHTML = !sorted.length ? `<div class="empty">${gotMenu ? "Aún no hay productos. Añade el primero abajo." : "Cargando la carta…"}</div>`
+    : sorted.map(m => {
+      const on = isOn(m), sp = !!m.especial, rcount = Object.values(m.receta||{}).filter(v => Number(v) > 0).length;
+      return `<div class="pcard ${m.station==="cocina"?"cocina":""} ${sp?"sp":""} ${on?"":"off"}">
+        <div class="pgrid">
+          <div class="field wide"><label for="m-${m.id}-name">Producto</label><input type="text" id="m-${m.id}-name" data-mid="${m.id}" data-f="name" value="${esc(m.name)}"></div>
+          <div class="field"><label for="m-${m.id}-price">Precio</label><input type="text" inputmode="decimal" id="m-${m.id}-price" data-mid="${m.id}" data-f="price" value="${String(Number(m.price)||0).replace(".",",")}"></div>
+          <div class="field"><label for="m-${m.id}-group">Grupo</label><input type="text" id="m-${m.id}-group" data-mid="${m.id}" data-f="group" value="${esc(m.group)}" list="groupsList"></div>
+          <div class="field"><label for="m-${m.id}-station">Sale en</label><select id="m-${m.id}-station" data-mid="${m.id}" data-f="station">
+            <option value="barra" ${m.station!=="cocina"?"selected":""}>Barra</option><option value="cocina" ${m.station==="cocina"?"selected":""}>Caja (tú)</option></select></div>
+        </div>
+        <div class="toggles">
+          <button type="button" class="sw" data-toggle="disponible" data-id="${m.id}" aria-pressed="${on}">Disponible</button>
+          <button type="button" class="sw spsw" data-toggle="especial" data-id="${m.id}" aria-pressed="${sp}">Fuera de carta</button>
+          <button type="button" class="btn small" data-recipe="${m.id}" aria-expanded="${openRecipes.has(m.id)}">Receta${rcount ? ` (${rcount})` : ""}</button>
+          <button type="button" class="btn ghost danger small" data-del="${m.id}" style="margin-left:auto">Borrar</button>
+        </div>
+        ${openRecipes.has(m.id) ? `<div class="recipe">${insSorted.length ? insSorted.map(i => `<div class="field"><label for="r-${m.id}-${i.id}">${esc(i.nombre)} (${esc(i.unidad)})</label>
+            <input type="text" inputmode="decimal" id="r-${m.id}-${i.id}" data-rid="${m.id}" data-ins="${i.id}" value="${Number(m.receta?.[i.id]) ? String(m.receta[i.id]).replace(".",",") : ""}" placeholder="0"></div>`).join("")
+            : `<div class="empty">Añade suministros abajo para poner recetas.</div>`}</div>` : ""}
+      </div>`;
+    }).join("");
+  // Suministros
+  $("#insEdit").innerHTML = insSorted.length ? insSorted.map(i => {
+    const st = insState(i), du = insDur(i, st), u = esc(i.unidad), cu = costUnit(i);
+    const est = [
+      st.left !== null ? `Quedan unos <b>${fmtUnits(Math.max(0, st.left), i.unidad)}</b>.` : "Sin contar todavía.",
+      du.perPack ? `Un paquete dura unos <b>${num1(du.perPack)} días</b> abiertos.` : "",
+      du.between ? `Compráis cada ${num1(du.between)} días de media.` : "",
+      cu ? `Coste: ${fmtCost(cu, i.unidad)}.` : "Sin precio: ponlo para calcular el coste de cada producto.",
+      st.usedBy ? "" : "Ningún producto lo usa en su receta."
+    ].filter(Boolean).join(" ");
+    return `<div class="icard">
+      <div class="qgrid">
+        <div class="field"><label for="i-${i.id}-n">Suministro</label><input type="text" id="i-${i.id}-n" data-iid="${i.id}" data-f="nombre" value="${esc(i.nombre)}"></div>
+        <div class="field"><label for="i-${i.id}-k">Un paquete trae (${u})</label><input type="text" inputmode="decimal" id="i-${i.id}-k" data-iid="${i.id}" data-f="paquete" value="${fmtIn(i.paquete)}" placeholder="Ej. 1000"></div>
+        <div class="field"><label for="i-${i.id}-p">Precio del paquete (€)</label><input type="text" inputmode="decimal" id="i-${i.id}-p" data-iid="${i.id}" data-f="precioPaquete" value="${fmtIn(i.precioPaquete)}" placeholder="Ej. 12,50"></div>
+        <div class="field"><label for="i-${i.id}-m">Avisar con menos de (${u})</label><input type="text" inputmode="decimal" id="i-${i.id}-m" data-iid="${i.id}" data-f="minimo" value="${fmtIn(i.minimo)}"></div>
+      </div>
+      <div class="row">
+        <input type="text" inputmode="decimal" id="i-${i.id}-c" placeholder="Tengo (${u})" style="width:130px" aria-label="Lo que tienes ahora de ${esc(i.nombre)}">
+        <button type="button" class="btn small" data-count="${i.id}">Guardar conteo</button>
+        <input type="number" min="1" step="1" id="i-${i.id}-b" value="1" style="width:70px" aria-label="Paquetes comprados de ${esc(i.nombre)}">
+        <button type="button" class="btn small primary" data-buy="${i.id}">Compré paquetes</button>
+        <button type="button" class="btn ghost danger small" data-delins="${i.id}" style="margin-left:auto">Borrar</button>
+      </div>
+      <p class="est">${est}</p>
+    </div>`;
+  }).join("") : `<div class="empty">Sin suministros.</div>`;
+}
+$("#menuEdit").addEventListener("change", async e => {
+  const el = e.target;
+  if (el.dataset.rid){
+    const v = el.value.trim() === "" ? 0 : parseMoney(el.value);
+    if (isNaN(v) || v < 0){ toast("Cantidad no válida"); return; }
+    try { await db.collection("menu").doc(el.dataset.rid).update({receta:{[el.dataset.ins]: v}}); toast("Receta guardada"); } catch(err){ toast("No se pudo guardar."); }
+    return;
+  }
+  const id = el.dataset.mid, f = el.dataset.f; if (!id || !db) return;
+  let v = el.value.trim();
+  if (f === "price"){ v = parsePrice(v); if (isNaN(v)){ toast("Precio no válido"); return; } }
+  if (f === "name" && !v){ toast("El nombre no puede quedar vacío"); return; }
+  try { await db.collection("menu").doc(id).update({[f]: v}); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); }
+});
+$("#menuEdit").addEventListener("click", async e => {
+  const t = e.target.closest("[data-toggle]"), r = e.target.closest("[data-recipe]"), d = e.target.closest("[data-del]");
+  if (r){ const id = r.dataset.recipe; openRecipes.has(id) ? openRecipes.delete(id) : openRecipes.add(id); renderAjustes(); return; }
+  if (!db) return;
+  if (t){
+    const m = menu.find(x => x.id === t.dataset.id); if (!m) return;
+    if (t.dataset.toggle === "disponible") setAvail(m.id, !isOn(m));
+    else { try { await db.collection("menu").doc(m.id).update({especial: !m.especial}); toast(!m.especial ? "Ahora sale como fuera de carta" : "Vuelve a la carta normal"); } catch(err){ toast("No se pudo cambiar."); } }
+  }
+  if (d) confirmTap(d, "m"+d.dataset.del, "¿Seguro?", async () => { try { await db.collection("menu").doc(d.dataset.del).delete(); toast("Producto borrado"); } catch(err){ toast("No se pudo borrar."); } });
+});
+$("#addForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!db){ toast("Sin conexión con la base de datos."); return; }
+  const name = $("#nName").value.trim(), price = parsePrice($("#nPrice").value);
+  if (!name || isNaN(price)){ toast("Pon nombre y precio"); return; }
+  const station = $("#nStation").value, especial = $("#nSpecial").checked;
+  const group = $("#nGroup").value.trim() || (station === "cocina" ? "Repostería" : "Cafés");
+  try {
+    const ref = await db.collection("menu").add({name, price, group, station, especial, disponible:true, order: menu.length + 1, receta:{}});
+    e.target.reset(); openRecipes.add(ref.id); toast(especial ? "Fuera de carta añadido. Ponle receta." : "Producto añadido. Ponle receta.");
+  } catch(err){ toast("No se pudo añadir."); }
+});
+$("#insEdit").addEventListener("change", async e => {
+  const el = e.target, id = el.dataset.iid, f = el.dataset.f; if (!id || !db) return;
+  let v = el.value.trim();
+  if (["minimo","paquete","precioPaquete"].includes(f)){ v = v === "" ? 0 : parseMoney(v); if (isNaN(v) || v < 0){ toast("Número no válido"); return; } }
+  if (f === "nombre" && !v){ toast("Pon un nombre"); return; }
+  try { await db.collection("insumos").doc(id).update({[f]: v}); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); }
+});
+$("#insEdit").addEventListener("click", async e => {
+  const c = e.target.closest("[data-count]"), d = e.target.closest("[data-delins]");
+  if (!db) return;
+  if (c){
+    const v = parseMoney($("#i-"+c.dataset.count+"-c").value);
+    if (isNaN(v) || v < 0){ toast("Escribe cuánto tienes"); return; }
+    try { await db.collection("insumos").doc(c.dataset.count).update({stockContado:v, fechaConteo:Date.now()}); toast("Conteo guardado"); } catch(err){ toast("No se pudo guardar."); }
+  }
+  const b = e.target.closest("[data-buy]");
+  if (b){
+    const ins = insumos.find(x => x.id === b.dataset.buy); if (!ins) return;
+    const pk = Number(ins.paquete); if (!(pk > 0)){ toast("Pon antes cuánto trae un paquete"); $("#i-"+ins.id+"-k").focus(); return; }
+    const n = Math.max(1, Math.round(Number($("#i-"+ins.id+"-b").value) || 1)), now = Date.now();
+    const st = insState(ins), base = st.left !== null ? Math.max(0, st.left) : 0, add = n*pk;
+    const coste = Number(ins.precioPaquete) > 0 ? cents(n*Number(ins.precioPaquete))/100 : null;
+    const compras = [...(Array.isArray(ins.compras) ? ins.compras : []), {t:now, paquetes:n, cantidad:add, coste}].slice(-40);
+    b.disabled = true;
+    try {
+      await db.collection("insumos").doc(ins.id).update({stockContado: base + add, fechaConteo: now, compras});
+      if (coste) await db.collection("gastos").add({fecha:dayKey(now), concepto:`${ins.nombre} (${n} paq.)`, categoria:catForIns(ins), importe:coste, origen:"compra", t:now});
+      toast(`${ins.nombre}: +${fmtUnits(add, ins.unidad)}${coste ? " · " + eur(coste) + " en gastos" : ""}`);
+    } catch(err){ toast(saveErrMsg(err, "No se pudo apuntar la compra.")); } finally { b.disabled = false; }
+    return;
+  }
+  if (d) confirmTap(d, "i"+d.dataset.delins, "¿Seguro?", async () => { try { await db.collection("insumos").doc(d.dataset.delins).delete(); toast("Suministro borrado"); } catch(err){ toast("No se pudo borrar."); } });
+});
+$("#insForm").addEventListener("submit", async e => {
+  e.preventDefault(); if (!db) return;
+  const nombre = $("#iName").value.trim(); if (!nombre){ toast("Pon un nombre"); return; }
+  const min = parseMoney($("#iMin").value);
+  try { await db.collection("insumos").add({nombre, unidad:$("#iUnit").value, minimo: isNaN(min) ? 0 : min, stockContado:null, fechaConteo:null}); e.target.reset(); toast("Suministro añadido"); }
+  catch(err){ toast("No se pudo añadir."); }
+});
+
+/* ---------- precios sugeridos ---------- */
+function fixedPerUnit(){
+  const m = merge(records(Date.now() - 28*86400000)), days = Object.keys(m.days).length;
+  const units = Object.values(m.productos).reduce((a,p) => a + p.qty, 0);
+  const fijo = fijos.reduce((a,f) => a + Number(f.importe||0), 0);
+  if (!days || !units || !fijo) return null;
+  return fijo / ((units/days) * cfg("diasSemana", 6) * 4.33);
+}
+const up10 = v => Math.ceil(v*10 - 1e-9)/10;
+function priceRows(){
+  const fpu = fixedPerUnit();
+  return sortMenu(menu.filter(isOn)).map(m => {
+    const pc = productCost(m), price = Number(m.price)||0;
+    if (!pc.c) return {m, price, cost:null, missing:pc.missing};
+    const pct = price ? pc.c/price : null;
+    const keep = price - pc.c - (fpu || 0);
+    const sugg = up10(Math.max(pc.c/0.30, (pc.c + (fpu || 0))*1.15));
+    return {m, price, cost:pc.c, pct, keep, sugg, missing:pc.missing, raise: sugg > price + 0.04};
+  });
+}
+function renderPrices(){
+  const rows = priceRows(), fpu = fixedPerUnit();
+  const withCost = rows.filter(r => r.cost !== null);
+  const out = [];
+  if (!withCost.length) out.push(sug("", "Pon el precio de tus suministros", "En Ajustes → Suministros indica cuánto trae cada paquete y lo que cuesta. Con eso calculo el coste de cada bebida y qué precio le conviene."));
+  else {
+    const raise = withCost.filter(r => r.raise);
+    if (raise.length) out.push(sug("warn", `${raise.length} ${raise.length === 1 ? "producto se queda corto" : "productos se quedan cortos"} de precio`, raise.map(r => `${esc(r.m.name)}: de ${eur(r.price)} a ${eur(r.sugg)}`).join(" · ")));
+    else out.push(sug("", "Precios bien ajustados", "Todos los productos con receta cubren ingredientes y fijos con margen."));
+    if (fpu) out.push(sug("", `Cada producto vendido carga ${eur(fpu)} de gastos fijos`, `Sale de vuestros fijos repartidos entre lo que vendéis al mes. Si vendéis más, esta cifra baja y el margen sube.`));
+    const odd = withCost.filter(r => cents(r.price) % 50 !== 0);
+    if (odd.length) out.push(sug("", "Precios redondos para cobrar más rápido", `Al cobrar solo en efectivo, precios acabados en ,00 o ,50 ahorran monedas pequeñas: ${odd.map(r => `${esc(r.m.name)} ${eur(r.price)} → ${eur(Math.ceil(r.price*2)/2)}`).join(" · ")}.`));
+  }
+  $("#priceSugs").innerHTML = out.join("");
+  $("#priceTable").innerHTML = `<thead><tr><th>Producto</th><th class="n">Precio</th><th class="n">Ingredientes</th><th class="n">% coste</th><th class="n">Te queda</th><th class="n">Sugerido</th></tr></thead><tbody>${rows.map(r => r.cost === null
+    ? `<tr><td>${esc(r.m.name)}</td><td class="n">${eur(r.price)}</td><td colspan="4" class="mins">${r.missing.length ? "Falta precio de: " + esc(r.missing.join(", ")) : "Sin receta"}</td></tr>`
+    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n">${eur(r.price)}</td><td class="n">${eur(r.cost)}</td><td class="n ${r.pct > .35 ? "up" : ""}">${Math.round(r.pct*100)}%</td><td class="n ${r.keep < 0 ? "up" : ""}">${fpu ? eur(r.keep) : "—"}</td><td class="n ${r.raise ? "up" : "okc"}">${r.raise ? eur(r.sugg) : "OK"}</td></tr>`).join("")}</tbody>`;
+}
+
+/* ---------- combos (solo sugerencias) ---------- */
+function comboPrice(sum){ return Math.floor(sum*0.9*2)/2; }
+function renderCombos(){
+  const m = merge(records(Date.now() - 30*86400000));
+  const name = id => menu.find(x => x.id === id);
+  const out = [];
+  Object.entries(m.pares).sort((a,b) => b[1]-a[1]).forEach(([k, n]) => {
+    if (out.length >= 3 || n < 3) return;
+    const [a, b] = k.split("|").map(name); if (!a || !b || !isOn(a) || !isOn(b)) return;
+    const sum = (Number(a.price)||0) + (Number(b.price)||0), p = comboPrice(sum);
+    out.push(sug("", `${esc(a.name)} + ${esc(b.name)}: ${eur(p)}`, `Se han pedido juntos ${n} veces en 30 días. Por separado son ${eur(sum)}; a ${eur(p)} el cliente ahorra ${eur(sum - p)} y cobras con un toque.`));
+  });
+  // Repostería que sale poco con la bebida que más sale
+  const slowFood = menu.filter(x => isOn(x) && x.station === "cocina" && prepKind(x, x.name) === "otro").sort((a,b) => (m.productos[a.id]?.qty||0) - (m.productos[b.id]?.qty||0))[0];
+  const topDrink = Object.entries(m.productos).filter(([k]) => { const x = name(k); return x && isOn(x) && prepKind(x, x.name) !== "otro"; }).sort((a,b) => b[1].qty - a[1].qty)[0];
+  if (out.length < 3 && slowFood && topDrink){
+    const d = name(topDrink[0]), sum = (Number(d.price)||0) + (Number(slowFood.price)||0), p = comboPrice(sum);
+    out.push(sug("", `${esc(d.name)} + ${esc(slowFood.name)}: ${eur(p)}`, `Junta lo que más se pide con la repostería que menos sale, para darle salida antes de que caduque. Por separado son ${eur(sum)}.`));
+  }
+  if (!out.length){
+    const drink = sortMenu(menu.filter(x => isOn(x) && prepKind(x, x.name) !== "otro"))[0], food = menu.find(x => isOn(x) && x.station === "cocina" && prepKind(x, x.name) === "otro");
+    if (drink && food){ const sum = (Number(drink.price)||0) + (Number(food.price)||0); out.push(sug("", `Ejemplo: ${esc(drink.name)} + ${esc(food.name)}: ${eur(comboPrice(sum))}`, "Cuando la app vea qué pedís juntos (unas semanas de cierres), te propondrá combos con vuestros datos reales."));
+    }
+  }
+  $("#comboSugs").innerHTML = out.join("") || `<div class="empty">Sin ideas todavía.</div>`;
+}
+
+/* ---------- se venden poco ---------- */
+function renderSlow(){
+  const from = Date.now() - 21*86400000;
+  const recent = closes.filter(c => (c.closedAt||0) >= from);
+  const days = new Set(recent.map(c => dayKey(c.openedAt))).size;
+  if (days < 5){ $("#slowSugs").innerHTML = `<div class="empty">Con al menos 5 días de cierres de caja te diré qué productos no salen y qué hacer con ellos (llevas ${days}).</div>`; return; }
+  const m = merge(recent.map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:{}})));
+  const avail = menu.filter(isOn);
+  const total = avail.reduce((a,x) => a + (m.productos[x.id]?.qty || 0), 0);
+  const avg = total / Math.max(1, avail.length);
+  const month = new Date().getMonth(), winter = [10,11,0,1].includes(month), summer = [5,6,7,8].includes(month);
+  const slow = avail.map(x => ({x, q: m.productos[x.id]?.qty || 0})).filter(r => r.q <= Math.max(1, avg*0.25)).sort((a,b) => a.q - b.q);
+  $("#slowSugs").innerHTML = slow.length ? slow.map(({x, q}) => {
+    const k = prepKind(x, x.name), cold = isCold(x, x.name);
+    let tip;
+    if (x.especial) tip = q === 0 ? "Como fuera de carta no ha funcionado: retíralo y prueba otro." : "Déjalo unos días más o cámbialo por otro fuera de carta.";
+    else if (x.station === "cocina" && k === "otro") tip = "Pide menos unidades para no tirar, u ofrécelo con un café a precio cerrado (combo).";
+    else if (cold && winter) tip = "Es bebida fría en invierno: es normal que baje. Mantenla pero sin preparar nada por adelantado.";
+    else if (!cold && summer) tip = "Es bebida caliente en verano: es normal que baje.";
+    else if (q === 0) tip = "Ninguna venta: quítalo de la carta o sácalo como fuera de carta unos días con otro nombre o presentación.";
+    else tip = "Ponlo más visible en la pizarra, recomiéndalo al cobrar o prueba un precio de lanzamiento una semana.";
+    return sug(q === 0 ? "warn" : "", `${esc(x.name)}: ${q} en ${days} días`, tip);
+  }).join("") : sug("", "Todo se vende", `En los últimos ${days} días abiertos ningún producto se queda muy por debajo de la media.`);
+}
+
+/* ---------- duración de suministros ---------- */
+function renderDur(){
+  const rows = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))).map(i => {
+    const st = insState(i), du = insDur(i, st);
+    const left = st.left !== null && st.perDay > 0 ? `${Math.max(0, Math.floor(st.left/st.perDay))} días` : "—";
+    return `<tr><td>${esc(i.nombre)}</td><td class="n">${st.perDay ? fmtUnits(st.perDay, i.unidad) : "—"}</td><td class="n">${du.perPack ? num1(du.perPack) + " días" : (Number(i.paquete) ? "—" : "pon el paquete")}</td><td class="n">${du.between ? num1(du.between) + " días" : "—"}</td><td class="n">${left}</td></tr>`;
+  }).join("");
+  $("#durTable").innerHTML = `<thead><tr><th>Suministro</th><th class="n">Gasto al día</th><th class="n">Un paquete dura</th><th class="n">Compráis cada</th><th class="n">Queda para</th></tr></thead><tbody>${rows || `<tr><td colspan="5" class="mins">Sin suministros.</td></tr>`}</tbody>`;
+}
+
+/* ---------- Excel para el dueño ---------- */
+let xlsxP = null;
+function loadXLSX(){
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  xlsxP = xlsxP || new Promise((res, rej) => {
+    const sc = document.createElement("script");
+    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxP = null; rej(new Error("No se pudo cargar")); };
+    document.head.appendChild(sc);
+  });
+  return xlsxP;
+}
+function buildWorkbook(X){
+  const EUR = '#,##0.00 "€"', PCT = "0%";
+  const mk = (aoa, money, pct, widths, headRow) => {
+    const ws = X.utils.aoa_to_sheet(aoa);
+    const r = X.utils.decode_range(ws["!ref"]);
+    for (let R = (headRow||0) + 1; R <= r.e.r; R++) for (let C = r.s.c; C <= r.e.c; C++){
+      const c = ws[X.utils.encode_cell({r:R, c:C})]; if (!c || c.t !== "n") continue;
+      if (money.includes(C)) c.z = EUR; else if (pct.includes(C)) c.z = PCT;
+    }
+    ws["!cols"] = widths.map(w => ({wch:w}));
+    return ws;
+  };
+  const r2 = v => Math.round(v*100)/100;
+  const fijoMes = fijos.reduce((a,f) => a + Number(f.importe||0), 0);
+  // Resumen por meses
+  const months = new Set();
+  closes.forEach(c => months.add(dayKey(c.openedAt).slice(0,7)));
+  gastos.forEach(g => g.fecha && months.add(String(g.fecha).slice(0,7)));
+  if (shift && shift.open) months.add(dayKey(shift.openedAt).slice(0,7));
+  const res = [["Utopía Coffee Club · números"], [`Generado el ${new Date().toLocaleDateString("es-ES")}. Gastos fijos: importe mensual actual aplicado a cada mes.`], [],
+    ["Mes", "Días abiertos", "Pedidos", "Ventas", "Ticket medio", "Gastos del mes", "Gastos fijos", "Beneficio", "Margen"]];
+  [...months].sort().forEach(k => {
+    const [y, mo] = k.split("-").map(Number);
+    const from = new Date(y, mo-1, 1).getTime(), to = new Date(y, mo, 1).getTime();
+    const ms = merge(records(from).filter(x => x.t >= from && x.t < to));
+    const ventas = ms.ventas/100, gv = gastos.filter(g => String(g.fecha||"").slice(0,7) === k).reduce((a,g) => a + Number(g.importe||0), 0);
+    const ben = ventas - gv - fijoMes;
+    res.push([new Date(y, mo-1, 1).toLocaleDateString("es-ES", {month:"long", year:"numeric"}), Object.keys(ms.days).length, ms.n, r2(ventas), ms.n ? r2(ventas/ms.n) : 0, r2(gv), r2(fijoMes), r2(ben), ventas ? ben/ventas : 0]);
+  });
+  // Cierres
+  const cie = [["Fecha", "Abre", "Cierra", "Pedidos", "Ventas", "Ticket medio", "Propinas", "Entradas", "Salidas", "Debía haber", "Contado", "Diferencia", "Espera media (min)"]];
+  closes.slice().sort((a,b) => a.openedAt - b.openedAt).forEach(c => {
+    const e = c.espera || {};
+    cie.push([new Date(c.openedAt).toLocaleDateString("es-ES"), hhmm(c.openedAt), hhmm(c.closedAt), c.pedidos||0, Number(c.ventas)||0, c.pedidos ? r2(c.ventas/c.pedidos) : 0, Number(c.propinas)||0, Number(c.entradas)||0, Number(c.salidas)||0, Number(c.esperado)||0, Number(c.contado)||0, Number(c.diferencia)||0, e.n ? Math.round(e.s/e.n/600)/100 : ""]);
+  });
+  // Productos
+  const all = merge(records(0)), totalV = all.ventas/100;
+  const pro = [["Producto", "Unidades", "Ventas", "% de las ventas", "Precio actual", "Coste ingredientes", "Margen por unidad"]];
+  Object.entries(all.productos).sort((a,b) => b[1].c - a[1].c).forEach(([k,p]) => {
+    const m = menu.find(x => x.id === k) || menu.find(x => x.name === p.name);
+    const pc = m ? productCost(m).c : 0, price = m ? Number(m.price) : p.c/100/Math.max(1,p.qty);
+    pro.push([p.name, p.qty, r2(p.c/100), totalV ? p.c/100/totalV : 0, r2(price), pc ? r2(pc) : "", pc ? r2(price - pc) : ""]);
+  });
+  // Gastos
+  const gas = [["Fecha", "Concepto", "Categoría", "Importe", "Origen"]];
+  gastos.slice().sort((a,b) => String(a.fecha).localeCompare(String(b.fecha))).forEach(g => gas.push([g.fecha ? new Date(g.fecha+"T12:00").toLocaleDateString("es-ES") : "", g.concepto, g.categoria, Number(g.importe)||0, g.origen === "caja" ? "Pagado de caja" : g.origen === "compra" ? "Compra de suministro" : "Manual"]));
+  gas.push([], ["Gastos fijos mensuales"]); fijos.forEach(f => gas.push(["", f.concepto, f.categoria, Number(f.importe)||0, "Fijo"]));
+  const wb = X.utils.book_new();
+  X.utils.book_append_sheet(wb, mk(res, [3,4,5,6,7], [8], [18,12,10,12,12,14,12,12,9], 3), "Resumen");
+  X.utils.book_append_sheet(wb, mk(cie, [4,5,6,7,8,9,10,11], [], [12,7,7,9,11,11,10,10,10,12,11,11,16]), "Cierres de caja");
+  X.utils.book_append_sheet(wb, mk(pro, [2,4,5,6], [3], [30,10,12,14,12,16,16]), "Productos");
+  X.utils.book_append_sheet(wb, mk(gas, [3], [], [12,34,26,11,20]), "Gastos");
+  return wb;
+}
+$("#xlsBtn").addEventListener("click", async () => {
+  const btn = $("#xlsBtn"); btn.disabled = true; const old = btn.textContent; btn.textContent = "Preparando…";
+  try {
+    const dl = await claude.use("downloads");
+    if (!dl){ toast("No se pudo descargar el archivo en este dispositivo."); return; }
+    const X = await loadXLSX();
+    const buf = X.write(buildWorkbook(X), {bookType:"xlsx", type:"array"});
+    await dl.save({filename:`Utopia-numeros-${dayKey()}.xlsx`, data: new Blob([buf])});
+    toast("Excel guardado");
+  } catch(e){
+    if (e && e.code === "declined") return;
+    toast(e && e.message === "No se pudo cargar" ? "No se pudo preparar el Excel. Revisa la conexión." : "No se pudo descargar el Excel.");
+  } finally { btn.disabled = false; btn.textContent = old; }
+});
+
+$("#seasonSeg").addEventListener("click", async e => {
+  const b = e.target.closest("[data-season]"); if (!b || !db) return;
+  const sea = b.dataset.season; b.disabled = true;
+  try {
+    for (const m of menu){
+      if (prepKind(m, m.name) === "otro") continue;
+      const cold = isCold(m, m.name);
+      const on = sea === "todo" ? true : sea === "invierno" ? !cold : cold;
+      if (on !== isOn(m)) await db.collection("menu").doc(m.id).update({disponible:on});
+    }
+    const nc = {...(config||{}), temporada:sea}; await db.doc("config/app").set(nc); config = nc;
+    toast(sea === "todo" ? "Toda la carta activa" : sea === "invierno" ? "Modo invierno: bebidas frías desactivadas" : "Modo verano: bebidas calientes desactivadas");
+  } catch(err){ toast(saveErrMsg(err, "No se pudo cambiar la temporada.")); } finally { b.disabled = false; }
+});
+
+/* ---------- render general ---------- */
+function renderAll(){
+  if (view === "pedidos"){ renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
+  else if (view === "barra") renderBarra();
+  else if (view === "caja") renderCaja();
+  else if (view === "gastos"){ renderGastos(); renderPrices(); }
+  else if (view === "datos"){ renderDatos(); renderDur(); renderSlow(); renderCombos(); }
+  else renderAjustes();
+  updateBanner();
+  $("#v-pedidos").dataset.mode = pedMode;
+  $("#cartBar").hidden = !(view === "pedidos" && pedMode === "cobrar" && cartTotal().n > 0);
+}
+function updateBanner(){
+  const open = !!(shift && shift.open);
+  let txt = "", btn = "";
+  if (gotShift && !open){ txt = "La caja no está abierta: estas ventas no se sumarán a ningún turno."; btn = `Abrir con ${eur(cfg("fondoHabitual", 100))}`; }
+  else if (open && dayKey(shift.openedAt) !== dayKey()){ txt = `La caja sigue abierta desde el ${dmy(shift.openedAt)}. Ciérrala para que cada día salga bien en los números.`; btn = "Ir a Caja"; }
+  $("#shiftBanner").hidden = !txt;
+  $("#bannerTxt").textContent = txt; $("#bannerBtn").textContent = btn;
+  const ROLES = {caja:"la caja (pedidos y cobro)", barra:"la barra (preparar bebidas)", ambos:"todo: caja y barra"};
+  $("#cupsToggle").setAttribute("aria-pressed", String(vasosCaja()));
+  $("#autoToggle").setAttribute("aria-pressed", String(autoReady()));
+  if (document.activeElement !== $("#jugG")) $("#jugG").value = jugCap().g;
+  const sea = (config && config.temporada) || "todo";
+  document.querySelectorAll("#seasonSeg [data-season]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.season === sea)));
+  $("#fidToggle").setAttribute("aria-pressed", String(fidOn()));
+  if (document.activeElement !== $("#fidCada")) $("#fidCada").value = fidCada();
+  if (document.activeElement !== $("#jugP")) $("#jugP").value = jugCap().p;
+  $("#roleTxt").textContent = role ? `Este dispositivo está configurado para ${ROLES[role]}.` : "Este dispositivo aún no tiene un uso elegido.";
+}
+// No repintamos la zona donde alguien está escribiendo, para no perder lo tecleado
+function softRender(){
+  if (inSetup) return;
+  const a = document.activeElement;
+  const typing = a && (a.tagName === "INPUT" || a.tagName === "SELECT");
+  if (typing && view === "pedidos" && $("#cartLines").contains(a)){ renderReady(); renderMenuGrid(); renderPending(); updateBanner(); pendingRender = true; return; }
+  if (typing && view !== "pedidos" && $("#v-"+view).contains(a)){ pendingRender = true; return; }
+  renderAll();
+}
+
+/* ---------- configuración inicial ---------- */
+let setupMode = "auto", tmpRole = null, barraOnly = false;
+const FIJOS_PRESET = [["alquiler","Alquiler","Alquiler"],["autonomos","Cuota de autónomos","Autónomos y gestoría"],["gestoria","Gestoría","Autónomos y gestoría"],["luz","Luz","Luz, agua e internet"],["agua","Agua","Luz, agua e internet"],["internet","Internet y teléfono","Luz, agua e internet"],["seguro","Seguro del local","Otros"],["otros","Otros fijos","Otros"]];
+const LATTES = ["iced-latte-tiramisu","hot-latte-tiramisu","iced-latte","hot-latte"], MATCHAS = ["iced-matcha-coco","hot-matcha-coco","iced-matcha-coco-mango"];
+const rv = (pid, ins, d) => { const m = menu.find(x => x.id === pid); const v = Number(m?.receta?.[ins]); return v > 0 ? v : d; };
+const fmtIn = v => (v === null || v === undefined || v === "") ? "" : String(v).replace(".", ",");
+function setupSteps(){
+  if (setupMode === "role") return [0, 6];
+  if (setupMode === "full") return [0,1,2,3,4,5,6];
+  return (config && config.setupDone) ? [0, 6] : [0,1,2,3,4,5,6];
+}
+function needSetup(){
+  if (inSetup || !db || !gotConfig || !gotMenu) return false;
+  if (!role) return true;
+  return !(config && config.setupDone) && role !== "barra" && lsGet("setupSkip") !== "1";
+}
+function maybeSetup(){ if (needSetup()) startSetup("auto"); }
+function startSetup(mode){
+  setupMode = mode; inSetup = true; setupStep = 0; tmpRole = role; barraOnly = false;
+  document.body.classList.add("in-setup");
+  VIEWS.forEach(x => $("#v-"+x).hidden = true);
+  $("#v-setup").hidden = false; $("#sub").textContent = "Configuración";
+  renderSetup(); window.scrollTo(0, 0);
+}
+function endSetup(){
+  inSetup = false; document.body.classList.remove("in-setup"); $("#v-setup").hidden = true;
+  setView(pickView());
+}
+const BEAN = `<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(35 12 12)" fill="currentColor"/><path d="M12 2.5c-3 3.5 3 6.5 0 10s3 6 0 9" transform="rotate(35 12 12)" stroke="var(--bg)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>`;
+function renderSetup(){
+  const steps = setupSteps(), cur = steps[setupStep], last = setupStep === steps.length - 1;
+  let body = "";
+  if (cur === 0){
+    body = `<div class="card"><h2>¿Para qué es este dispositivo?</h2>
+      <p class="hint">Así se abre directo en la pantalla que necesitas. Lo puedes cambiar en Ajustes.</p>
+      <div class="role">
+        <button type="button" data-role="caja" aria-pressed="${tmpRole === "caja"}"><b>Caja</b><span>El móvil: tomar pedidos, cobrar y entregar</span></button>
+        <button type="button" data-role="barra" aria-pressed="${tmpRole === "barra"}"><b>Barra</b><span>El iPad: ver y preparar cafés y matcha</span></button>
+        <button type="button" data-role="ambos" aria-pressed="${tmpRole === "ambos"}"><b>Las dos</b><span>Un solo dispositivo para todo</span></button>
+      </div></div>`;
+  } else if (cur === 1){
+    const list = sortMenu(menu);
+    body = `<div class="card"><h2>Carta y precios</h2>
+      <p class="hint">Revisa los precios y desmarca lo que hoy no tengáis.</p>
+      <div>${list.map(m => `<div class="srow"><span><b>${esc(m.name)}</b>${m.especial ? ' <span class="tag sp">Fuera de carta</span>' : ""}</span>
+        <input type="text" inputmode="decimal" id="sp-${m.id}" value="${fmtIn(m.price)}" aria-label="Precio de ${esc(m.name)}">
+        <label class="check"><input type="checkbox" id="sa-${m.id}" ${isOn(m) ? "checked" : ""}> Hay</label></div>`).join("")}</div>
+      <div class="lbl" style="margin-top:6px">¿Tenéis algo fuera de carta ahora?</div>
+      <div class="qgrid">
+        <div class="field"><label for="spN">Nombre</label><input type="text" id="spN" placeholder="Ej. Matcha fresa"></div>
+        <div class="field"><label for="spP">Precio (€)</label><input type="text" id="spP" inputmode="decimal" placeholder="4,00"></div>
+        <div class="field"><label for="spS">Sale en</label><select id="spS"><option value="barra">Barra</option><option value="cocina">Caja (tú)</option></select></div>
+      </div></div>`;
+  } else if (cur === 2){
+    body = `<div class="card"><h2>Cómo preparáis cada bebida</h2>
+      <p class="hint">Con esto la app calcula cuánto gastáis y qué comprar. Si no lo sabes exacto, deja el valor que viene.</p>
+      <div class="qgrid">
+        <div class="field"><label for="q1">Matcha por bebida (g)</label><input type="text" inputmode="decimal" id="q1" value="${fmtIn(rv("iced-matcha-coco","matcha",3))}"></div>
+        <div class="field"><label for="q2">Bebida de coco por matcha (ml)</label><input type="text" inputmode="decimal" id="q2" value="${fmtIn(rv("iced-matcha-coco","coco",200))}"></div>
+        <div class="field"><label for="q3">Café por latte (g)</label><input type="text" inputmode="decimal" id="q3" value="${fmtIn(rv("iced-latte","cafe",18))}"></div>
+        <div class="field"><label for="q4">Leche por latte (ml)</label><input type="text" inputmode="decimal" id="q4" value="${fmtIn(rv("iced-latte","leche",180))}"></div>
+        <div class="field"><label for="q5">Café por cold brew (g)</label><input type="text" inputmode="decimal" id="q5" value="${fmtIn(rv("cold-brew","cafe",20))}"></div>
+        <div class="field"><label for="q6">Café por batch (g)</label><input type="text" inputmode="decimal" id="q6" value="${fmtIn(rv("batch","cafe",15))}"></div>
+      </div>
+      <p class="hint">Cada bebida gasta además un vaso (frío o caliente) y una tapa. Lo fino, producto a producto, está en Ajustes → Receta.</p></div>`;
+  } else if (cur === 3){
+    const ins = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre)));
+    body = `<div class="card"><h2>¿Cuánto tenéis ahora?</h2>
+      <p class="hint">Cuenta lo que hay en el almacén y pon cómo lo compráis: lo que trae un paquete y lo que cuesta. Con eso calculo cuánto os dura y el coste de cada bebida. Lo que no sepas, déjalo vacío.</p>
+      <div style="display:grid;gap:10px">${ins.length ? ins.map(i => `<div class="icard"><b>${esc(i.nombre)} <span class="mins">(${esc(i.unidad)})</span></b>
+        <div class="qgrid">
+          <div class="field"><label for="st-${i.id}">Tengo ahora</label><input type="text" inputmode="decimal" id="st-${i.id}" value="${i.stockContado !== null && i.stockContado !== undefined ? fmtIn(i.stockContado) : ""}"></div>
+          <div class="field"><label for="sk-${i.id}">Un paquete trae</label><input type="text" inputmode="decimal" id="sk-${i.id}" value="${fmtIn(i.paquete)}"></div>
+          <div class="field"><label for="sp2-${i.id}">Precio paquete (€)</label><input type="text" inputmode="decimal" id="sp2-${i.id}" value="${fmtIn(i.precioPaquete)}"></div>
+          <div class="field"><label for="sm-${i.id}">Avisar con menos de</label><input type="text" inputmode="decimal" id="sm-${i.id}" value="${fmtIn(i.minimo)}"></div>
+        </div></div>`).join("") : `<div class="empty">Sin suministros. Puedes añadirlos en Ajustes.</div>`}</div></div>`;
+  } else if (cur === 4){
+    body = `<div class="card"><h2>Gastos fijos al mes</h2>
+      <p class="hint">Lo que pagáis cada mes, vendáis o no. Sirve para calcular el beneficio y cuánto hay que vender al día. Deja vacío lo que no tengáis.</p>
+      <div class="qgrid">${FIJOS_PRESET.map(([slug, label]) => { const f = fijos.find(x => x.id === "fijo-"+slug); return `<div class="field"><label for="fx-${slug}">${label} (€)</label><input type="text" inputmode="decimal" id="fx-${slug}" value="${f ? fmtIn(f.importe) : ""}" placeholder="0"></div>`; }).join("")}</div></div>`;
+  } else if (cur === 5){
+    const open = shift && shift.open;
+    body = `<div class="card"><h2>La caja</h2>
+      <div class="qgrid">
+        <div class="field"><label for="cf1">Fondo de cambio habitual (€)</label><input type="text" inputmode="decimal" id="cf1" value="${fmtIn(cfg("fondoHabitual", 100))}"></div>
+        <div class="field"><label for="cf2">Avisar para retirar dinero a partir de (€)</label><input type="text" inputmode="decimal" id="cf2" value="${fmtIn(cfg("retiradaUmbral", 200))}"></div>
+        <div class="field"><label for="cf3">Días que abrís a la semana</label><select id="cf3">${[1,2,3,4,5,6,7].map(n => `<option ${n === cfg("diasSemana", 6) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
+      </div>
+      <label class="check"><input type="checkbox" id="cf5" ${vasosCaja() ? "checked" : ""}> Mientras cobro, preparo yo los vasos (hielo, leche fría y nombre) para que la barra solo añada el espresso o el matcha</label>
+      ${open ? `<p class="hint">La caja ya está abierta desde las ${hhmm(shift.openedAt)}.</p>` : `<label class="check"><input type="checkbox" id="cf4" checked> Abrir la caja ahora con este fondo</label>`}</div>`;
+  } else {
+    body = barraOnly
+      ? `<div class="card"><h2>Listo para la barra</h2><p class="hint">En esta pantalla verás cada bebida con el nombre del cliente y un aviso al llegar. Toca la pantalla una vez para activar el sonido. La carta, precios y caja se configuran desde el móvil de caja.</p></div>`
+      : steps.length === 2
+      ? `<div class="card"><h2>Hecho</h2><p class="hint">Este dispositivo se abrirá en ${tmpRole === "barra" ? "la Barra" : "Pedidos"}.</p></div>`
+      : `<div class="card"><h2>Todo listo</h2>
+        <ul class="lines" style="gap:8px">
+          <li><span class="q">1</span><span>Abre el mismo enlace en el iPad de Laura, «Añadir a pantalla de inicio», y que entre con su correo.</span></li>
+          <li><span class="q">2</span><span>En el iPad, que elija <b>Barra</b> al abrirla y toque la pantalla una vez para el sonido.</span></li>
+          <li><span class="q">3</span><span>Haz un pedido de prueba, anúlalo y comprueba que la caja cuadra.</span></li>
+          <li><span class="q">4</span><span>Al acabar el día, cierra la caja contando billetes y monedas: así salen las estadísticas y las compras sugeridas.</span></li>
+        </ul>
+        <p class="legal">Esta app no emite tickets ni facturas. Para eso seguid con vuestro sistema y consultad con la gestoría el programa que exige Veri*factu.</p></div>`;
+  }
+  $("#setupBox").innerHTML = `
+    <div class="lockup"><span class="word">UTOPÍA</span><span class="club">COFFEE CLUB</span><div class="beanrule">${BEAN}</div></div>
+    ${steps.length > 2 ? `<div class="steps" aria-label="Paso ${setupStep+1} de ${steps.length}">${steps.map((s,i) => `<i class="${i <= setupStep ? "on" : ""}"></i>`).join("")}</div>` : ""}
+    ${body}
+    <div class="err" id="setupErr" hidden></div>
+    <div class="navrow">
+      ${setupStep > 0 && !barraOnly ? `<button type="button" class="btn" id="sBack">Atrás</button>` : (setupMode !== "auto" ? `<button type="button" class="btn" id="sCancel">Cancelar</button>` : `<span></span>`)}
+      <div class="row">${!last && cur !== 0 ? `<button type="button" class="btn ghost" id="sSkip">Terminar más tarde</button>` : ""}
+      <button type="button" class="btn primary" id="sNext">${last ? "Empezar" : "Siguiente"}</button></div>
+    </div>`;
+}
+function setupErr(msg){ const e = $("#setupErr"); e.textContent = msg; e.hidden = !msg; }
+async function saveStep(cur){
+  if (cur === 0){
+    if (!tmpRole){ setupErr("Elige para qué es este dispositivo."); return false; }
+    role = tmpRole; lsSet("rol", role); lsSet("vista2", role === "barra" ? "barra" : "pedidos");
+    if (setupMode === "auto" && role === "barra" && !(config && config.setupDone)) barraOnly = true;
+    return true;
+  }
+  if (cur === 1){
+    for (const m of menu){
+      const p = parsePrice($("#sp-"+m.id)?.value), on = $("#sa-"+m.id)?.checked;
+      const ch = {};
+      if (!isNaN(p) && cents(p) !== cents(m.price)) ch.price = p;
+      if (on !== undefined && on !== isOn(m)) ch.disponible = on;
+      if (Object.keys(ch).length) await db.collection("menu").doc(m.id).update(ch);
+    }
+    const n = $("#spN").value.trim(), p = parsePrice($("#spP").value);
+    if (n){
+      if (isNaN(p)){ setupErr("Pon el precio del producto fuera de carta."); return false; }
+      const st = $("#spS").value;
+      await db.collection("menu").add({name:n, price:p, group: st === "cocina" ? "Repostería" : "Cafés", station:st, especial:true, disponible:true, order:menu.length+1, receta: st === "cocina" ? {} : {"vaso-frio":1, tapa:1}});
+    }
+    return true;
+  }
+  if (cur === 2){
+    const q = {}; for (let i = 1; i <= 6; i++){ const v = parseMoney($("#q"+i).value); if (isNaN(v) || v < 0){ setupErr("Revisa las cantidades: solo números."); return false; } q[i] = v; }
+    const has = id => menu.some(m => m.id === id);
+    const writes = [];
+    MATCHAS.forEach(id => has(id) && writes.push([id, {matcha:q[1], coco: id === "iced-matcha-coco-mango" ? Math.max(0, q[2]-20) : q[2]}]));
+    LATTES.forEach(id => has(id) && writes.push([id, {cafe:q[3], leche: id.startsWith("hot") ? q[4]+20 : q[4]}]));
+    if (has("cold-brew")) writes.push(["cold-brew", {cafe:q[5]}]);
+    if (has("cloud-cold-brew")) writes.push(["cloud-cold-brew", {cafe:q[5]}]);
+    if (has("batch")) writes.push(["batch", {cafe:q[6]}]);
+    for (const [id, r] of writes) await db.collection("menu").doc(id).update({receta:r});
+    return true;
+  }
+  if (cur === 3){
+    const now = Date.now();
+    for (const i of insumos){
+      const sv = $("#st-"+i.id)?.value.trim(), mv = $("#sm-"+i.id)?.value.trim();
+      const ch = {};
+      if (sv){ const v = parseMoney(sv); if (isNaN(v) || v < 0){ setupErr(`Revisa lo que tienes de ${i.nombre}.`); return false; } if (v !== Number(i.stockContado)) { ch.stockContado = v; ch.fechaConteo = now; } }
+      if (mv !== undefined){ const v = mv === "" ? 0 : parseMoney(mv); if (!isNaN(v) && v !== Number(i.minimo)) ch.minimo = v; }
+      [["sk-","paquete"],["sp2-","precioPaquete"]].forEach(([pre, f]) => { const raw = $("#"+pre+i.id)?.value.trim(); if (raw === undefined) return; const v = raw === "" ? 0 : parseMoney(raw); if (!isNaN(v) && v >= 0 && v !== Number(i[f]||0)) ch[f] = v; });
+      if (Object.keys(ch).length) await db.collection("insumos").doc(i.id).update(ch);
+    }
+    return true;
+  }
+  if (cur === 4){
+    for (const [slug, label, cat] of FIJOS_PRESET){
+      const raw = $("#fx-"+slug).value.trim(), v = raw === "" ? 0 : parseMoney(raw);
+      if (isNaN(v) || v < 0){ setupErr(`Revisa el importe de ${label}.`); return false; }
+      const id = "fijo-"+slug, exists = fijos.find(f => f.id === id);
+      if (v > 0) await db.collection("fijos").doc(id).set({concepto:label, categoria:cat, importe:cents(v)/100});
+      else if (exists) await db.collection("fijos").doc(id).delete();
+    }
+    return true;
+  }
+  if (cur === 5){
+    const f = parseMoney($("#cf1").value), r = parseMoney($("#cf2").value), d = Number($("#cf3").value);
+    if (isNaN(f) || f < 0 || isNaN(r) || r < 0){ setupErr("Revisa los importes de la caja."); return false; }
+    const nc = {...(config||{}), fondoHabitual:cents(f)/100, retiradaUmbral:cents(r)/100, diasSemana:d, vasosCaja: !!$("#cf5")?.checked};
+    await db.doc("config/app").set(nc); config = nc;
+    if ($("#cf4")?.checked && !(shift && shift.open)) await openShift(cents(f)/100);
+    return true;
+  }
+  if (cur === 6 && !barraOnly && setupSteps().length > 2){
+    const nc = {...(config||{}), setupDone:true, setupAt:Date.now()};
+    await db.doc("config/app").set(nc); config = nc;
+    lsSet("setupSkip", "");
+  }
+  return true;
+}
+$("#setupBox").addEventListener("click", async e => {
+  const r = e.target.closest("[data-role]");
+  if (r){ tmpRole = r.dataset.role; $("#setupBox").querySelectorAll("[data-role]").forEach(b => b.setAttribute("aria-pressed", String(b === r))); setupErr(""); return; }
+  if (e.target.closest("#sBack")){ setupStep = Math.max(0, setupStep-1); renderSetup(); window.scrollTo(0,0); return; }
+  if (e.target.closest("#sCancel")){ endSetup(); return; }
+  if (e.target.closest("#sSkip")){ lsSet("setupSkip", "1"); endSetup(); toast("Puedes terminar la configuración en Ajustes"); return; }
+  const nx = e.target.closest("#sNext"); if (!nx) return;
+  if (!db){ setupErr("Sin conexión con la base de datos."); return; }
+  const steps = setupSteps(), cur = steps[setupStep];
+  nx.disabled = true; setupErr("");
+  try {
+    const ok = await saveStep(cur);
+    if (!ok){ nx.disabled = false; return; }
+    if (setupStep === steps.length - 1){ endSetup(); return; }
+    setupStep = barraOnly ? steps.length - 1 : setupStep + 1;
+    renderSetup(); window.scrollTo(0,0);
+  } catch(err){ setupErr(saveErrMsg(err, "No se pudo guardar. Revisa la conexión y vuelve a intentarlo.")); nx.disabled = false; }
+});
+$("#redoSetup").addEventListener("click", () => startSetup("full"));
+["jugG","jugP"].forEach(id => $("#"+id).addEventListener("change", async e => {
+  if (!db) return;
+  const v = Math.round(Number(e.target.value)); if (!(v >= 1 && v <= 6)){ toast("Pon un número de 1 a 6"); return; }
+  const nc = {...(config||{}), [id === "jugG" ? "jarraGrande" : "jarraPequena"]: v};
+  try { await db.doc("config/app").set(nc); config = nc; toast("Guardado"); } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+}));
+async function setCfg(patch, msg){
+  if (!db) return;
+  const nc = {...(config||{}), ...patch};
+  try { await db.doc("config/app").set(nc); config = nc; updateBanner(); if (msg) toast(msg); } catch(e){ toast(saveErrMsg(e, "No se pudo guardar.")); }
+}
+$("#fidToggle").addEventListener("click", () => setCfg({fidelidad: !fidOn()}, !fidOn() ? "Fidelidad activada" : "Fidelidad desactivada"));
+$("#fidCada").addEventListener("change", e => { const v = Math.round(Number(e.target.value)); if (v >= 2 && v <= 30) setCfg({fidelidadCada:v}, `Gratis cada ${v} visitas`); else toast("Pon un número de 2 a 30"); });
+$("#autoToggle").addEventListener("click", async () => {
+  if (!db) return;
+  const nc = {...(config||{}), autoListo: !autoReady()};
+  try { await db.doc("config/app").set(nc); config = nc; updateBanner(); toast(nc.autoListo ? "Se avisa solo al tachar todo" : "Hay que pulsar Listo"); } catch(e){ toast(saveErrMsg(e, "No se pudo guardar.")); }
+});
+$("#cupsToggle").addEventListener("click", async () => {
+  if (!db) return;
+  const nc = {...(config||{}), vasosCaja: !vasosCaja()};
+  try { await db.doc("config/app").set(nc); config = nc; updateBanner(); toast(nc.vasosCaja ? "Preparas tú los vasos" : "La barra prepara los vasos"); } catch(e){ toast(saveErrMsg(e, "No se pudo guardar.")); }
+});
+$("#changeRole").addEventListener("click", () => startSetup("role"));
+let pendingRender = false;
+document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender){ pendingRender = false; softRender(); } }, 50));
+const lateWarned = new Set();
+setInterval(() => {
+  document.querySelectorAll(".mins[data-t]").forEach(el => el.textContent = minsTxt(Number(el.dataset.t)));
+  // En la caja: aviso si un pedido lleva más de 5 minutos esperando a la barra
+  if (role !== "barra" && view === "pedidos"){
+    const late = orders.filter(o => o.status === "nuevo" && mins(o.createdAt) >= 5 && !lateWarned.has(o.id));
+    if (late.length){ late.forEach(o => lateWarned.add(o.id)); beep("new"); toast(`${late.map(o => o.customer).join(", ")} ${late.length > 1 ? "llevan" : "lleva"} más de 5 min en barra: echa una mano`); }
+  }
+}, 30000);
+
+/* ---------- permisos ---------- */
+let readOnly = false;
+const NO_PERM = "Tu usuario no tiene permiso para guardar. Comprueba que tu correo está en el equipo de Utopía.";
+// Un guardado rechazado por permisos llega como invalid_argument; los datos de la app siempre son válidos
+function saveErrMsg(err, fallback){
+  const c = err && err.code;
+  if (c === "invalid_argument" || c === "not_granted" || c === "revoked"){ readOnly = true; setNotice(NO_PERM, true); return "Sin permiso para guardar: pide acceso para editar."; }
+  if (c === "quota_exceeded") return "La base de datos está llena. Hay que borrar pedidos antiguos.";
+  return fallback;
+}
+
+/* ---------- conexión ---------- */
+async function prune(){
+  const limit = Date.now() - 2*86400000;
+  const old = orders.filter(o => (o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) < limit);
+  for (const o of old){ try { await db.collection("orders").doc(o.id).delete(); } catch(e){ break; } }
+}
+async function boot(){
+  setView(pickView());
+  db = await (window.claude?.use ? window.claude.use("db") : null);
+  if (!db){ setNotice("Inicia sesión para usar la app.", true); gotMenu = gotOrders = true; renderAll(); return; }
+  try {
+    const u = await claude.use("user");
+    if (u && (await u.can("data.write")) === false){ readOnly = true; setNotice(NO_PERM, true); }
+  } catch(e){}
+  const slow = setTimeout(() => setNotice("No se puede conectar con la base de datos todavía. Revisa la conexión a internet.", true), 10000);
+  const settle = () => { if (gotMenu && gotOrders){ clearTimeout(slow); if (!readOnly) setNotice(actx && actx.state === "running" ? "" : "Toca la pantalla una vez para activar los avisos sonoros."); } };
+  document.addEventListener("pointerdown", () => { if (gotMenu && gotOrders && !readOnly) setTimeout(() => setNotice(""), 300); }, {once:true});
+
+  db.collection("menu").onSnapshot(snap => {
+    menu = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    if (!snap.metadata.fromCache) gotMenu = true;
+    settle(); softRender(); maybeSetup();
+  }, err => { clearTimeout(slow); setNotice("No se pudo cargar la carta.", true); });
+  db.doc("config/app").onSnapshot(snap => {
+    config = snap.exists ? snap.data() : null;
+    if (!snap.metadata.fromCache) gotConfig = true;
+    softRender(); maybeSetup();
+  }, err => { gotConfig = true; });
+
+  let pruned = false;
+  db.collection("orders").onSnapshot(snap => {
+    ordersRaw = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    applyOrders();
+    if (primed){
+      let newOne = false, readyOne = false;
+      orders.forEach(o => {
+        const p = prevStatus.get(o.id);
+        if (p === undefined && o.status === "nuevo") newOne = true;
+        if (p !== undefined && p !== "listo" && o.status === "listo") readyOne = true;
+      });
+      if (view === "barra" && newOne) alertUser("new");
+      if (view === "pedidos" && readyOne){ alertUser("ready"); if (pedMode === "cobrar" && !cart.size && !$("#cust").value.trim()) setMode("entregar"); }
+    }
+    prevStatus = new Map(orders.map(o => [o.id, o.status]));
+    [...ticks].forEach(k => { if (prevStatus.get(k.split(":")[0]) !== "nuevo") ticks.delete(k); });
+    if (!snap.metadata.fromCache){ gotOrders = true; primed = true; if (!pruned){ pruned = true; prune(); } }
+    settle(); softRender();
+  }, err => { clearTimeout(slow); setNotice("Se perdió la conexión con las comandas. Recarga la página.", true); });
+
+  db.doc("turno/actual").onSnapshot(snap => {
+    shift = snap.exists ? snap.data() : null;
+    if (!snap.metadata.fromCache) gotShift = true;
+    softRender();
+  }, err => setNotice("No se pudo cargar la caja.", true));
+  db.collection("cierres").orderBy("closedAt", "desc").limit(400).onSnapshot(snap => { closes = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
+  db.collection("gastos").orderBy("fecha", "desc").limit(800).onSnapshot(snap => { gastos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); }, err => {});
+  db.collection("fijos").onSnapshot(snap => { fijos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); }, err => {});
+  db.collection("insumos").onSnapshot(snap => { insumos = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
+  setTimeout(flushOutbox, 3000);
+  db.collection("clientes").orderBy("t", "desc").limit(300).onSnapshot(snap => { clientes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRegular(); }, err => {});
+}
+boot();
+})();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+</script>
+</body>
+</html>

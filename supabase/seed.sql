@@ -1,0 +1,25 @@
+-- Datos de partida: vuestra carta, suministros y configuración
+insert into public.docs (col, id, data) values
+  ('menu', 'batch', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Batch", "order": 5, "price": 2.5, "receta": {"cafe": 15, "tapa": 1, "vaso-caliente": 1}, "station": "cocina"}'::jsonb),
+  ('menu', 'carrot-cake', '{"disponible": true, "especial": false, "group": "Repostería", "name": "Carrot cake", "order": 2, "price": 3, "receta": {"carrot": 1}, "station": "cocina"}'::jsonb),
+  ('menu', 'cloud-cold-brew', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Cloud cold brew", "order": 4, "price": 3.8, "receta": {"cafe": 20, "leche": 60, "tapa": 1, "vaso-frio": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'cold-brew', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Cold brew", "order": 3, "price": 3.5, "receta": {"cafe": 20, "tapa": 1, "vaso-frio": 1}, "station": "cocina"}'::jsonb),
+  ('menu', 'cookie-bucle', '{"disponible": true, "especial": false, "group": "Repostería", "name": "Cookie avena, pecanas y caramelo", "order": 1, "price": 3, "receta": {"cookies": 1}, "station": "cocina"}'::jsonb),
+  ('menu', 'hot-latte-tiramisu', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Hot latte tiramisú", "order": 2, "price": 3.8, "receta": {"cafe": 18, "leche": 200, "tapa": 1, "vaso-caliente": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'hot-latte', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Hot latte", "order": 7, "price": 2.2, "receta": {"cafe": 18, "leche": 200, "tapa": 1, "vaso-caliente": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'hot-matcha-coco', '{"disponible": true, "especial": false, "group": "Matcha", "name": "Hot matcha coco", "order": 2, "price": 3.2, "receta": {"coco": 200, "matcha": 3, "tapa": 1, "vaso-caliente": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'iced-latte-tiramisu', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Iced latte tiramisú", "order": 1, "price": 4, "receta": {"cafe": 18, "leche": 180, "tapa": 1, "vaso-frio": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'iced-latte', '{"disponible": true, "especial": false, "group": "Cafés", "name": "Iced latte", "order": 6, "price": 2.5, "receta": {"cafe": 18, "leche": 180, "tapa": 1, "vaso-frio": 1}, "station": "barra"}'::jsonb),
+  ('menu', 'iced-matcha-coco-mango', '{"disponible": true, "especial": false, "group": "Matcha", "name": "Iced matcha coco mango", "order": 3, "price": 3.8, "receta": {"coco": 180, "matcha": 3, "tapa": 1, "vaso-frio": 1}, "station": "cocina"}'::jsonb),
+  ('menu', 'iced-matcha-coco', '{"disponible": true, "especial": false, "group": "Matcha", "name": "Iced matcha coco", "order": 1, "price": 3.5, "receta": {"coco": 200, "matcha": 3, "tapa": 1, "vaso-frio": 1}, "station": "cocina"}'::jsonb),
+  ('insumos', 'cafe', '{"fechaConteo": null, "minimo": 500, "nombre": "Café en grano", "stockContado": null, "unidad": "g"}'::jsonb),
+  ('insumos', 'carrot', '{"fechaConteo": null, "minimo": 4, "nombre": "Carrot cake (raciones)", "stockContado": null, "unidad": "ud"}'::jsonb),
+  ('insumos', 'coco', '{"fechaConteo": null, "minimo": 2000, "nombre": "Bebida de coco", "stockContado": null, "unidad": "ml"}'::jsonb),
+  ('insumos', 'cookies', '{"fechaConteo": null, "minimo": 6, "nombre": "Cookies Bucle", "stockContado": null, "unidad": "ud"}'::jsonb),
+  ('insumos', 'leche', '{"fechaConteo": null, "minimo": 2000, "nombre": "Leche", "stockContado": null, "unidad": "ml"}'::jsonb),
+  ('insumos', 'matcha', '{"fechaConteo": null, "minimo": 100, "nombre": "Matcha", "stockContado": null, "unidad": "g"}'::jsonb),
+  ('insumos', 'tapa', '{"fechaConteo": null, "minimo": 80, "nombre": "Tapas", "stockContado": null, "unidad": "ud"}'::jsonb),
+  ('insumos', 'vaso-caliente', '{"fechaConteo": null, "minimo": 50, "nombre": "Vasos calientes", "stockContado": null, "unidad": "ud"}'::jsonb),
+  ('insumos', 'vaso-frio', '{"fechaConteo": null, "minimo": 50, "nombre": "Vasos fríos", "stockContado": null, "unidad": "ud"}'::jsonb),
+  ('config', 'app', '{"diasSemana": 6, "fondoHabitual": 100, "retiradaUmbral": 200}'::jsonb)
+on conflict (col, id) do update set data = excluded.data, updated_at = now();
