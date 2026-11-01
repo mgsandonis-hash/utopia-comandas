@@ -491,7 +491,7 @@ table.t tr:last-child td{border-bottom:0}
     <section id="openSec" hidden>
       <div class="sec-h"><h2>Abrir caja</h2></div>
       <div class="ticket">
-        <p class="hint">Cuenta el cambio con el que empiezas el turno.</p>
+        <p class="hint" id="fondoHint">Cuenta el cambio con el que empiezas el turno.</p>
         <div class="field"><label for="fondo">Fondo de cambio (€)</label><input type="text" id="fondo" inputmode="decimal" placeholder="Ej. 100" autocomplete="off"></div>
         <button type="button" class="btn primary" id="openBtn">Abrir caja</button>
       </div>
@@ -1546,9 +1546,24 @@ const catOptions = sel => `${CATS.map(c => `<option${c === sel ? " selected" : "
 $("#movCat").innerHTML = catOptions("Leche y bebidas vegetales");
 $("#gCat").innerHTML = catOptions("Café y matcha");
 $("#fCat").innerHTML = catOptions("Alquiler");
+// Fondo automático: lo que se contó en el cajón al cerrar el último turno
+function lastClose(){ return closes.reduce((a,c) => (!a || (c.closedAt||0) > (a.closedAt||0)) ? c : a, null); }
+function fondoAuto(){
+  const c = lastClose();
+  return (c && c.contado !== undefined && c.contado !== null && !isNaN(Number(c.contado))) ? {v:Number(c.contado), from:c} : {v:cfg("fondoHabitual", 100), from:null};
+}
+let fondoPrefill = null;
 function renderCaja(){
   const open = !!(shift && shift.open);
   $("#openSec").hidden = open || !gotShift;
+  if (!open){
+    const fa = fondoAuto(), inp = $("#fondo");
+    // Se rellena solo si no lo has cambiado tú
+    if (document.activeElement !== inp && (inp.value === "" || inp.value === fondoPrefill)){ inp.value = fmtIn(fa.v); fondoPrefill = inp.value; }
+    $("#fondoHint").innerHTML = fa.from
+      ? `Es lo que contasteis al cerrar el ${dmy(fa.from.closedAt)} a las ${hhmm(fa.from.closedAt)}: <b>${eur(fa.v)}</b>. Si sacasteis dinero después, cámbialo antes de abrir.`
+      : "Cuenta el cambio con el que empiezas el turno.";
+  }
   $("#shiftSec").hidden = !open;
   if (open){
     const s = shiftSummary();
@@ -1617,16 +1632,16 @@ $("#movSeg").addEventListener("click", e => {
 async function openShift(fondo, btn){
   if (!db) return;
   if (btn) btn.disabled = true;
-  try { await db.doc("turno/actual").set({open:true, openedAt:Date.now(), fondo, movs:[]}); $("#fondo").value = ""; toast("Caja abierta con " + eur(fondo)); }
+  try { await db.doc("turno/actual").set({open:true, openedAt:Date.now(), fondo, movs:[]}); $("#fondo").value = ""; fondoPrefill = null; toast("Caja abierta con " + eur(fondo)); }
   catch(e){ toast(saveErrMsg(e, "No se pudo abrir la caja. Revisa la conexión.")); } finally { if (btn) btn.disabled = false; }
 }
 $("#openBtn").addEventListener("click", () => {
   const v = parseMoney($("#fondo").value);
-  openShift(isNaN(v) ? cfg("fondoHabitual", 0) : cents(v)/100, $("#openBtn"));
+  openShift(isNaN(v) ? fondoAuto().v : cents(v)/100, $("#openBtn"));
 });
 $("#bannerBtn").addEventListener("click", () => {
   if (shift && shift.open){ location.hash = "caja"; return; }
-  openShift(cfg("fondoHabitual", 100), $("#bannerBtn"));
+  openShift(fondoAuto().v, $("#bannerBtn"));
 });
 $("#movBtn").addEventListener("click", async () => {
   if (!db || !shift || !shift.open) return;
@@ -2266,7 +2281,7 @@ function renderAll(){
 function updateBanner(){
   const open = !!(shift && shift.open);
   let txt = "", btn = "";
-  if (gotShift && !open){ txt = "La caja no está abierta: estas ventas no se sumarán a ningún turno."; btn = `Abrir con ${eur(cfg("fondoHabitual", 100))}`; }
+  if (gotShift && !open){ txt = "La caja no está abierta: estas ventas no se sumarán a ningún turno."; btn = `Abrir con ${eur(fondoAuto().v)}`; }
   else if (open && dayKey(shift.openedAt) !== dayKey()){ txt = `La caja sigue abierta desde el ${dmy(shift.openedAt)}. Ciérrala para que cada día salga bien en los números.`; btn = "Ir a Caja"; }
   $("#shiftBanner").hidden = !txt;
   $("#bannerTxt").textContent = txt; $("#bannerBtn").textContent = btn;
