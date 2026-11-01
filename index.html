@@ -72,6 +72,8 @@ button{cursor:pointer}
 .subnav::-webkit-scrollbar{display:none}
 .subnav button{border:0;background:none;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.95rem;color:var(--muted);white-space:nowrap;flex:none}
 .subnav button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.esc input{width:100%;min-width:76px;max-width:120px;text-align:right}
+.esc td{vertical-align:middle}
 .ajnav{border-top:0;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
 .ajnav button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
 .boxrow{display:grid;grid-template-columns:110px minmax(0,1fr) 90px auto;gap:6px;align-items:center}
@@ -649,6 +651,21 @@ table.t tr:last-child td{border-bottom:0}
       </div></div></details></section>
     </div>
     <div data-ajp="suministros" hidden>
+      <nav class="subnav ajnav" id="supNav" aria-label="Suministros" style="margin-top:10px">
+        <button type="button" data-sup="esc">Escandallos</button>
+        <button type="button" data-sup="inv">Inventario</button>
+      </nav>
+      <div data-supp="esc">
+      <section><div class="sec-h"><h2>Escandallos</h2></div>
+        <p class="hint" style="margin-bottom:10px">Pon lo que pagasteis y cuánto traía. El coste por gramo (o ml, o unidad) sale solo y va directo a las recetas de la carta.</p>
+        <div class="tablewrap"><table class="t esc" id="escTable"></table></div></section>
+      <section><details class="fold" id="f-costebebida" open><summary class="sec-h"><h2>Coste por bebida</h2><span class="count" id="costCount"></span></summary><div class="foldbody">
+        <div class="sugs" id="costSugs" style="margin-bottom:10px"></div>
+        <div class="tablewrap"><table class="t" id="costTable"></table></div>
+        <p class="hint" style="margin-top:8px">Coste por bebida = lo que os cuesta a vosotros: cantidad de cada ingrediente de la receta × su coste por gramo, ml o unidad. Si sube algún suministro, la app compara con el coste que tenía la bebida cuando pusisteis el precio y os sugiere el nuevo: <b>precio nuevo = precio actual × coste nuevo ÷ coste anterior</b> (así el ingrediente sigue siendo el mismo % del precio), redondeado a los 10 céntimos de arriba. También os dice el mínimo para no ganar menos por bebida: precio actual + lo que ha subido el coste.</p>
+      </div></details></section>
+      </div>
+      <div data-supp="inv" hidden>
       <p class="hint" style="margin:14px 0 4px">Cuando compres, pulsa <b>Compré</b>: suma al stock y apunta el gasto. Toca <b>Editar</b> para el tamaño y precio del paquete o para contar lo que hay.</p>
       <div id="insEdit"></div>
       <section><details class="fold" id="f-addins"><summary class="sec-h"><h2>Añadir suministro</h2></summary><div class="foldbody">      <form class="addform" id="insForm">
@@ -657,6 +674,7 @@ table.t tr:last-child td{border-bottom:0}
         <div class="field"><label for="iMin">Mínimo</label><input type="text" id="iMin" inputmode="decimal" placeholder="500"></div>
         <button class="btn" type="submit">Añadir suministro</button>
       </form></div></details></section>
+      </div>
     </div>
     <div data-ajp="qr" hidden><section><div class="card" style="display:grid;gap:12px">
         <div class="toggles"><button type="button" class="sw" id="webToggle" aria-pressed="true">Aceptar pedidos de clientes por QR</button></div>
@@ -789,6 +807,14 @@ function setAjTab(t){
 }
 document.querySelectorAll("#ajNav [data-aj]").forEach(b => b.addEventListener("click", () => setAjTab(b.dataset.aj)));
 setAjTab(ajTab);
+let supTab = lsGet("supTab") === "inv" ? "inv" : "esc";
+function setSupTab(t){
+  supTab = t; lsSet("supTab", t);
+  document.querySelectorAll("#supNav [data-sup]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.sup === t)));
+  document.querySelectorAll("[data-supp]").forEach(p => p.hidden = p.dataset.supp !== t);
+}
+document.querySelectorAll("#supNav [data-sup]").forEach(b => b.addEventListener("click", () => setSupTab(b.dataset.sup)));
+setSupTab(supTab);
 // Desplegables: cada uno recuerda en este dispositivo si lo dejasteis abierto
 let folds = {}; try { folds = JSON.parse(lsGet("folds") || "{}") || {}; } catch(e){ folds = {}; }
 document.querySelectorAll("details.fold[id]").forEach(d => { if (folds[d.id] !== undefined) d.open = !!folds[d.id]; });
@@ -2124,7 +2150,72 @@ function renderAjustes(){
       <p class="est">${est}</p>` : ""}
     </div>`;
   }).join("") : `<div class="empty">Sin suministros.</div>`;
+  renderEscandallos();
 }
+const UNAME = {g:"g", ml:"ml", ud:"ud"};
+const fmtPer = (cu, u) => cu === null ? "—" : `${cu.toLocaleString("es-ES", {minimumFractionDigits: cu < 0.1 ? 4 : 2, maximumFractionDigits: cu < 0.1 ? 4 : 2})} €/${UNAME[u] || u}`;
+// Coste de un producto con los costes que tenían los suministros antes del último cambio de precio
+function productCostPrev(m){
+  let c = 0;
+  Object.entries(m.receta || {}).forEach(([iid, q]) => {
+    q = Number(q) || 0; if (!q) return;
+    const ins = insumos.find(x => x.id === iid); if (!ins) return;
+    const cu = Number(ins.costeAnterior) > 0 ? Number(ins.costeAnterior) : costUnit(ins);
+    if (cu) c += q*cu;
+  });
+  return c;
+}
+function costRows(){
+  return sortMenu(menu).map(m => {
+    const pc = productCost(m), price = Number(m.price)||0, has = Object.values(m.receta||{}).some(v => Number(v) > 0);
+    const ref = Number(m.costeRef) > 0 ? Number(m.costeRef) : productCostPrev(m);
+    const up = pc.c > 0 && ref > 0 && pc.c - ref >= 0.005 && pc.c > ref*1.02;
+    const sugPct = up && price ? up10(price * pc.c / ref) : null;
+    const sugMin = up && price ? up10(price + (pc.c - ref)) : null;
+    return {m, price, has, cost: pc.c, missing: pc.missing, ref, up, sugPct, sugMin, pct: price && pc.c ? pc.c/price : null};
+  });
+}
+function renderEscandallos(){
+  const ins = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre)));
+  $("#escTable").innerHTML = ins.length ? `<thead><tr><th>Ingrediente</th><th class="n">Coste (lo pagado)</th><th class="n">Contiene</th><th class="n">Coste por ${"g/ml/ud"}</th></tr></thead><tbody>${ins.map(i => {
+    const u = UNAME[i.unidad] || i.unidad, cu = costUnit(i), prev = Number(i.costeAnterior) > 0 ? Number(i.costeAnterior) : null;
+    const trend = cu && prev && Math.abs(cu - prev)/prev > 0.005 ? ` <span class="mins ${cu > prev ? "up" : "okc"}">${cu > prev ? "▲" : "▼"} ${Math.round((cu/prev - 1)*100)}%</span>` : "";
+    return `<tr><td><b>${esc(i.nombre)}</b></td>
+      <td class="n"><input type="text" inputmode="decimal" data-esc="${i.id}" data-f="precioPaquete" value="${fmtIn(i.precioPaquete)}" placeholder="€" aria-label="Coste pagado de ${esc(i.nombre)} en euros"></td>
+      <td class="n"><input type="text" inputmode="decimal" data-esc="${i.id}" data-f="paquete" value="${fmtIn(i.paquete)}" placeholder="${u}" aria-label="Cantidad comprada de ${esc(i.nombre)} en ${u}"> ${u}</td>
+      <td class="n">${fmtPer(cu, i.unidad)}${trend}</td></tr>`;
+  }).join("")}</tbody>` : `<tbody><tr><td class="mins">Añade suministros en Inventario.</td></tr></tbody>`;
+  const rows = costRows(), ups = rows.filter(r => r.up);
+  $("#costCount").textContent = ups.length ? `${ups.length} a revisar` : "";
+  $("#costSugs").innerHTML = ups.length ? ups.map(r => `<div class="sug warn"><b>${esc(r.m.name)}: os cuesta ${eur(r.cost)} (antes ${eur(r.ref)})</b>
+      <p>Para mantener el mismo % de coste: <b>${eur(r.sugPct)}</b>. Mínimo para no ganar menos por bebida: ${eur(r.sugMin)}. Ahora: ${eur(r.price)}.</p>
+      <div class="row" style="margin-top:6px"><button type="button" class="btn small primary" data-apply="${r.m.id}" data-p="${r.sugPct}">Subir a ${eur(r.sugPct)}</button>
+      ${r.sugMin < r.sugPct ? `<button type="button" class="btn small" data-apply="${r.m.id}" data-p="${r.sugMin}">Subir a ${eur(r.sugMin)}</button>` : ""}
+      <button type="button" class="btn small ghost" data-keep="${r.m.id}">Mantener precio</button></div></div>`).join("")
+    : rows.some(r => r.cost > 0) ? `<div class="sug"><b>Sin subidas de coste</b><p>Ningún suministro ha subido desde que pusisteis los precios.</p></div>` : "";
+  $("#costTable").innerHTML = `<thead><tr><th>Producto</th><th class="n">Os cuesta</th><th class="n">Precio cliente</th><th class="n">% coste</th><th class="n">Margen</th></tr></thead><tbody>${rows.map(r => !r.has
+    ? `<tr><td>${esc(r.m.name)}</td><td colspan="4" class="mins">Sin receta</td></tr>`
+    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta coste de ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n ${r.up ? "up" : ""}">${r.cost ? eur(r.cost) : "—"}</td><td class="n">${eur(r.price)}</td><td class="n ${r.pct > .35 ? "up" : ""}">${r.pct !== null ? Math.round(r.pct*100) + "%" : "—"}</td><td class="n">${r.cost ? eur(r.price - r.cost) : "—"}</td></tr>`).join("")}</tbody>`;
+}
+// Guardar coste y cantidad del escandallo; recuerda el coste anterior para detectar subidas
+async function saveEsc(id, f, raw){
+  const ins = insumos.find(x => x.id === id); if (!ins || !db) return;
+  const v = raw.trim() === "" ? 0 : parseMoney(raw);
+  if (isNaN(v) || v < 0){ toast("Número no válido"); return; }
+  if (v === (Number(ins[f])||0)) return;
+  const old = costUnit(ins), next = costUnit({...ins, [f]: v});
+  const patch = {[f]: v};
+  if (old && next && Math.abs(next - old) > 1e-9){ patch.costeAnterior = old; patch.cambioCoste = Date.now(); }
+  try { await db.collection("insumos").doc(id).update(patch); toast(next ? `Guardado · ${fmtPer(next, ins.unidad)}` : "Guardado"); } catch(err){ toast("No se pudo guardar."); }
+}
+$("#escTable").addEventListener("change", e => { const el = e.target; if (el.dataset.esc) saveEsc(el.dataset.esc, el.dataset.f, el.value); });
+$("#costSugs").addEventListener("click", async e => {
+  const a = e.target.closest("[data-apply]"), k = e.target.closest("[data-keep]"); if (!db || (!a && !k)) return;
+  const id = (a || k).dataset.apply || (a || k).dataset.keep, m = menu.find(x => x.id === id); if (!m) return;
+  const patch = {costeRef: Math.round(productCost(m).c*10000)/10000};
+  if (a) patch.price = Number(a.dataset.p);
+  try { await db.collection("menu").doc(id).update(patch); toast(a ? `${m.name}: ${eur(patch.price)}` : "Precio mantenido"); } catch(err){ toast("No se pudo guardar."); }
+});
 $("#menuEdit").addEventListener("change", async e => {
   const el = e.target;
   const extra = el.dataset.cup ? {id:el.dataset.cup, patch:{receta:{"vaso-caliente": el.value === "caliente" ? 1 : 0, "vaso-frio": el.value === "frio" ? 1 : 0, pegatina: el.value ? 1 : 0}}}
@@ -2140,6 +2231,7 @@ $("#menuEdit").addEventListener("change", async e => {
   const id = el.dataset.mid, f = el.dataset.f; if (!id || !db) return;
   let v = el.value.trim();
   if (f === "price"){ v = parsePrice(v); if (isNaN(v)){ toast("Precio no válido"); return; } }
+  if (f === "price"){ const m = menu.find(x => x.id === id), c = m ? productCost(m).c : 0; try { await db.collection("menu").doc(id).update({price: v, ...(c > 0 ? {costeRef: Math.round(c*10000)/10000} : {})}); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); } return; }
   if (f === "name" && !v){ toast("El nombre no puede quedar vacío"); return; }
   try { await db.collection("menu").doc(id).update({[f]: v}); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); }
 });
@@ -2168,7 +2260,8 @@ $("#addForm").addEventListener("submit", async e => {
 $("#insEdit").addEventListener("change", async e => {
   const el = e.target, id = el.dataset.iid, f = el.dataset.f; if (!id || !db) return;
   let v = el.value.trim();
-  if (["minimo","paquete","precioPaquete"].includes(f)){ v = v === "" ? 0 : parseMoney(v); if (isNaN(v) || v < 0){ toast("Número no válido"); return; } }
+  if (f === "paquete" || f === "precioPaquete"){ saveEsc(id, f, v); return; }
+  if (f === "minimo"){ v = v === "" ? 0 : parseMoney(v); if (isNaN(v) || v < 0){ toast("Número no válido"); return; } }
   if (f === "nombre" && !v){ toast("Pon un nombre"); return; }
   try { await db.collection("insumos").doc(id).update({[f]: v}); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); }
 });
