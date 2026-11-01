@@ -1397,7 +1397,7 @@ function iceTxt(m, it){
   return g ? n(g) : "hielo";
 }
 // Ingredientes extra que hay que acordarse de echar
-const EXTRAS = {"pure-mango":"puré de mango", "mascarpone":"mezcla mascarpone", "mezcla-cloud":"mezcla cloud", "chocolate":"chocolate", "agua":"agua"};
+const EXTRAS = {"pure-mango":"puré de mango", "mascarpone":"mezcla mascarpone", "mezcla-cloud":"mezcla cloud", "chocolate":"chocolate"};
 const extrasTxt = (r, skip = []) => Object.entries(EXTRAS).filter(([k]) => !skip.includes(k) && Number(r?.[k]) > 0).map(([k, n]) => { const i = insumos.find(x => x.id === k); return ` + ${num1(Number(r[k]))} ${i ? i.unidad : "g"} ${n}`; }).join("");
 const CUP_KEYS = ["vaso-caliente", "vaso-frio", "tapa", "hielo", "pegatina"];
 function isCold(m, name){
