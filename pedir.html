@@ -259,11 +259,9 @@ function showStatus(s){
   ["t1","t2","t3"].forEach((t,i) => $("#"+t).classList.toggle("on", step > i));
   let box = "";
   if (st === "porcobrar" && s.metodo === "bizum" && s.bizum){
-    const concepto = `Utopía ${pad(s.num)} ${s.customer}`;
     box = `<div class="big pay"><b>Haz un Bizum de ${eur(s.total)}</b>
       <div class="bz"><span>Al número</span><strong>${fmtTel(s.bizum)}</strong><button type="button" class="copy" data-copy="${s.bizum}">Copiar</button></div>
       <div class="bz"><span>Importe</span><strong>${eur(s.total)}</strong><button type="button" class="copy" data-copy="${String(Number(s.total).toFixed(2)).replace(".", ",")}">Copiar</button></div>
-      <div class="bz"><span>Concepto</span><strong>${esc(concepto)}</strong><button type="button" class="copy" data-copy="${esc(concepto)}">Copiar</button></div>
       En cuanto nos llegue, empezamos a prepararlo. ¿Prefieres efectivo? Dilo en caja.</div>`;
   }
   else if (st === "porcobrar") box = `<div class="big pay"><b>Pasa por caja a pagar</b>${eur(s.total)} en efectivo. Di tu nombre al llegar.</div>`;
