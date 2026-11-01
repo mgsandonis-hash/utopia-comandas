@@ -13,7 +13,7 @@ App de pedidos, barra, caja y números de Utopía Coffee Club. Se instala como i
 
 - `pedir.html` es la página que abre el cliente al escanear `cartel-qr.pdf` / `qr.png`. No necesita cuenta.
 - El cliente solo puede ver la carta disponible (sin recetas ni costes) y crear su pedido mediante funciones de la base de datos con límites (máx. 10 de cada producto, 20 en total, 15 pedidos sin pagar a la vez). Solo se puede pedir con la caja abierta y con «Aceptar pedidos de clientes por QR» activado en Ajustes.
-- El pedido queda «por cobrar»: aparece en Pedidos → Cobrar, se cobra en efectivo y entonces pasa a la barra. El cliente ve el estado en su móvil (pagar → preparando → listo).
+- El pedido queda «por cobrar»: aparece en Pedidos → Cobrar. Se cobra en efectivo, o con «Bizum recibido» cuando llega la notificación del banco, y entonces pasa a la barra. El cliente ve el estado en su móvil (pagar → preparando → listo).
 
 ## Puesta en marcha
 
