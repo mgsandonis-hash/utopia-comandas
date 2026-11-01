@@ -161,6 +161,7 @@ input[type=text],input[type=number],input[type=date],select{width:100%;box-sizin
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:8px 14px;font-weight:700;font-size:.92rem}
 .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chips .chiph{flex-basis:100%;font-family:var(--display);font-size:1.15rem;letter-spacing:.08em;color:var(--muted);margin-top:6px}
 .chip.off{background:var(--danger-soft);border-color:var(--danger);color:var(--danger);text-decoration:line-through}
 
 /* Efectivo */
@@ -456,7 +457,7 @@ table.t tr:last-child td{border-bottom:0}
     </section>
     <section>
       <div class="sec-h"><h2>¿Se ha acabado algo?</h2></div>
-      <p class="hint" style="margin-bottom:10px">Toca un producto para marcarlo agotado. Desaparece al momento de la pantalla de pedidos.</p>
+      <p class="hint" style="margin-bottom:10px">Toca un producto para marcarlo agotado (o para volver a activarlo). Desaparece al momento de la pantalla de pedidos y de los pedidos por QR.</p>
       <div class="chips" id="barStock"></div>
     </section>
   </div>
@@ -1426,8 +1427,11 @@ function renderBarra(){
       <button type="button" class="btn go" data-done="${o.id}">Listo · avisar caja</button>
     </article>`;
   }).join("");
-  const barItems = sortMenu(menu.filter(m => m.station !== "cocina"));
-  $("#barStock").innerHTML = barItems.length ? barItems.map(m => `<button type="button" class="chip ${isOn(m)?"":"off"}" data-stock="${m.id}" aria-pressed="false">${esc(m.name)}</button>`).join("") : `<div class="empty">Sin productos de barra.</div>`;
+  // Toda la carta, por grupos (bebidas de barra, las que sirve caja y la bollería)
+  const stockGroups = groupsOf(sortMenu(menu));
+  $("#barStock").innerHTML = menu.length ? [...stockGroups].map(([g, items]) => `<span class="chiph">${esc(g)}</span>` +
+    items.map(m => `<button type="button" class="chip ${isOn(m)?"":"off"}" data-stock="${m.id}" aria-pressed="false">${esc(m.name)}</button>`).join("")).join("")
+    : `<div class="empty">La carta está vacía.</div>`;
 }
 const autoT = {};
 const autoReady = () => !(config && config.autoListo === false);
