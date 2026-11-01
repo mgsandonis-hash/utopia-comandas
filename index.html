@@ -574,7 +574,7 @@ table.t tr:last-child td{border-bottom:0}
     <section>
       <div class="sec-h"><h2>Informe para el dueño</h2></div>
       <div class="card row" style="justify-content:space-between">
-        <p class="hint" style="flex:1;min-width:220px">Excel con resumen por meses, cada cierre de caja, ventas por producto con su margen y todos los gastos.</p>
+        <p class="hint" style="flex:1;min-width:220px">Excel con la imagen de Utopía: cifras clave, mes a mes, caja de cada día, horas y días de más venta, productos con su margen y gastos, con tablas y gráficos.</p>
         <button type="button" class="btn primary" id="xlsBtn">Descargar Excel</button>
       </div>
     </section>
@@ -2410,79 +2410,63 @@ function renderDur(){
 }
 
 /* ---------- Excel para el dueño ---------- */
-let xlsxP = null;
-function loadXLSX(){
-  if (window.XLSX) return Promise.resolve(window.XLSX);
-  xlsxP = xlsxP || new Promise((res, rej) => {
-    const sc = document.createElement("script");
-    sc.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
-    sc.onload = () => res(window.XLSX); sc.onerror = () => { xlsxP = null; rej(new Error("No se pudo cargar")); };
-    document.head.appendChild(sc);
-  });
-  return xlsxP;
+const loadScript = src => new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error("No se pudo cargar")); document.head.appendChild(sc); });
+let informeP = null;
+function loadInforme(){
+  if (window.JSZip && window.UtopiaInforme) return Promise.resolve();
+  informeP = informeP || Promise.all([window.JSZip ? 0 : loadScript("https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"), window.UtopiaInforme ? 0 : loadScript("informe.js")]).catch(e => { informeP = null; throw e; });
+  return informeP;
 }
-function buildWorkbook(X){
-  const EUR = '#,##0.00 "€"', PCT = "0%";
-  const mk = (aoa, money, pct, widths, headRow) => {
-    const ws = X.utils.aoa_to_sheet(aoa);
-    const r = X.utils.decode_range(ws["!ref"]);
-    for (let R = (headRow||0) + 1; R <= r.e.r; R++) for (let C = r.s.c; C <= r.e.c; C++){
-      const c = ws[X.utils.encode_cell({r:R, c:C})]; if (!c || c.t !== "n") continue;
-      if (money.includes(C)) c.z = EUR; else if (pct.includes(C)) c.z = PCT;
-    }
-    ws["!cols"] = widths.map(w => ({wch:w}));
-    return ws;
-  };
+function informeData(){
   const r2 = v => Math.round(v*100)/100;
+  const fmtD = t => new Date(t).toLocaleDateString("es-ES");
   const fijoMes = fijos.reduce((a,f) => a + Number(f.importe||0), 0);
-  // Resumen por meses
+  const recs = records(0);
   const months = new Set();
-  closes.forEach(c => months.add(dayKey(c.openedAt).slice(0,7)));
+  recs.forEach(x => months.add(x.day.slice(0,7)));
   gastos.forEach(g => g.fecha && months.add(String(g.fecha).slice(0,7)));
-  if (shift && shift.open) months.add(dayKey(shift.openedAt).slice(0,7));
-  const res = [["Utopía Coffee Club · números"], [`Generado el ${new Date().toLocaleDateString("es-ES")}. Gastos fijos: importe mensual actual aplicado a cada mes.`], [],
-    ["Mes", "Días abiertos", "Pedidos", "Ventas", "Ticket medio", "Gastos del mes", "Gastos fijos", "Beneficio", "Margen"]];
-  [...months].sort().forEach(k => {
+  const meses = [...months].sort().map(k => {
     const [y, mo] = k.split("-").map(Number);
     const from = new Date(y, mo-1, 1).getTime(), to = new Date(y, mo, 1).getTime();
-    const ms = merge(records(from).filter(x => x.t >= from && x.t < to));
+    const ms = merge(recs.filter(x => x.t >= from && x.t < to));
     const ventas = ms.ventas/100, gv = gastos.filter(g => String(g.fecha||"").slice(0,7) === k).reduce((a,g) => a + Number(g.importe||0), 0);
     const ben = ventas - gv - fijoMes;
-    res.push([new Date(y, mo-1, 1).toLocaleDateString("es-ES", {month:"long", year:"numeric"}), Object.keys(ms.days).length, ms.n, r2(ventas), ms.n ? r2(ventas/ms.n) : 0, r2(gv), r2(fijoMes), r2(ben), ventas ? ben/ventas : 0]);
+    return [new Date(y, mo-1, 1).toLocaleDateString("es-ES", {month:"long", year:"numeric"}), Object.keys(ms.days).length, ms.n, r2(ventas), ms.n ? r2(ventas/ms.n) : 0, r2(gv), r2(fijoMes), r2(ben), ventas ? ben/ventas : 0];
   });
-  // Cierres
-  const cie = [["Fecha", "Abre", "Cierra", "Pedidos", "Ventas", "De ellas Bizum", "Ticket medio", "Propinas", "Entradas", "Salidas", "Debía haber", "Contado", "Diferencia", "Espera media (min)"]];
-  closes.slice().sort((a,b) => a.openedAt - b.openedAt).forEach(c => {
-    const e = c.espera || {};
-    cie.push([new Date(c.openedAt).toLocaleDateString("es-ES"), hhmm(c.openedAt), hhmm(c.closedAt), c.pedidos||0, Number(c.ventas)||0, Number(c.ventasBizum)||0, c.pedidos ? r2(c.ventas/c.pedidos) : 0, Number(c.propinas)||0, Number(c.entradas)||0, Number(c.salidas)||0, Number(c.esperado)||0, Number(c.contado)||0, Number(c.diferencia)||0, e.n ? Math.round(e.s/e.n/600)/100 : ""]);
-  });
-  // Productos
-  const all = merge(records(0)), totalV = all.ventas/100;
-  const pro = [["Producto", "Unidades", "Ventas", "% de las ventas", "Precio actual", "Coste ingredientes", "Margen por unidad"]];
-  Object.entries(all.productos).sort((a,b) => b[1].c - a[1].c).forEach(([k,p]) => {
+  const all = merge(recs), totV = all.ventas/100, dias = Object.keys(all.days).length;
+  const totG = meses.reduce((a,m) => a + m[5] + m[6], 0), totB = meses.reduce((a,m) => a + m[7], 0);
+  const cs = closes.slice().sort((a,b) => a.openedAt - b.openedAt);
+  const cierres = cs.map(c => { const e = c.espera || {}; return [fmtD(c.openedAt), hhmm(c.openedAt), hhmm(c.closedAt), c.pedidos||0, Number(c.ventas)||0, Number(c.ventasBizum)||0, c.pedidos ? r2(c.ventas/c.pedidos) : 0, Number(c.propinas)||0, Number(c.entradas)||0, Number(c.salidas)||0, Number(c.esperado)||0, Number(c.contado)||0, Number(c.diferencia)||0, e.n ? Math.round(e.s/e.n/6000)/10 : ""]; });
+  const horas = Object.entries(all.horas||{}).map(([h, v]) => [Number(h), v]).sort((a,b) => a[0]-b[0]).map(([h, v]) => [`${h}:00`, v.n||0, r2((v.c||0)/100)]);
+  const wd = {}; recs.forEach(x => { const d = new Date(x.day+"T12:00").getDay(); const w = wd[d] || (wd[d] = {days:new Set(), n:0, c:0}); w.days.add(x.day); w.n += x.n||0; w.c += x.ventas||0; });
+  const semana = [1,2,3,4,5,6,0].filter(d => wd[d]).map(d => { const w = wd[d], v = w.c/100; return [WEEKDAYS_FULL[d], w.days.size, w.n, r2(v), r2(v/w.days.size)]; });
+  const productos = Object.entries(all.productos).sort((a,b) => b[1].c - a[1].c).map(([k,p]) => {
     const m = menu.find(x => x.id === k) || menu.find(x => x.name === p.name);
     const pc = m ? productCost(m).c : 0, price = m ? Number(m.price) : p.c/100/Math.max(1,p.qty);
-    pro.push([p.name, p.qty, r2(p.c/100), totalV ? p.c/100/totalV : 0, r2(price), pc ? r2(pc) : "", pc ? r2(price - pc) : ""]);
+    return [p.name, m?.group || p.group || "", p.qty, r2(p.c/100), totV ? p.c/100/totV : 0, r2(price), pc ? r2(pc) : "", pc ? r2(price - pc) : ""];
   });
-  // Gastos
-  const gas = [["Fecha", "Concepto", "Categoría", "Importe", "Origen"]];
-  gastos.slice().sort((a,b) => String(a.fecha).localeCompare(String(b.fecha))).forEach(g => gas.push([g.fecha ? new Date(g.fecha+"T12:00").toLocaleDateString("es-ES") : "", g.concepto, g.categoria, Number(g.importe)||0, g.origen === "caja" ? "Pagado de caja" : g.origen === "compra" ? "Compra de suministro" : "Manual"]));
-  gas.push([], ["Gastos fijos mensuales"]); fijos.forEach(f => gas.push(["", f.concepto, f.categoria, Number(f.importe)||0, "Fijo"]));
-  const wb = X.utils.book_new();
-  X.utils.book_append_sheet(wb, mk(res, [3,4,5,6,7], [8], [18,12,10,12,12,14,12,12,9], 3), "Resumen");
-  X.utils.book_append_sheet(wb, mk(cie, [4,5,6,7,8,9,10,11,12], [], [12,7,7,9,11,13,11,10,10,10,12,11,11,16]), "Cierres de caja");
-  X.utils.book_append_sheet(wb, mk(pro, [2,4,5,6], [3], [30,10,12,14,12,16,16]), "Productos");
-  X.utils.book_append_sheet(wb, mk(gas, [3], [], [12,34,26,11,20]), "Gastos");
-  return wb;
+  const gs = gastos.slice().sort((a,b) => String(a.fecha).localeCompare(String(b.fecha)));
+  const cat = {}; gs.forEach(g => { const k = g.categoria || "Otros"; cat[k] = (cat[k]||0) + Number(g.importe||0); });
+  const first = recs.length ? Math.min(...recs.map(x => x.t)) : Date.now();
+  const lng = t => new Date(t).toLocaleDateString("es-ES", {day:"numeric", month:"long", year:"numeric"});
+  return {
+    generado: fmtD(Date.now()), periodo: recs.length ? `Del ${lng(first)} al ${lng(Date.now())}` : "Sin ventas todavía",
+    kpis: {ventas:r2(totV), pedidos:all.n, ticket: all.n ? r2(totV/all.n) : 0, gastos:r2(totG), beneficio:r2(totB), margen: totV ? totB/totV : 0, dias},
+    meses, cierres, horas, semana, productos,
+    gastos: gs.map(g => [g.fecha ? fmtD(g.fecha+"T12:00") : "", g.concepto, g.categoria, Number(g.importe)||0, g.origen === "caja" ? "Pagado de caja" : g.origen === "compra" ? "Compra de suministro" : "Manual"]),
+    categorias: Object.entries(cat).sort((a,b) => b[1]-a[1]).map(([k,v]) => [k, r2(v)]),
+    fijos: fijos.map(f => [f.concepto, f.categoria, Number(f.importe)||0])
+  };
 }
+const WEEKDAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
 $("#xlsBtn").addEventListener("click", async () => {
   const btn = $("#xlsBtn"); btn.disabled = true; const old = btn.textContent; btn.textContent = "Preparando…";
   try {
     const dl = await claude.use("downloads");
     if (!dl){ toast("No se pudo descargar el archivo en este dispositivo."); return; }
-    const X = await loadXLSX();
-    const buf = X.write(buildWorkbook(X), {bookType:"xlsx", type:"array"});
-    await dl.save({filename:`Utopia-numeros-${dayKey()}.xlsx`, data: new Blob([buf])});
+    await loadInforme();
+    const blob = await window.UtopiaInforme.build(window.JSZip, informeData());
+    await dl.save({filename:`Utopia-informe-${dayKey()}.xlsx`, data: blob});
     toast("Excel guardado");
   } catch(e){
     if (e && e.code === "declined") return;

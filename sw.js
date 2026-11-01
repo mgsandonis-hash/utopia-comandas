@@ -1,9 +1,9 @@
 /* Utopía Comandas · funcionamiento sin conexión
    Guarda la app en el dispositivo para que abra aunque no haya cobertura.
    Los datos van aparte: la app los guarda en el móvil y los envía al volver la conexión. */
-const VERSION = "utopia-v16";
+const VERSION = "utopia-v17";
 const SHELL = [
-  "./", "./index.html", "./store.js", "./config.js", "./manifest.webmanifest",
+  "./", "./index.html", "./store.js", "./config.js", "./informe.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"
 ];
