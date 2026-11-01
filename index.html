@@ -570,7 +570,7 @@ table.t tr:last-child td{border-bottom:0}
       </form></div></details></section>
     <section><details class="fold" id="f-precios"><summary class="sec-h"><h2>Precios</h2><span class="count" id="priceCount"></span></summary><div class="foldbody"><div class="sugs" id="priceSugs" style="margin-bottom:10px"></div>
       <div class="tablewrap"><table class="t" id="priceTable"></table></div>
-      <p class="hint" style="margin-top:8px">Coste = ingredientes según la receta y el precio de cada suministro. «Te queda» descuenta además la parte de gastos fijos que le toca a cada producto vendido. El sugerido deja el ingrediente en un 30% del precio y cubre los fijos.</p></div></details></section>
+      <p class="hint" style="margin-top:8px">Coste = ingredientes según la receta y el precio de cada suministro. «Te queda» descuenta además la parte de gastos fijos que le toca a cada producto vendido. El sugerido solo salta si el ingrediente se lleva más del % que hayáis puesto en Ajustes → Suministros → Escandallos, o si no cubre los fijos.</p></div></details></section>
     <section>
       <div class="sec-h"><h2>Informe para el dueño</h2></div>
       <div class="card row" style="justify-content:space-between">
@@ -660,9 +660,10 @@ table.t tr:last-child td{border-bottom:0}
         <p class="hint" style="margin-bottom:10px">Pon lo que pagasteis y cuánto traía. El coste por gramo (o ml, o unidad) sale solo y va directo a las recetas de la carta.</p>
         <div class="tablewrap"><table class="t esc" id="escTable"></table></div></section>
       <section><details class="fold" id="f-costebebida" open><summary class="sec-h"><h2>Coste por bebida</h2><span class="count" id="costCount"></span></summary><div class="foldbody">
+        <div class="field" style="max-width:320px;margin-bottom:10px"><label for="costeObj">Máximo que se puede llevar el ingrediente (% del precio)</label><input type="number" id="costeObj" min="10" max="90" step="1" inputmode="numeric" placeholder="50"></div>
         <div class="sugs" id="costSugs" style="margin-bottom:10px"></div>
         <div class="tablewrap"><table class="t" id="costTable"></table></div>
-        <p class="hint" style="margin-top:8px">Coste por bebida = lo que os cuesta a vosotros: cantidad de cada ingrediente de la receta × su coste por gramo, ml o unidad. Si sube algún suministro, la app compara con el coste que tenía la bebida cuando pusisteis el precio y os sugiere el nuevo: <b>precio nuevo = precio actual × coste nuevo ÷ coste anterior</b> (así el ingrediente sigue siendo el mismo % del precio), redondeado a los 10 céntimos de arriba. También os dice el mínimo para no ganar menos por bebida: precio actual + lo que ha subido el coste.</p>
+        <p class="hint" style="margin-top:8px">Coste por bebida = lo que os cuesta a vosotros: cantidad de cada ingrediente de la receta × su coste por gramo, ml o unidad. Si sube algún suministro, la app compara con el coste que tenía la bebida cuando pusisteis el precio y os sugiere subir solo lo que ha subido el coste: <b>precio nuevo = precio actual + (coste nuevo − coste anterior)</b>, redondeado a los 10 céntimos de arriba, para seguir ganando los mismos euros por bebida. Como segunda opción, el precio que mantiene el mismo % de coste (precio × coste nuevo ÷ coste anterior). En rojo, las bebidas cuyo ingrediente pasa del % que pongáis arriba.</p>
       </div></details></section>
       </div>
       <div data-supp="inv" hidden>
@@ -2185,17 +2186,18 @@ function renderEscandallos(){
       <td class="n"><input type="text" inputmode="decimal" data-esc="${i.id}" data-f="paquete" value="${fmtIn(i.paquete)}" placeholder="${u}" aria-label="Cantidad comprada de ${esc(i.nombre)} en ${u}"> ${u}</td>
       <td class="n">${fmtPer(cu, i.unidad)}${trend}</td></tr>`;
   }).join("")}</tbody>` : `<tbody><tr><td class="mins">Añade suministros en Inventario.</td></tr></tbody>`;
+  if (document.activeElement !== $("#costeObj")) $("#costeObj").value = Math.round(costObj()*100);
   const rows = costRows(), ups = rows.filter(r => r.up);
   $("#costCount").textContent = ups.length ? `${ups.length} a revisar` : "";
   $("#costSugs").innerHTML = ups.length ? ups.map(r => `<div class="sug warn"><b>${esc(r.m.name)}: os cuesta ${eur(r.cost)} (antes ${eur(r.ref)})</b>
-      <p>Para mantener el mismo % de coste: <b>${eur(r.sugPct)}</b>. Mínimo para no ganar menos por bebida: ${eur(r.sugMin)}. Ahora: ${eur(r.price)}.</p>
-      <div class="row" style="margin-top:6px"><button type="button" class="btn small primary" data-apply="${r.m.id}" data-p="${r.sugPct}">Subir a ${eur(r.sugPct)}</button>
-      ${r.sugMin < r.sugPct ? `<button type="button" class="btn small" data-apply="${r.m.id}" data-p="${r.sugMin}">Subir a ${eur(r.sugMin)}</button>` : ""}
+      <p>Para seguir ganando lo mismo por bebida: <b>${eur(r.sugMin)}</b> (ahora ${eur(r.price)}).${r.sugPct > r.sugMin ? ` Si además queréis mantener el mismo % de coste: ${eur(r.sugPct)}.` : ""}</p>
+      <div class="row" style="margin-top:6px"><button type="button" class="btn small primary" data-apply="${r.m.id}" data-p="${r.sugMin}">Subir a ${eur(r.sugMin)}</button>
+      ${r.sugPct > r.sugMin ? `<button type="button" class="btn small" data-apply="${r.m.id}" data-p="${r.sugPct}">Subir a ${eur(r.sugPct)}</button>` : ""}
       <button type="button" class="btn small ghost" data-keep="${r.m.id}">Mantener precio</button></div></div>`).join("")
     : rows.some(r => r.cost > 0) ? `<div class="sug"><b>Sin subidas de coste</b><p>Ningún suministro ha subido desde que pusisteis los precios.</p></div>` : "";
   $("#costTable").innerHTML = `<thead><tr><th>Producto</th><th class="n">Os cuesta</th><th class="n">Precio cliente</th><th class="n">% coste</th><th class="n">Margen</th></tr></thead><tbody>${rows.map(r => !r.has
     ? `<tr><td>${esc(r.m.name)}</td><td colspan="4" class="mins">Sin receta</td></tr>`
-    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta coste de ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n ${r.up ? "up" : ""}">${r.cost ? eur(r.cost) : "—"}</td><td class="n">${eur(r.price)}</td><td class="n ${r.pct > .35 ? "up" : ""}">${r.pct !== null ? Math.round(r.pct*100) + "%" : "—"}</td><td class="n">${r.cost ? eur(r.price - r.cost) : "—"}</td></tr>`).join("")}</tbody>`;
+    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta coste de ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n ${r.up ? "up" : ""}">${r.cost ? eur(r.cost) : "—"}</td><td class="n">${eur(r.price)}</td><td class="n ${r.pct > costObj() ? "up" : ""}">${r.pct !== null ? Math.round(r.pct*100) + "%" : "—"}</td><td class="n">${r.cost ? eur(r.price - r.cost) : "—"}</td></tr>`).join("")}</tbody>`;
 }
 // Guardar coste y cantidad del escandallo; recuerda el coste anterior para detectar subidas
 async function saveEsc(id, f, raw){
@@ -2208,6 +2210,7 @@ async function saveEsc(id, f, raw){
   if (old && next && Math.abs(next - old) > 1e-9){ patch.costeAnterior = old; patch.cambioCoste = Date.now(); }
   try { await db.collection("insumos").doc(id).update(patch); toast(next ? `Guardado · ${fmtPer(next, ins.unidad)}` : "Guardado"); } catch(err){ toast("No se pudo guardar."); }
 }
+$("#costeObj").addEventListener("change", e => { const v = Math.round(Number(e.target.value)); if (!(v >= 10 && v <= 90)){ toast("Pon un % entre 10 y 90"); return; } setCfg({costeObjetivo:v}, `Máximo ${v}% de coste`).then(renderAjustes); });
 $("#escTable").addEventListener("change", e => { const el = e.target; if (el.dataset.esc) saveEsc(el.dataset.esc, el.dataset.f, el.value); });
 $("#costSugs").addEventListener("click", async e => {
   const a = e.target.closest("[data-apply]"), k = e.target.closest("[data-keep]"); if (!db || (!a && !k)) return;
@@ -2310,6 +2313,8 @@ function fixedPerUnit(){
   return fijo / ((units/days) * cfg("diasSemana", 6) * 4.33);
 }
 const up10 = v => Math.ceil(v*10 - 1e-9)/10;
+// Parte del precio que aceptáis que se lleve el ingrediente (por defecto 50%)
+const costObj = () => Math.min(0.9, Math.max(0.1, cfg("costeObjetivo", 50)/100));
 function priceRows(){
   const fpu = fixedPerUnit();
   return sortMenu(menu.filter(isOn)).map(m => {
@@ -2317,7 +2322,7 @@ function priceRows(){
     if (!pc.c) return {m, price, cost:null, missing:pc.missing};
     const pct = price ? pc.c/price : null;
     const keep = price - pc.c - (fpu || 0);
-    const sugg = up10(Math.max(pc.c/0.30, (pc.c + (fpu || 0))*1.15));
+    const sugg = up10(Math.max(pc.c/costObj(), pc.c + (fpu || 0)));
     return {m, price, cost:pc.c, pct, keep, sugg, missing:pc.missing, raise: sugg > price + 0.04};
   });
 }
@@ -2339,7 +2344,7 @@ function renderPrices(){
   $("#priceCount").textContent = nRaise ? `${nRaise} a revisar` : "";
   $("#priceTable").innerHTML = `<thead><tr><th>Producto</th><th class="n">Precio</th><th class="n">Ingredientes</th><th class="n">% coste</th><th class="n">Te queda</th><th class="n">Sugerido</th></tr></thead><tbody>${rows.map(r => r.cost === null
     ? `<tr><td>${esc(r.m.name)}</td><td class="n">${eur(r.price)}</td><td colspan="4" class="mins">${r.missing.length ? "Falta precio de: " + esc(r.missing.join(", ")) : "Sin receta"}</td></tr>`
-    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n">${eur(r.price)}</td><td class="n">${eur(r.cost)}</td><td class="n ${r.pct > .35 ? "up" : ""}">${Math.round(r.pct*100)}%</td><td class="n ${r.keep < 0 ? "up" : ""}">${fpu ? eur(r.keep) : "—"}</td><td class="n ${r.raise ? "up" : "okc"}">${r.raise ? eur(r.sugg) : "OK"}</td></tr>`).join("")}</tbody>`;
+    : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n">${eur(r.price)}</td><td class="n">${eur(r.cost)}</td><td class="n ${r.pct > costObj() ? "up" : ""}">${Math.round(r.pct*100)}%</td><td class="n ${r.keep < 0 ? "up" : ""}">${fpu ? eur(r.keep) : "—"}</td><td class="n ${r.raise ? "up" : "okc"}">${r.raise ? eur(r.sugg) : "OK"}</td></tr>`).join("")}</tbody>`;
 }
 
 /* ---------- combos (solo sugerencias) ---------- */
