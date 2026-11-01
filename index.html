@@ -62,10 +62,30 @@ button{cursor:pointer}
 .brand .club{display:inline-block;margin-left:4px;font-family:var(--display);font-size:.95rem;letter-spacing:.2em;line-height:1}
 .brand small{display:block;font-size:.8rem;color:var(--muted);letter-spacing:.04em;margin-top:2px}
 .brand svg{width:22px;height:22px;flex:none}
-.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px;max-width:100%;overflow-x:auto;scrollbar-width:none}
-.tabs::-webkit-scrollbar{display:none}
-.tabs button{border:0;background:none;padding:7px 13px;border-radius:999px;font-weight:700;font-size:.9rem;color:var(--muted);white-space:nowrap;flex:none}
-.tabs button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+/* Pestañas: dos puestos grandes + Oficina pequeña */
+.tabs{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:stretch;min-width:min(100%,420px)}
+.tabs button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;color:var(--muted);white-space:nowrap}
+.tabs button.big{font-family:var(--display);font-size:1.5rem;letter-spacing:.07em;padding:6px 14px;line-height:1.1}
+.tabs button.office{font-weight:700;font-size:.85rem;letter-spacing:.04em;padding:6px 12px;text-transform:uppercase}
+.tabs button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.subnav{display:flex;gap:4px;width:100%;overflow-x:auto;scrollbar-width:none;border-top:1px dashed var(--line);padding-top:6px}
+.subnav::-webkit-scrollbar{display:none}
+.subnav button{border:0;background:none;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.95rem;color:var(--muted);white-space:nowrap;flex:none}
+.subnav button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.ajnav{border-top:0;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
+.ajnav button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+/* Desplegables */
+details.fold > summary{list-style:none;cursor:pointer;margin-bottom:0}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary h2::before{content:"▸";display:inline-block;width:1em;font-size:.8em;transition:transform .15s;color:var(--muted)}
+details.fold[open] > summary h2::before{transform:rotate(90deg)}
+details.fold[open] > summary{margin-bottom:10px}
+details.fold > summary .count{order:4}
+@media (prefers-reduced-motion:reduce){details.fold > summary h2::before{transition:none}}
+.addnote{grid-column:1/-1;justify-self:start;border:1px dashed var(--line);background:none;border-radius:999px;padding:4px 12px;font-weight:600;font-size:.9rem;color:var(--muted)}
+.phead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.phead .pn{margin-right:auto;min-width:0;overflow-wrap:anywhere}
+.icard.low{border-color:var(--danger)}
 .notice{font-size:.85rem;color:var(--muted);width:100%}
 .notice.warn{color:var(--danger)}
 
@@ -326,8 +346,10 @@ table.t tr:last-child td{border-bottom:0}
   .brand .club,.brand small{display:none}
   .brand .word{font-size:1.45rem}
   .brand svg{width:16px;height:16px}
-  .tabs{width:100%;order:3}
-  .tabs button{padding:6px 10px;font-size:.88rem}
+  .tabs{width:100%;order:3;min-width:0}
+  .tabs button.big{font-size:1.35rem;padding:6px 8px}
+  .tabs button.office{padding:6px 8px;font-size:.78rem}
+  .subnav{order:4}
   section{margin-top:16px}
 }
 /* Entregas por producto */
@@ -365,9 +387,12 @@ table.t tr:last-child td{border-bottom:0}
 <header class="top">
   <div class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(35 12 12)" fill="currentColor"/><path d="M12 2.5c-3 3.5 3 6.5 0 10s3 6 0 9" transform="rotate(35 12 12)" stroke="var(--bg)" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
     <div><span class="word">UTOPÍA</span> <span class="club">COFFEE CLUB</span><small id="sub">Pedidos · tomar, cobrar y entregar</small></div></div>
-  <nav class="tabs" aria-label="Vista">
-    <button type="button" data-view="pedidos">Pedidos</button>
-    <button type="button" data-view="barra">Barra</button>
+  <nav class="tabs" aria-label="Puestos">
+    <button type="button" class="big" data-view="pedidos">Mostrador</button>
+    <button type="button" class="big" data-view="barra">Cafetera</button>
+    <button type="button" class="office" data-office="1" aria-label="Oficina">Oficina</button>
+  </nav>
+  <nav class="subnav" id="officeNav" aria-label="Oficina" hidden>
     <button type="button" data-view="caja">Caja</button>
     <button type="button" data-view="gastos">Gastos</button>
     <button type="button" data-view="datos">Datos</button>
@@ -380,7 +405,7 @@ table.t tr:last-child td{border-bottom:0}
   <!-- CONFIGURACIÓN INICIAL -->
   <div id="v-setup" hidden><div class="setup" id="setupBox"></div></div>
 
-  <!-- PEDIDOS -->
+  <!-- MOSTRADOR (Mario) -->
   <div id="v-pedidos" hidden>
     <div class="banner row" id="shiftBanner" hidden><span id="bannerTxt" style="flex:1;min-width:200px"></span><button type="button" class="btn small" id="bannerBtn"></button></div>
     <div class="banner off" id="outboxBanner" role="status" hidden></div>
@@ -428,12 +453,12 @@ table.t tr:last-child td{border-bottom:0}
           <label class="check" id="tipRow" hidden><input type="checkbox" id="tipChk"> Se deja las vueltas de propina</label>
         </div>
         <div class="err" id="sendErr" hidden></div>
-        <button type="button" class="btn primary" id="sendBtn" style="padding:14px;font-size:1.05rem">Cobrado · enviar a barra</button>
+        <button type="button" class="btn primary" id="sendBtn" style="padding:14px;font-size:1.05rem">Cobrado · enviar a cafetera</button>
       </div>
     </section>
 
     <section class="m-entregar">
-      <div class="sec-h"><h2>Esperando a la barra</h2><span class="count" id="pendCount"></span></div>
+      <div class="sec-h"><h2>Esperando a la cafetera</h2><span class="count" id="pendCount"></span></div>
       <div class="pending" id="pendList"></div>
     </section>
 
@@ -443,7 +468,7 @@ table.t tr:last-child td{border-bottom:0}
     </section>
   </div>
 
-  <!-- BARRA -->
+  <!-- CAFETERA (Laura) -->
   <div id="v-barra" hidden>
     <section>
       <div class="prodpanel" id="prodPanel" hidden>
@@ -456,18 +481,12 @@ table.t tr:last-child td{border-bottom:0}
       <div class="sec-h"><h2>Bebidas por preparar</h2><span class="count" id="barCount"></span><span class="mins aside" id="barWait"></span></div>
       <div class="bar-grid" id="barGrid"></div>
     </section>
-    <section>
-      <div class="sec-h"><h2>Para tener listo hoy</h2></div>
-      <div id="miseBox"></div>
-    </section>
-    <section>
-      <div class="sec-h"><h2>¿Se ha acabado algo?</h2></div>
-      <p class="hint" style="margin-bottom:10px">Toca un producto para marcarlo agotado (o para volver a activarlo). Desaparece al momento de la pantalla de pedidos y de los pedidos por QR.</p>
-      <div class="chips" id="barStock"></div>
-    </section>
+    <section><details class="fold" id="f-mise"><summary class="sec-h"><h2>Para tener listo hoy</h2></summary><div class="foldbody"><div id="miseBox"></div></div></details></section>
+    <section><details class="fold" id="f-stock"><summary class="sec-h"><h2>¿Se ha acabado algo?</h2><span class="count" id="soldCount"></span></summary><div class="foldbody"><p class="hint" style="margin-bottom:10px">Toca un producto para marcarlo agotado (o para volver a activarlo). Desaparece al momento del mostrador y de los pedidos por QR.</p>
+      <div class="chips" id="barStock"></div></div></details></section>
   </div>
 
-  <!-- CAJA -->
+  <!-- OFICINA · CAJA -->
   <div id="v-caja" hidden>
     <section id="openSec" hidden>
       <div class="sec-h"><h2>Abrir caja</h2></div>
@@ -483,15 +502,11 @@ table.t tr:last-child td{border-bottom:0}
         <div class="sec-h"><h2>Turno abierto</h2><span class="count" id="shiftSince"></span></div>
         <div class="kpis" id="cashStats"></div>
       </section>
-
-      <section>
-        <div class="sec-h"><h2>Propinas</h2><span class="count" id="tipTotal"></span></div>
-        <div class="ticket" style="margin-bottom:14px">
+      <section><details class="fold" id="f-tips"><summary class="sec-h"><h2>Propinas</h2><span class="count" id="tipTotal"></span></summary><div class="foldbody"><div class="ticket">
           <p class="hint">Si os dejan propina y va al cajón, apúntala: así la caja cuadra y sabéis cuánto sacáis. Las vueltas que se dejan al cobrar se suman solas.</p>
           <div class="quick" id="tipQuick"><button type="button" data-tip="20">+0,20 €</button><button type="button" data-tip="50">+0,50 €</button><button type="button" data-tip="100">+1 €</button><button type="button" data-tip="200">+2 €</button></div>
-        </div>
-        <div class="sec-h"><h2>Entradas y salidas</h2></div>
-        <div class="ticket">
+        </div></div></details></section>
+      <section><details class="fold" id="f-movs"><summary class="sec-h"><h2>Entradas y salidas</h2><span class="count" id="movCount"></span></summary><div class="foldbody">        <div class="ticket">
           <div class="seg" id="movSeg">
             <button type="button" data-mov="salida" aria-pressed="true">Sale dinero</button>
             <button type="button" data-mov="entrada" aria-pressed="false">Entra dinero</button>
@@ -506,34 +521,22 @@ table.t tr:last-child td{border-bottom:0}
           </div>
           <button type="button" class="btn" id="movBtn">Apuntar</button>
           <div id="movList"></div>
-        </div>
-      </section>
-
-      <section>
-        <div class="sec-h"><h2>Cerrar caja</h2></div>
-        <div class="ticket">
+        </div></div></details></section>
+      <section><details class="fold" id="f-close"><summary class="sec-h"><h2>Cerrar caja</h2></summary><div class="foldbody">        <div class="ticket">
           <div class="seg" id="closeMode"><button type="button" data-cm="full" aria-pressed="true">Billete a billete</button><button type="button" data-cm="express" aria-pressed="false">Solo el total</button></div>
           <div class="field" id="expressBox" hidden><label for="closeTotal">Total contado en el cajón (€)</label><input type="text" id="closeTotal" inputmode="decimal" placeholder="Ej. 245,30" autocomplete="off"></div>
           <p class="hint" id="denomHint">Cuenta cuántos billetes y monedas hay en el cajón.</p>
           <div class="denoms" id="denoms"></div>
           <div class="arqueo" id="arqueo"></div>
           <button type="button" class="btn primary" id="closeBtn">Cerrar caja y guardar</button>
-        </div>
-      </section>
+        </div></div></details></section>
     </div>
 
-    <section>
-      <div class="sec-h"><h2>Sugerencias de caja</h2></div>
-      <div class="sugs" id="cajaSugs"></div>
-    </section>
-
-    <section>
-      <div class="sec-h"><h2>Cierres anteriores</h2></div>
-      <div id="closesList"></div>
-    </section>
+    <section><details class="fold" id="f-cajasugs"><summary class="sec-h"><h2>Sugerencias de caja</h2><span class="count" id="cajaSugCount"></span></summary><div class="foldbody"><div class="sugs" id="cajaSugs"></div></div></details></section>
+    <section><details class="fold" id="f-closes"><summary class="sec-h"><h2>Cierres anteriores</h2></summary><div class="foldbody"><div id="closesList"></div></div></details></section>
   </div>
 
-  <!-- GASTOS -->
+  <!-- OFICINA · GASTOS -->
   <div id="v-gastos" hidden>
     <section>
       <div class="sec-h"><h2>Beneficio</h2>
@@ -545,14 +548,25 @@ table.t tr:last-child td{border-bottom:0}
       <div class="card"><div class="sec-h"><h2>Gasto por categoría</h2></div><div class="hbars" id="catBars"></div></div>
       <div><div class="sec-h"><h2>Sugerencias</h2></div><div class="sugs" id="profitSugs"></div></div>
     </section>
-
-    <section>
-      <div class="sec-h"><h2>Precios</h2></div>
-      <div class="sugs" id="priceSugs" style="margin-bottom:10px"></div>
+    <section><details class="fold" id="f-gnew" open><summary class="sec-h"><h2>Apuntar gasto</h2></summary><div class="foldbody">      <form class="addform" id="gastoForm">
+        <div class="field"><label for="gFecha">Fecha</label><input type="date" id="gFecha" required></div>
+        <div class="field"><label for="gConcepto">Concepto</label><input type="text" id="gConcepto" required placeholder="Ej. Matcha 1 kg" maxlength="60"></div>
+        <div class="field"><label for="gCat">Categoría</label><select id="gCat"></select></div>
+        <div class="field"><label for="gImporte">Importe (€)</label><input type="text" id="gImporte" inputmode="decimal" required placeholder="45,00"></div>
+        <button class="btn primary" type="submit">Apuntar</button>
+      </form></div></details></section>
+    <section><details class="fold" id="f-gmes"><summary class="sec-h"><h2>Gastos del mes</h2><span class="count" id="gastosTotal"></span></summary><div class="foldbody"><div id="gastosList"></div></div></details></section>
+    <section><details class="fold" id="f-gfijos"><summary class="sec-h"><h2>Gastos fijos al mes</h2><span class="count" id="fijosTotal"></span></summary><div class="foldbody">      <p class="hint" style="margin-bottom:10px">Alquiler, autónomos, luz, gestoría… Se restan enteros en cada mes.</p>
+      <div id="fijosList"></div>
+      <form class="addform" id="fijoForm" style="margin-top:10px">
+        <div class="field"><label for="fConcepto">Concepto</label><input type="text" id="fConcepto" required placeholder="Alquiler" maxlength="60"></div>
+        <div class="field"><label for="fCat">Categoría</label><select id="fCat"></select></div>
+        <div class="field"><label for="fImporte">Al mes (€)</label><input type="text" id="fImporte" inputmode="decimal" required placeholder="600"></div>
+        <button class="btn" type="submit">Añadir fijo</button>
+      </form></div></details></section>
+    <section><details class="fold" id="f-precios"><summary class="sec-h"><h2>Precios</h2><span class="count" id="priceCount"></span></summary><div class="foldbody"><div class="sugs" id="priceSugs" style="margin-bottom:10px"></div>
       <div class="tablewrap"><table class="t" id="priceTable"></table></div>
-      <p class="hint" style="margin-top:8px">Coste = ingredientes según la receta y el precio de cada suministro. «Te queda» descuenta además la parte de gastos fijos que le toca a cada producto vendido. El sugerido deja el ingrediente en un 30% del precio y cubre los fijos.</p>
-    </section>
-
+      <p class="hint" style="margin-top:8px">Coste = ingredientes según la receta y el precio de cada suministro. «Te queda» descuenta además la parte de gastos fijos que le toca a cada producto vendido. El sugerido deja el ingrediente en un 30% del precio y cubre los fijos.</p></div></details></section>
     <section>
       <div class="sec-h"><h2>Informe para el dueño</h2></div>
       <div class="card row" style="justify-content:space-between">
@@ -560,37 +574,9 @@ table.t tr:last-child td{border-bottom:0}
         <button type="button" class="btn primary" id="xlsBtn">Descargar Excel</button>
       </div>
     </section>
-
-    <section>
-      <div class="sec-h"><h2>Apuntar gasto</h2></div>
-      <form class="addform" id="gastoForm">
-        <div class="field"><label for="gFecha">Fecha</label><input type="date" id="gFecha" required></div>
-        <div class="field"><label for="gConcepto">Concepto</label><input type="text" id="gConcepto" required placeholder="Ej. Matcha 1 kg" maxlength="60"></div>
-        <div class="field"><label for="gCat">Categoría</label><select id="gCat"></select></div>
-        <div class="field"><label for="gImporte">Importe (€)</label><input type="text" id="gImporte" inputmode="decimal" required placeholder="45,00"></div>
-        <button class="btn primary" type="submit">Apuntar</button>
-      </form>
-    </section>
-
-    <section>
-      <div class="sec-h"><h2>Gastos del mes</h2><span class="count" id="gastosTotal"></span></div>
-      <div id="gastosList"></div>
-    </section>
-
-    <section>
-      <div class="sec-h"><h2>Gastos fijos al mes</h2><span class="count" id="fijosTotal"></span></div>
-      <p class="hint" style="margin-bottom:10px">Alquiler, autónomos, luz, gestoría… Se restan enteros en cada mes.</p>
-      <div id="fijosList"></div>
-      <form class="addform" id="fijoForm" style="margin-top:10px">
-        <div class="field"><label for="fConcepto">Concepto</label><input type="text" id="fConcepto" required placeholder="Alquiler" maxlength="60"></div>
-        <div class="field"><label for="fCat">Categoría</label><select id="fCat"></select></div>
-        <div class="field"><label for="fImporte">Al mes (€)</label><input type="text" id="fImporte" inputmode="decimal" required placeholder="600"></div>
-        <button class="btn" type="submit">Añadir fijo</button>
-      </form>
-    </section>
   </div>
 
-  <!-- DATOS -->
+  <!-- OFICINA · DATOS -->
   <div id="v-datos" hidden>
     <section>
       <div class="sec-h"><h2>Ventas</h2>
@@ -613,86 +599,71 @@ table.t tr:last-child td{border-bottom:0}
         <div class="sec-h" style="margin-top:14px"><h2>Por tipo</h2></div><div class="hbars" id="groupBars"></div>
         <div class="sec-h" style="margin-top:14px"><h2>Espera por hora</h2></div><div class="hbars" id="waitBars"></div></div>
     </section>
-    <section>
-      <div class="sec-h"><h2>Compras sugeridas</h2></div>
-      <p class="hint" style="margin-bottom:10px">Calculado con lo que vendéis cada día y las recetas de Ajustes. Cuenta el stock en Ajustes para saber cuántos días te quedan.</p>
-      <div class="sugs" id="supplySugs"></div>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Cuánto os dura cada suministro</h2></div>
-      <div class="tablewrap"><table class="t" id="durTable"></table></div>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Combos que podríais probar</h2></div>
-      <p class="hint" style="margin-bottom:10px">Solo son ideas: no están en la carta. Si os convence alguno, añadidlo en Ajustes como fuera de carta.</p>
-      <div class="sugs" id="comboSugs"></div>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Se venden poco</h2></div>
-      <div class="sugs" id="slowSugs"></div>
-    </section>
+    <section><details class="fold" id="f-compras" open><summary class="sec-h"><h2>Compras sugeridas</h2><span class="count" id="supplyCount"></span></summary><div class="foldbody"><p class="hint" style="margin-bottom:10px">Calculado con lo que vendéis cada día y las recetas. Cuenta el stock en Ajustes → Suministros para saber cuántos días te quedan.</p><div class="sugs" id="supplySugs"></div></div></details></section>
+    <section><details class="fold" id="f-dura"><summary class="sec-h"><h2>Cuánto os dura cada suministro</h2></summary><div class="foldbody"><div class="tablewrap"><table class="t" id="durTable"></table></div></div></details></section>
+    <section><details class="fold" id="f-combos"><summary class="sec-h"><h2>Combos que podríais probar</h2></summary><div class="foldbody"><p class="hint" style="margin-bottom:10px">Solo son ideas: no están en la carta. Si os convence alguno, añadidlo en Ajustes como fuera de carta.</p><div class="sugs" id="comboSugs"></div></div></details></section>
+    <section><details class="fold" id="f-lentos"><summary class="sec-h"><h2>Se venden poco</h2></summary><div class="foldbody"><div class="sugs" id="slowSugs"></div></div></details></section>
   </div>
 
-  <!-- AJUSTES -->
+  <!-- OFICINA · AJUSTES -->
   <div id="v-ajustes" hidden>
-    <section>
-      <div class="sec-h"><h2>Temporada</h2></div>
-      <div class="card" style="display:grid;gap:10px;margin-bottom:16px">
+    <nav class="subnav ajnav" id="ajNav" aria-label="Ajustes">
+      <button type="button" data-aj="carta">Carta</button>
+      <button type="button" data-aj="suministros">Suministros</button>
+      <button type="button" data-aj="qr">QR y pagos</button>
+      <button type="button" data-aj="equipo">Equipo</button>
+    </nav>
+    <div data-ajp="carta">
+      <p class="hint" style="margin:14px 0 4px"><b>Disponible</b> apagado = agotado, no sale en el mostrador ni en el QR. <b>Fuera de carta</b> = sale arriba del todo, destacado. Toca <b>Editar</b> para cambiar nombre, precio o receta.</p>
+      <div id="menuEdit"></div>
+      <section><details class="fold" id="f-addprod"><summary class="sec-h"><h2>Añadir producto</h2></summary><div class="foldbody">      <form class="addform" id="addForm">
+        <div class="field"><label for="nName">Nombre</label><input type="text" id="nName" required placeholder="Ej. Matcha fresa"></div>
+        <div class="field"><label for="nPrice">Precio (€)</label><input type="text" id="nPrice" inputmode="decimal" required placeholder="3,80"></div>
+        <div class="field"><label for="nGroup">Grupo</label><input type="text" id="nGroup" list="groupsList" placeholder="Matcha"></div>
+        <div class="field"><label for="nStation">Sale en</label><select id="nStation"><option value="barra">Cafetera (Laura)</option><option value="cocina">Mostrador (tú)</option></select></div>
+        <label class="check"><input type="checkbox" id="nSpecial"> Fuera de carta</label>
+        <button class="btn primary" type="submit">Añadir</button>
+      </form>
+      <datalist id="groupsList"></datalist></div></details></section>
+      <section><details class="fold" id="f-temporada"><summary class="sec-h"><h2>Temporada</h2></summary><div class="foldbody">      <div class="card" style="display:grid;gap:10px;margin-bottom:0">
         <p class="hint">Activa o desactiva de golpe las bebidas frías o calientes. La repostería no se toca.</p>
         <div class="seg" id="seasonSeg">
           <button type="button" data-season="todo">Todo</button>
           <button type="button" data-season="invierno">Invierno (sin frías)</button>
           <button type="button" data-season="verano">Verano (sin calientes)</button>
         </div>
-      </div>
-      <div class="sec-h"><h2>Carta y stock</h2></div>
-      <p class="hint" style="margin-bottom:12px"><b>Disponible</b> apagado = agotado, no sale en pedidos. <b>Fuera de carta</b> = sale arriba del todo, destacado. Los cambios se guardan al salir de cada casilla.</p>
-      <div id="menuEdit"></div>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Añadir producto</h2></div>
-      <form class="addform" id="addForm">
-        <div class="field"><label for="nName">Nombre</label><input type="text" id="nName" required placeholder="Ej. Matcha fresa"></div>
-        <div class="field"><label for="nPrice">Precio (€)</label><input type="text" id="nPrice" inputmode="decimal" required placeholder="3,80"></div>
-        <div class="field"><label for="nGroup">Grupo</label><input type="text" id="nGroup" list="groupsList" placeholder="Matcha"></div>
-        <div class="field"><label for="nStation">Sale en</label><select id="nStation"><option value="barra">Barra (iPad)</option><option value="cocina">Caja (lo sirves tú)</option></select></div>
-        <label class="check"><input type="checkbox" id="nSpecial"> Fuera de carta</label>
-        <button class="btn primary" type="submit">Añadir</button>
-      </form>
-      <datalist id="groupsList"></datalist>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Suministros</h2></div>
-      <p class="hint" style="margin-bottom:12px">Cuenta lo que tienes y pulsa <b>Guardar conteo</b>. Desde ese momento la app resta lo que se gasta con cada venta.</p>
+      </div></div></details></section>
+    </div>
+    <div data-ajp="suministros" hidden>
+      <p class="hint" style="margin:14px 0 4px">Cuando compres, pulsa <b>Compré</b>: suma al stock y apunta el gasto. Toca <b>Editar</b> para el tamaño y precio del paquete o para contar lo que hay.</p>
       <div id="insEdit"></div>
-      <form class="addform" id="insForm" style="margin-top:10px">
+      <section><details class="fold" id="f-addins"><summary class="sec-h"><h2>Añadir suministro</h2></summary><div class="foldbody">      <form class="addform" id="insForm">
         <div class="field"><label for="iName">Suministro</label><input type="text" id="iName" required placeholder="Ej. Puré de mango"></div>
         <div class="field"><label for="iUnit">Unidad</label><select id="iUnit"><option value="g">gramos</option><option value="ml">ml</option><option value="ud">unidades</option></select></div>
         <div class="field"><label for="iMin">Mínimo</label><input type="text" id="iMin" inputmode="decimal" placeholder="500"></div>
         <button class="btn" type="submit">Añadir suministro</button>
-      </form>
-    </section>
-    <section>
-      <div class="sec-h"><h2>Este dispositivo y la cuenta</h2></div>
-      <div class="card" style="display:grid;gap:10px">
-        <p class="hint" id="roleTxt"></p>
-        <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en caja mientras cobro</button>
-          <button type="button" class="sw" id="autoToggle" aria-pressed="true">Avisar a caja solo al tachar la última bebida</button></div>
+      </form></div></details></section>
+    </div>
+    <div data-ajp="qr" hidden><section><div class="card" style="display:grid;gap:12px">
         <div class="toggles"><button type="button" class="sw" id="webToggle" aria-pressed="true">Aceptar pedidos de clientes por QR</button></div>
-        <div class="field" style="max-width:260px"><label for="bizumIn">Número de Bizum (vacío = sin Bizum)</label><input type="text" id="bizumIn" inputmode="tel" autocomplete="off" placeholder="600 00 00 00"></div>
         <div class="qrbox"><img src="qr.png" alt="Código QR para pedir desde el móvil" width="132" height="132">
-          <p class="hint">Los clientes escanean, piden con su nombre y pagan en caja en efectivo. Solo se puede pedir con la caja abierta. <a href="cartel-qr.pdf" target="_blank" rel="noopener">Cartel para imprimir</a> · <a href="pedir.html" target="_blank" rel="noopener">Ver la página del cliente</a></p></div>
+          <p class="hint">Los clientes escanean, piden con su nombre y pagan en caja. Solo se puede pedir con la caja abierta. <a href="cartel-qr.pdf" target="_blank" rel="noopener">Cartel para imprimir</a> · <a href="pedir.html" target="_blank" rel="noopener">Ver la página del cliente</a></p></div>
+        <div class="field" style="max-width:260px"><label for="bizumIn">Número de Bizum (vacío = sin Bizum)</label><input type="text" id="bizumIn" inputmode="tel" autocomplete="off" placeholder="600 00 00 00"></div>
         <div class="toggles"><button type="button" class="sw" id="fidToggle" aria-pressed="true">Fidelidad: una bebida gratis</button>
           <label class="check" for="fidCada">cada <input type="number" id="fidCada" min="2" max="30" step="1" style="width:70px"> visitas</label></div>
+      </div></section></div>
+    <div data-ajp="equipo" hidden><section><div class="card" style="display:grid;gap:12px">
+        <p class="hint" id="roleTxt"></p>
+        <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en el mostrador mientras cobro</button></div>
+        <p class="hint">Activado: tú dejas el vaso con hielo, leche fría y nombre, y en la cafetera solo se añade el espresso o el matcha.</p>
+        <div class="toggles"><button type="button" class="sw" id="autoToggle" aria-pressed="true">Avisar al mostrador solo al tachar la última bebida</button></div>
         <div class="qgrid">
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <p class="hint">Activado: tú dejas el vaso con hielo, leche fría y nombre, y en la barra solo se añade el espresso o el matcha.</p>
-        <div class="row"><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
-      </div>
-    </section>
+      </div></section></div>
   </div>
 </main>
 
@@ -740,7 +711,8 @@ function parseMoney(v){ const s = String(v ?? "").trim(); if (!s) return NaN; co
 
 const GROUP_ORDER = ["Matcha","Cafés","Repostería"];
 const VIEWS = ["pedidos","barra","caja","gastos","datos","ajustes"];
-const SUBS = {pedidos:"Pedidos · tomar, cobrar y entregar", barra:"Barra · cafés y matcha", caja:"Caja · efectivo del turno", gastos:"Gastos · beneficio del mes", datos:"Datos · ventas y compras", ajustes:"Ajustes · carta, stock y suministros"};
+const SUBS = {pedidos:"Mostrador · cobrar, servir y entregar", barra:"Cafetera · cafés y matcha", caja:"Oficina · caja del turno", gastos:"Oficina · gastos y beneficio", datos:"Oficina · ventas y compras", ajustes:"Oficina · ajustes"};
+const OFFICE = ["caja","gastos","datos","ajustes"];
 const DENOMS = [50,20,10,5,2,1,0.5,0.2,0.1,0.05,0.02,0.01];
 const DENOMS_C = DENOMS.map(d => Math.round(d*100));
 const CATS = ["Café y matcha","Leche y bebidas vegetales","Repostería","Vasos y envases","Limpieza","Alquiler","Luz, agua e internet","Autónomos y gestoría","Otros"];
@@ -756,6 +728,7 @@ const cart = new Map();
 const ticks = new Set();
 const counts = {};
 const openRecipes = new Set();
+const openIns = new Set();
 let movType = "salida";
 let view = "pedidos";
 let period = "7";
@@ -780,15 +753,32 @@ function setView(v){
   lsSet("vista2", v);
   $("#v-setup").hidden = true;
   VIEWS.forEach(x => { $("#v-"+x).hidden = x !== v; });
-  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
-  const act = document.querySelector('.tabs button[aria-pressed="true"]'); if (act) act.scrollIntoView({block:"nearest", inline:"nearest"});
+  const inOffice = OFFICE.includes(v);
+  if (inOffice) lsSet("oficina", v);
+  document.querySelectorAll(".tabs [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
+  $(".tabs [data-office]").setAttribute("aria-pressed", String(inOffice));
+  $("#officeNav").hidden = !inOffice;
+  document.querySelectorAll("#officeNav [data-view]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.view === v)));
   $("#sub").textContent = SUBS[v];
   renderAll();
   keepAwake();
 }
-document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
-  if (location.hash !== "#"+b.dataset.view) location.hash = b.dataset.view; else setView(b.dataset.view);
-}));
+const goView = v => { if (location.hash !== "#"+v) location.hash = v; else setView(v); };
+document.querySelectorAll(".tabs [data-view], #officeNav [data-view]").forEach(b => b.addEventListener("click", () => goView(b.dataset.view)));
+$(".tabs [data-office]").addEventListener("click", () => { const last = lsGet("oficina"); goView(OFFICE.includes(last) ? last : "caja"); });
+// Ajustes: subpestañas
+let ajTab = ["carta","suministros","qr","equipo"].includes(lsGet("ajTab")) ? lsGet("ajTab") : "carta";
+function setAjTab(t){
+  ajTab = t; lsSet("ajTab", t);
+  document.querySelectorAll("#ajNav [data-aj]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.aj === t)));
+  document.querySelectorAll("[data-ajp]").forEach(p => p.hidden = p.dataset.ajp !== t);
+}
+document.querySelectorAll("#ajNav [data-aj]").forEach(b => b.addEventListener("click", () => setAjTab(b.dataset.aj)));
+setAjTab(ajTab);
+// Desplegables: cada uno recuerda en este dispositivo si lo dejasteis abierto
+let folds = {}; try { folds = JSON.parse(lsGet("folds") || "{}") || {}; } catch(e){ folds = {}; }
+document.querySelectorAll("details.fold[id]").forEach(d => { if (folds[d.id] !== undefined) d.open = !!folds[d.id]; });
+document.addEventListener("toggle", e => { const d = e.target; if (d.matches && d.matches("details.fold[id]")){ folds[d.id] = d.open; lsSet("folds", JSON.stringify(folds)); } }, true);
 addEventListener("hashchange", () => setView(pickView()));
 
 /* ---------- avisos ---------- */
@@ -946,7 +936,7 @@ async function payWebBizum(o){
   const st = hasBar ? "nuevo" : needsPrep ? "listo" : "entregado";
   await upd(o.id, {status:st, pay:"bizum", metodo:"bizum", received:o.total, change:0, propina:0, entregados:[],
     readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, createdAt:now, day:dayKey(now), pedidoEn:o.createdAt},
-    `#${pad(o.num)} ${o.customer} · Bizum ${eur(o.total)} · ${hasBar ? "pasa a barra" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}`);
+    `#${pad(o.num)} ${o.customer} · Bizum ${eur(o.total)} · ${hasBar ? "pasa a la cafetera" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}`);
   saveRegular(o.customer, items, now);
 }
 function startWebCharge(id){
@@ -970,8 +960,8 @@ function renderWebCharging(){
   if (webOrderId && (!o || o.status !== "porcobrar")){ webOrderId = null; }
   const box = $("#webCharging");
   box.hidden = !webOrderId;
-  box.innerHTML = webOrderId ? `<span style="flex:1">Cobrando el pedido del móvil <b>#${pad(o.num)} ${esc(o.customer)}</b>. Al cobrar pasa a la barra.</span><button type="button" class="btn small" id="webStop">Dejarlo</button>` : "";
-  $("#sendBtn").textContent = webOrderId ? "Cobrado · pasar a barra" : "Cobrado · enviar a barra";
+  box.innerHTML = webOrderId ? `<span style="flex:1">Cobrando el pedido del móvil <b>#${pad(o.num)} ${esc(o.customer)}</b>. Al cobrar pasa a la cafetera.</span><button type="button" class="btn small" id="webStop">Dejarlo</button>` : "";
+  $("#sendBtn").textContent = webOrderId ? "Cobrado · pasar a cafetera" : "Cobrado · enviar a cafetera";
 }
 $("#v-pedidos").addEventListener("click", e => {
   const pay = e.target.closest("[data-webpay]"), cn = e.target.closest("[data-webcancel]"), stop = e.target.closest("#webStop");
@@ -1012,7 +1002,7 @@ function itemLine(o, it, i){
   if (mine(it)) return `<li class="${done ? "dlv" : ""}"><span class="q">${it.qty}×</span>${name}
     ${done ? `<button type="button" class="tag ok" data-ungive="${o.id}" data-i="${i}" title="Tocar si no se entregó">✓ Entregado</button>`
            : `<button type="button" class="btn small primary" data-give="${o.id}" data-i="${i}">Entregar</button>`}</li>`;
-  return `<li class="${done ? "dlv" : ""}"><span class="q">${it.qty}×</span>${name}<span class="tag bar">${o.status === "nuevo" ? "En barra" : "De barra"}</span></li>`;
+  return `<li class="${done ? "dlv" : ""}"><span class="q">${it.qty}×</span>${name}<span class="tag bar">${o.status === "nuevo" ? "En cafetera" : "De cafetera"}</span></li>`;
 }
 function backToCobrarIfDone(){
   setTimeout(() => { if (view === "pedidos" && pedMode === "entregar" && pendingForMe().total === 0){ setMode("cobrar"); toast("Todo entregado"); } }, 600);
@@ -1038,7 +1028,7 @@ function renderReady(){
       <div class="who"><span class="num">#${pad(o.num)}</span><span class="name">${esc(o.customer)}</span></div>
       <ul class="lines">${lines}</ul>
       <div class="row"><button type="button" class="btn deliver" data-deliver="${o.id}">${some ? "Entregar el resto" : "Entregado"}</button>
-      ${hasBarItems ? `<button type="button" class="btn ghost" data-back="${o.id}">Volver a barra</button>` : ""}
+      ${hasBarItems ? `<button type="button" class="btn ghost" data-back="${o.id}">Volver a cafetera</button>` : ""}
       <button type="button" class="btn ghost danger" data-cancel="${o.id}">Anular</button></div>
     </article>`;
   }).join("");
@@ -1072,6 +1062,7 @@ function renderMenuGrid(){
   box.innerHTML = html;
 }
 let invMode = null, freeItemId = null, payMethod = "efectivo";
+const openNotes = new Set();   // notas abiertas en el ticket (las que tienen texto se ven siempre)
 const bizumNum = () => String((config && config.bizum) || "").replace(/\D/g, "");
 const fmtTel = t => t.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4");   // invitación / consumo propio, y producto gratis por fidelidad
 function cartTotal(){
@@ -1091,8 +1082,9 @@ function renderCart(){
     return `<div class="tline">
       <div><b>${esc(m.name)}</b> <span class="note" style="font-style:normal">${eur(m.price*c.qty)}</span></div>
       <div class="stepper"><button type="button" data-dec="${id}" aria-label="Quitar uno">−</button><span>${c.qty}</span><button type="button" data-inc="${id}" aria-label="Añadir uno">+</button></div>
-      <input type="text" id="note-${id}" data-note="${id}" value="${esc(c.note)}" placeholder="Nota (sin hielo, extra matcha…)" autocomplete="off">
-      ${m.station !== "cocina" ? `<div class="notechips">${NOTE_CHIPS.filter(t => !(c.note||"").includes(t)).map(t => `<button type="button" data-chip="${id}" data-t="${esc(t)}">+ ${esc(t)}</button>`).join("")}</div>` : ""}
+      ${(c.note||"").trim() || openNotes.has(id) ? `<input type="text" id="note-${id}" data-note="${id}" value="${esc(c.note)}" placeholder="Nota (sin hielo, extra matcha…)" autocomplete="off">
+      ${prepKind(m, m.name) !== "otro" ? `<div class="notechips">${NOTE_CHIPS.filter(t => !(c.note||"").includes(t)).map(t => `<button type="button" data-chip="${id}" data-t="${esc(t)}">+ ${esc(t)}</button>`).join("")}</div>` : ""}`
+      : `<button type="button" class="addnote" data-opennote="${id}">+ Nota</button>`}
     </div>`;
   }).join("");
   const {t, n, full, disc} = cartTotal();
@@ -1145,9 +1137,9 @@ function renderPending(){
       <button type="button" class="btn ghost danger" data-cancel="${o.id}">Anular</button>
       <ul class="lines inorder">${(o.items||[]).map((it,i) => itemLine(o, it, i)).join("")}</ul>
       ${cups && bar.length ? `<ul class="cups">${bar.map(i => `<li><b>Vaso para ${esc(i.name)}</b> <span>${esc(cupPrep(i))}</span></li>`).join("")}</ul>
-      <button type="button" class="btn small ${o.vasos ? "" : "primary"}" data-cups="${o.id}" aria-pressed="${!!o.vasos}">${o.vasos ? "Vasos en barra ✓" : "Vasos listos, pasar a barra"}</button>` : ""}
+      <button type="button" class="btn small ${o.vasos ? "" : "primary"}" data-cups="${o.id}" aria-pressed="${!!o.vasos}">${o.vasos ? "Vasos en cafetera ✓" : "Vasos listos, pasar a cafetera"}</button>` : ""}
     </div>`; }).join("")
-    : `<div class="empty">No hay pedidos esperando a la barra.</div>`;
+    : `<div class="empty">No hay pedidos esperando a la cafetera.</div>`;
   // Entregados en los últimos 15 minutos, por si te equivocas al tocar
   const done = orders.filter(o => o.status === "entregado" && (o.deliveredAt||0) > Date.now() - 15*60000).sort((a,b) => b.deliveredAt-a.deliveredAt).slice(0, 4);
   $("#doneSec").hidden = !done.length;
@@ -1162,6 +1154,8 @@ $("#menuGrid").addEventListener("click", e => {
   renderMenuGrid(); renderCart();
 });
 $("#cartLines").addEventListener("click", e => {
+  const on = e.target.closest("[data-opennote]");
+  if (on){ openNotes.add(on.dataset.opennote); renderCart(); const inp = $("#note-"+on.dataset.opennote); if (inp) inp.focus(); return; }
   const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]"), chip = e.target.closest("[data-chip]");
   if (chip){ const c = cart.get(chip.dataset.chip); if (!c) return; c.note = [c.note, chip.dataset.t].filter(s => s && s.trim()).join(", "); renderCart(); return; }
   if (inc) cart.get(inc.dataset.inc).qty++;
@@ -1267,11 +1261,11 @@ $("#sendBtn").addEventListener("click", async () => {
       : await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{...fields, createdAt:now, day:dayKey(now)}});
     webOrderId = null;
     if (!useNumber && invMode !== "casa") saveRegular(name, items, now);
-    cart.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null; payMethod = "efectivo";
+    cart.clear(); openNotes.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null; payMethod = "efectivo";
     useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
     renderMenuGrid(); renderCart();
     window.scrollTo({top:0, behavior:"smooth"});
-    toast(res === "queued" ? `#${pad(num)} ${name} · sin conexión: guardado, se envía solo al volver` : `#${pad(num)} ${name} · ${hasBar ? "enviado a barra" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}${tip ? " · propina " + eurC(tip) : ""}${shift && shift.open ? "" : " · ¡abre la caja!"}`);
+    toast(res === "queued" ? `#${pad(num)} ${name} · sin conexión: guardado, se envía solo al volver` : `#${pad(num)} ${name} · ${hasBar ? "enviado a cafetera" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}${tip ? " · propina " + eurC(tip) : ""}${shift && shift.open ? "" : " · ¡abre la caja!"}`);
   } catch(err){
     showErr(saveErrMsg(err, "No se pudo enviar. Revisa la conexión y vuelve a intentarlo."));
   } finally { btn.disabled = false; }
@@ -1332,7 +1326,7 @@ $("#v-pedidos").addEventListener("click", e => {
   if (d){ d.disabled = true; upd(d.dataset.deliver, {status:"entregado", deliveredAt:Date.now()}).then(backToCobrarIfDone); }
   else if (un){ upd(un.dataset.undo, {status:"listo", deliveredAt:null}, "Vuelve a Para entregar"); }
   else if (e.target.closest("[data-cups]")){ const b = e.target.closest("[data-cups]"); const o = orders.find(x => x.id === b.dataset.cups); if (o) upd(o.id, {vasos: !o.vasos}, o.vasos ? "" : "La barra ve que el vaso está listo"); }
-  else if (bk){ upd(bk.dataset.back, {status:"nuevo", readyAt:null}, "Devuelto a barra"); }
+  else if (bk){ upd(bk.dataset.back, {status:"nuevo", readyAt:null}, "Devuelto a la cafetera"); }
   else if (cn){ confirmTap(cn, "c"+cn.dataset.cancel, "¿Anular? Toca otra vez", async () => {
     const o = orders.find(x => x.id === cn.dataset.cancel);
     try { await db.collection("orders").doc(cn.dataset.cancel).update({status:"anulado", cancelledAt:Date.now()}); toast(`Pedido anulado${o ? " · devuelve " + eur(o.total) : ""}`); } catch(e){ toast("No se pudo anular."); } }); }
@@ -1441,7 +1435,7 @@ function renderMise(){
   if (sum.batch) lines.push(`<li><b>${per(sum.batch)} batch</b>: ten el termo hecho antes de la hora punta.</li>`);
   if (sum.espresso) lines.push(`<li><b>${per(sum.espresso)} lattes</b>: molino lleno y la máquina ajustada antes de abrir.</li>`);
   const liq = [sum.leche && `<b>${fmtUnits(sum.leche/days, "ml")} de leche</b>`, sum.coco && `<b>${fmtUnits(sum.coco/days, "ml")} de bebida de coco</b>`].filter(Boolean);
-  if (liq.length) lines.push(`<li>${liq.join(" y ")} en la nevera de barra.</li>`);
+  if (liq.length) lines.push(`<li>${liq.join(" y ")} en la nevera de la cafetera.</li>`);
   Object.entries(sum.cocina).forEach(([n,q]) => lines.push(`<li><b>${per(q)} × ${esc(n)}</b> listos en el expositor.</li>`));
   $("#miseBox").innerHTML = `<p class="hint" style="margin-bottom:8px">Media de ${same.length >= 2 ? "los " + WEEKDAYS_L[wd] : "los últimos días abiertos"}${peak ? `. Hora punta: <b>${peak[0]}:00–${Number(peak[0])+1}:00</b>, tenlo todo listo antes` : ""}.</p><ul class="mise">${lines.join("")}</ul>`;
 }
@@ -1460,12 +1454,14 @@ function renderBarra(){
       ${o.vasos ? `<span class="tag rd">Vasos preparados por caja</span>` : ""}
       ${bar.map(it => { const k = o.id+":"+it.i, add = barAdds(it, o); return `<button type="button" class="bitem ${ticks.has(k)?"done":""}" data-tick="${k}" aria-pressed="${ticks.has(k)}">
         <span class="q">${it.qty}×</span><span class="t"><span>${esc(it.name)}</span>${it.note?`<span class="note">${esc(it.note)}</span>`:""}${add ? `<span class="add">${add}</span>` : ""}</span></button>`; }).join("")}
-      ${food.length ? `<div class="foodnote">Lo sirve caja: ${food.map(f => f.qty + "× " + esc(f.name) + (deliveredSet(o).has(f.i) ? " ✓" : "")).join(", ")}</div>` : ""}
-      <button type="button" class="btn go" data-done="${o.id}">Listo · avisar caja</button>
+      ${food.length ? `<div class="foodnote">Lo sirve el mostrador: ${food.map(f => f.qty + "× " + esc(f.name) + (deliveredSet(o).has(f.i) ? " ✓" : "")).join(", ")}</div>` : ""}
+      <button type="button" class="btn go" data-done="${o.id}">Listo · avisar al mostrador</button>
     </article>`;
   }).join("");
   // Toda la carta, por grupos (bebidas de barra, las que sirve caja y la bollería)
   const stockGroups = groupsOf(sortMenu(menu));
+  const nOff = menu.filter(m => !isOn(m)).length;
+  $("#soldCount").textContent = nOff ? `${nOff} agotado${nOff > 1 ? "s" : ""}` : "";
   $("#barStock").innerHTML = menu.length ? [...stockGroups].map(([g, items]) => `<span class="chiph">${esc(g)}</span>` +
     items.map(m => `<button type="button" class="chip ${isOn(m)?"":"off"}" data-stock="${m.id}" aria-pressed="false">${esc(m.name)}</button>`).join("")).join("")
     : `<div class="empty">La carta está vacía.</div>`;
@@ -1485,11 +1481,11 @@ $("#barGrid").addEventListener("click", e => {
       if (all){ toast("Todo hecho: aviso a caja en 2 s"); autoT[oid] = setTimeout(() => {
         const still = (o.items||[]).every((it,i) => it.station === "cocina" || ticks.has(oid+":"+i));
         const cur = orders.find(x => x.id === oid);
-        if (still && cur && cur.status === "nuevo" && db) upd(oid, {status:"listo", readyAt:Date.now()}, "Avisado en caja");
+        if (still && cur && cur.status === "nuevo" && db) upd(oid, {status:"listo", readyAt:Date.now()}, "Avisado en el mostrador");
       }, 2000); }
     }
   }
-  else if (d && db){ d.disabled = true; upd(d.dataset.done, {status:"listo", readyAt:Date.now()}, "Avisado en caja"); }
+  else if (d && db){ d.disabled = true; upd(d.dataset.done, {status:"listo", readyAt:Date.now()}, "Avisado en el mostrador"); }
 });
 async function setAvail(id, on){
   const m = menu.find(x => x.id === id); if (!m || !db) return;
@@ -1566,6 +1562,7 @@ function renderCaja(){
       <div class="kpi"><b>${eurC(s.propTot)}</b><span>propinas</span></div>
       ${s.invit.n + s.fidel.n ? `<div class="kpi"><b>${s.invit.n + s.fidel.n}</b><span>gratis (${eurC(s.invit.c + s.fidel.c)} de carta)</span></div>` : ""}
       <div class="kpi key"><b>${eurC(s.esperado)}</b><span>debe haber en el cajón</span></div>`;
+    $("#movCount").textContent = s.movs.length ? `${s.movs.length} · −${eurC(s.salidas)} +${eurC(s.entradas)}` : "";
     $("#movList").innerHTML = s.movs.length ? s.movs.slice().sort((a,b) => b.t-a.t).map(m => `<div class="mov">
         <span class="mins">${hhmm(m.t)}</span><span class="c">${esc(m.concepto || (m.tipo === "salida" ? "Salida" : "Entrada"))}${m.gastoId ? ' <span class="tag food">Gasto</span>' : ""}</span>
         <span class="${m.tipo === "salida" ? "out" : "in"}">${m.tipo === "salida" ? "−" : "+"}${eur(m.importe)}</span>
@@ -1609,6 +1606,8 @@ function renderCajaSugs(){
   const bad = last.filter(c => Math.abs(cents(c.diferencia)) >= 100);
   if (bad.length >= 2) out.push(sug("alert", `${bad.length} descuadres en los últimos ${last.length} cierres`, "Apunta cada salida en el momento, cuenta las vueltas delante del cliente y no mezcles dinero personal con el cajón."));
   $("#cajaSugs").innerHTML = out.join("") || `<div class="empty">Todo en orden.</div>`;
+  const nWarn = out.filter(h => /class="sug (warn|alert)"/.test(h)).length;
+  $("#cajaSugCount").textContent = nWarn ? `${nWarn} aviso${nWarn > 1 ? "s" : ""}` : "";
 }
 $("#movSeg").addEventListener("click", e => {
   const b = e.target.closest("[data-mov]"); if (!b) return; movType = b.dataset.mov;
@@ -1788,12 +1787,12 @@ function renderDatos(){
     <div class="kpi"><b>${eurC(m.n ? Math.round(m.ventas/m.n) : 0)}</b><span>ticket medio</span></div>
     <div class="kpi"><b>${dayList.length ? eurC(Math.round(m.ventas/dayList.length)) : eur(0)}</b><span>media por día abierto</span></div>
     ${best && dayList.length > 1 ? `<div class="kpi"><b>${eurC(best[1].ventas)}</b><span>mejor día · ${dmy(best[1].t)}</span></div>` : ""}
-    ${m.espera.n ? `<div class="kpi ${m.espera.over/m.espera.n > .2 ? "neg" : ""}"><b>${fmtWait(m.espera.s/m.espera.n)}</b><span>espera media en barra · ${Math.round(m.espera.over/m.espera.n*100)}% más de 5 min</span></div>` : ""}
+    ${m.espera.n ? `<div class="kpi ${m.espera.over/m.espera.n > .2 ? "neg" : ""}"><b>${fmtWait(m.espera.s/m.espera.n)}</b><span>espera media en cafetera · ${Math.round(m.espera.over/m.espera.n*100)}% más de 5 min</span></div>` : ""}
     ${m.propinas ? `<div class="kpi"><b>${eurC(m.propinas)}</b><span>propinas</span></div>` : ""}
     ${m.invit.n + m.fidel.n ? `<div class="kpi"><b>${m.invit.n + m.fidel.n}</b><span>gratis: ${m.invit.n} invitación/propio · ${m.fidel.n} fidelidad (${eurC(m.invit.c + m.fidel.c)})</span></div>` : ""}`;
   const wh = Object.entries(m.horas).filter(([h,v]) => v.wn).sort((a,b) => a[0]-b[0]);
   $("#waitBars").innerHTML = wh.length ? wh.map(([h,v]) => { const avg = v.ws/v.wn; return `<div class="hbar"><span>${h}:00</span><b>${fmtWait(avg)}</b><div class="track"><div class="fill ${avg > 300000 ? "cost" : ""}" style="width:${Math.min(100, avg/600000*100)}%"></div></div></div>`; }).join("")
-    : `<div class="empty">Cuando la barra marque pedidos como listos verás aquí cuánto esperan los clientes en cada hora.</div>`;
+    : `<div class="empty">Cuando la cafetera marque pedidos como listos verás aquí cuánto esperan los clientes en cada hora.</div>`;
   // Ventas por día
   if (!dayList.length) $("#dayBars").innerHTML = `<div class="empty" style="flex:1">Aún no hay ventas en este periodo. El turno abierto cuenta en directo y cada cierre de caja se guarda aquí.</div>`;
   else {
@@ -1906,6 +1905,8 @@ function renderSupply(){
   rows.forEach(r => out.push(r.html));
   const noRecipe = menu.filter(m => isOn(m) && !Object.values(m.receta||{}).some(v => Number(v) > 0));
   if (noRecipe.length) out.push(sug("warn", "Productos sin receta", `${noRecipe.map(m => esc(m.name)).join(", ")}. Añade su receta en Ajustes para que cuenten en las compras.`));
+  const nBuy = out.filter(h => /class="sug (warn|alert)"/.test(h)).length;
+  $("#supplyCount").textContent = nBuy ? `${nBuy} por comprar` : "";
   $("#supplySugs").innerHTML = out.join("") || `<div class="empty">Añade suministros y recetas en Ajustes para ver aquí qué comprar.</div>`;
 }
 
@@ -1920,23 +1921,24 @@ function renderAjustes(){
   box.innerHTML = !sorted.length ? `<div class="empty">${gotMenu ? "Aún no hay productos. Añade el primero abajo." : "Cargando la carta…"}</div>`
     : sorted.map(m => {
       const on = isOn(m), sp = !!m.especial, rcount = Object.values(m.receta||{}).filter(v => Number(v) > 0).length;
+      const ed = openRecipes.has(m.id);
       return `<div class="pcard ${m.station==="cocina"?"cocina":""} ${sp?"sp":""} ${on?"":"off"}">
-        <div class="pgrid">
+        <div class="phead"><span class="pn"><b>${esc(m.name)}</b> <span class="mins">${eur(m.price)} · ${m.station === "cocina" ? "Mostrador" : "Cafetera"}${rcount ? "" : " · sin receta"}</span></span>
+          <button type="button" class="sw" data-toggle="disponible" data-id="${m.id}" aria-pressed="${on}">Disponible</button>
+          <button type="button" class="sw spsw" data-toggle="especial" data-id="${m.id}" aria-pressed="${sp}">Fuera de carta</button>
+          <button type="button" class="btn small" data-recipe="${m.id}" aria-expanded="${ed}">${ed ? "Cerrar ▴" : "Editar ▾"}</button></div>
+        ${ed ? `<div class="pgrid">
           <div class="field wide"><label for="m-${m.id}-name">Producto</label><input type="text" id="m-${m.id}-name" data-mid="${m.id}" data-f="name" value="${esc(m.name)}"></div>
           <div class="field"><label for="m-${m.id}-price">Precio</label><input type="text" inputmode="decimal" id="m-${m.id}-price" data-mid="${m.id}" data-f="price" value="${String(Number(m.price)||0).replace(".",",")}"></div>
           <div class="field"><label for="m-${m.id}-group">Grupo</label><input type="text" id="m-${m.id}-group" data-mid="${m.id}" data-f="group" value="${esc(m.group)}" list="groupsList"></div>
-          <div class="field"><label for="m-${m.id}-station">Sale en</label><select id="m-${m.id}-station" data-mid="${m.id}" data-f="station">
-            <option value="barra" ${m.station!=="cocina"?"selected":""}>Barra</option><option value="cocina" ${m.station==="cocina"?"selected":""}>Caja (tú)</option></select></div>
+          <div class="field"><label for="m-${m.id}-station">Lo prepara</label><select id="m-${m.id}-station" data-mid="${m.id}" data-f="station">
+            <option value="barra" ${m.station!=="cocina"?"selected":""}>Cafetera (Laura)</option><option value="cocina" ${m.station==="cocina"?"selected":""}>Mostrador (tú)</option></select></div>
         </div>
-        <div class="toggles">
-          <button type="button" class="sw" data-toggle="disponible" data-id="${m.id}" aria-pressed="${on}">Disponible</button>
-          <button type="button" class="sw spsw" data-toggle="especial" data-id="${m.id}" aria-pressed="${sp}">Fuera de carta</button>
-          <button type="button" class="btn small" data-recipe="${m.id}" aria-expanded="${openRecipes.has(m.id)}">Receta${rcount ? ` (${rcount})` : ""}</button>
-          <button type="button" class="btn ghost danger small" data-del="${m.id}" style="margin-left:auto">Borrar</button>
-        </div>
-        ${openRecipes.has(m.id) ? `<div class="recipe">${insSorted.length ? insSorted.map(i => `<div class="field"><label for="r-${m.id}-${i.id}">${esc(i.nombre)} (${esc(i.unidad)})</label>
+        <div class="lbl">Receta · cantidad por unidad vendida</div>
+        <div class="recipe">${insSorted.length ? insSorted.map(i => `<div class="field"><label for="r-${m.id}-${i.id}">${esc(i.nombre)} (${esc(i.unidad)})</label>
             <input type="text" inputmode="decimal" id="r-${m.id}-${i.id}" data-rid="${m.id}" data-ins="${i.id}" value="${Number(m.receta?.[i.id]) ? String(m.receta[i.id]).replace(".",",") : ""}" placeholder="0"></div>`).join("")
-            : `<div class="empty">Añade suministros abajo para poner recetas.</div>`}</div>` : ""}
+            : `<div class="empty">Añade suministros en la pestaña Suministros para poner recetas.</div>`}</div>
+        <div class="row"><button type="button" class="btn ghost danger small" data-del="${m.id}" style="margin-left:auto">Borrar producto</button></div>` : ""}
       </div>`;
     }).join("");
   // Suministros
@@ -1949,8 +1951,14 @@ function renderAjustes(){
       cu ? `Coste: ${fmtCost(cu, i.unidad)}.` : "Sin precio: ponlo para calcular el coste de cada producto.",
       st.usedBy ? "" : "Ningún producto lo usa en su receta."
     ].filter(Boolean).join(" ");
-    return `<div class="icard">
-      <div class="qgrid">
+    const ed = openIns.has(i.id), short = [st.left !== null ? `quedan ${fmtUnits(Math.max(0, st.left), i.unidad)}` : "sin contar", du.perPack ? `paquete ${num1(du.perPack)} días` : ""].filter(Boolean).join(" · ");
+    const low = st.left !== null && st.left <= (Number(i.minimo)||0);
+    return `<div class="icard ${low ? "low" : ""}">
+      <div class="phead"><span class="pn"><b>${esc(i.nombre)}</b> <span class="mins">${short}</span></span>
+        <input type="number" min="1" step="1" id="i-${i.id}-b" value="1" style="width:64px" aria-label="Paquetes comprados de ${esc(i.nombre)}">
+        <button type="button" class="btn small primary" data-buy="${i.id}">Compré</button>
+        <button type="button" class="btn small" data-insedit="${i.id}" aria-expanded="${ed}">${ed ? "Cerrar ▴" : "Editar ▾"}</button></div>
+      ${ed ? `<div class="qgrid">
         <div class="field"><label for="i-${i.id}-n">Suministro</label><input type="text" id="i-${i.id}-n" data-iid="${i.id}" data-f="nombre" value="${esc(i.nombre)}"></div>
         <div class="field"><label for="i-${i.id}-k">Un paquete trae (${u})</label><input type="text" inputmode="decimal" id="i-${i.id}-k" data-iid="${i.id}" data-f="paquete" value="${fmtIn(i.paquete)}" placeholder="Ej. 1000"></div>
         <div class="field"><label for="i-${i.id}-p">Precio del paquete (€)</label><input type="text" inputmode="decimal" id="i-${i.id}-p" data-iid="${i.id}" data-f="precioPaquete" value="${fmtIn(i.precioPaquete)}" placeholder="Ej. 12,50"></div>
@@ -1959,11 +1967,9 @@ function renderAjustes(){
       <div class="row">
         <input type="text" inputmode="decimal" id="i-${i.id}-c" placeholder="Tengo (${u})" style="width:130px" aria-label="Lo que tienes ahora de ${esc(i.nombre)}">
         <button type="button" class="btn small" data-count="${i.id}">Guardar conteo</button>
-        <input type="number" min="1" step="1" id="i-${i.id}-b" value="1" style="width:70px" aria-label="Paquetes comprados de ${esc(i.nombre)}">
-        <button type="button" class="btn small primary" data-buy="${i.id}">Compré paquetes</button>
         <button type="button" class="btn ghost danger small" data-delins="${i.id}" style="margin-left:auto">Borrar</button>
       </div>
-      <p class="est">${est}</p>
+      <p class="est">${est}</p>` : ""}
     </div>`;
   }).join("") : `<div class="empty">Sin suministros.</div>`;
 }
@@ -2018,6 +2024,8 @@ $("#insEdit").addEventListener("click", async e => {
     if (isNaN(v) || v < 0){ toast("Escribe cuánto tienes"); return; }
     try { await db.collection("insumos").doc(c.dataset.count).update({stockContado:v, fechaConteo:Date.now()}); toast("Conteo guardado"); } catch(err){ toast("No se pudo guardar."); }
   }
+  const ie = e.target.closest("[data-insedit]");
+  if (ie){ const id = ie.dataset.insedit; openIns.has(id) ? openIns.delete(id) : openIns.add(id); renderAjustes(); return; }
   const b = e.target.closest("[data-buy]");
   if (b){
     const ins = insumos.find(x => x.id === b.dataset.buy); if (!ins) return;
@@ -2078,6 +2086,8 @@ function renderPrices(){
     if (odd.length) out.push(sug("", "Precios redondos para cobrar más rápido", `Al cobrar solo en efectivo, precios acabados en ,00 o ,50 ahorran monedas pequeñas: ${odd.map(r => `${esc(r.m.name)} ${eur(r.price)} → ${eur(Math.ceil(r.price*2)/2)}`).join(" · ")}.`));
   }
   $("#priceSugs").innerHTML = out.join("");
+  const nRaise = withCost.filter(r => r.raise).length;
+  $("#priceCount").textContent = nRaise ? `${nRaise} a revisar` : "";
   $("#priceTable").innerHTML = `<thead><tr><th>Producto</th><th class="n">Precio</th><th class="n">Ingredientes</th><th class="n">% coste</th><th class="n">Te queda</th><th class="n">Sugerido</th></tr></thead><tbody>${rows.map(r => r.cost === null
     ? `<tr><td>${esc(r.m.name)}</td><td class="n">${eur(r.price)}</td><td colspan="4" class="mins">${r.missing.length ? "Falta precio de: " + esc(r.missing.join(", ")) : "Sin receta"}</td></tr>`
     : `<tr><td>${esc(r.m.name)}${r.missing.length ? ` <span class="mins">(falta ${esc(r.missing.join(", "))})</span>` : ""}</td><td class="n">${eur(r.price)}</td><td class="n">${eur(r.cost)}</td><td class="n ${r.pct > .35 ? "up" : ""}">${Math.round(r.pct*100)}%</td><td class="n ${r.keep < 0 ? "up" : ""}">${fpu ? eur(r.keep) : "—"}</td><td class="n ${r.raise ? "up" : "okc"}">${r.raise ? eur(r.sugg) : "OK"}</td></tr>`).join("")}</tbody>`;
@@ -2260,7 +2270,7 @@ function updateBanner(){
   else if (open && dayKey(shift.openedAt) !== dayKey()){ txt = `La caja sigue abierta desde el ${dmy(shift.openedAt)}. Ciérrala para que cada día salga bien en los números.`; btn = "Ir a Caja"; }
   $("#shiftBanner").hidden = !txt;
   $("#bannerTxt").textContent = txt; $("#bannerBtn").textContent = btn;
-  const ROLES = {caja:"la caja (pedidos y cobro)", barra:"la barra (preparar bebidas)", ambos:"todo: caja y barra"};
+  const ROLES = {caja:"el Mostrador (pedidos, cobro y entrega)", barra:"la Cafetera (preparar bebidas)", ambos:"todo: Mostrador y Cafetera"};
   $("#cupsToggle").setAttribute("aria-pressed", String(vasosCaja()));
   $("#autoToggle").setAttribute("aria-pressed", String(autoReady()));
   if (document.activeElement !== $("#jugG")) $("#jugG").value = jugCap().g;
@@ -2319,8 +2329,8 @@ function renderSetup(){
     body = `<div class="card"><h2>¿Para qué es este dispositivo?</h2>
       <p class="hint">Así se abre directo en la pantalla que necesitas. Lo puedes cambiar en Ajustes.</p>
       <div class="role">
-        <button type="button" data-role="caja" aria-pressed="${tmpRole === "caja"}"><b>Caja</b><span>El móvil: tomar pedidos, cobrar y entregar</span></button>
-        <button type="button" data-role="barra" aria-pressed="${tmpRole === "barra"}"><b>Barra</b><span>El iPad: ver y preparar cafés y matcha</span></button>
+        <button type="button" data-role="caja" aria-pressed="${tmpRole === "caja"}"><b>Mostrador</b><span>El móvil: tomar pedidos, cobrar y entregar</span></button>
+        <button type="button" data-role="barra" aria-pressed="${tmpRole === "barra"}"><b>Cafetera</b><span>El iPad: ver y preparar cafés y matcha</span></button>
         <button type="button" data-role="ambos" aria-pressed="${tmpRole === "ambos"}"><b>Las dos</b><span>Un solo dispositivo para todo</span></button>
       </div></div>`;
   } else if (cur === 1){
@@ -2334,7 +2344,7 @@ function renderSetup(){
       <div class="qgrid">
         <div class="field"><label for="spN">Nombre</label><input type="text" id="spN" placeholder="Ej. Matcha fresa"></div>
         <div class="field"><label for="spP">Precio (€)</label><input type="text" id="spP" inputmode="decimal" placeholder="4,00"></div>
-        <div class="field"><label for="spS">Sale en</label><select id="spS"><option value="barra">Barra</option><option value="cocina">Caja (tú)</option></select></div>
+        <div class="field"><label for="spS">Sale en</label><select id="spS"><option value="barra">Cafetera</option><option value="cocina">Mostrador (tú)</option></select></div>
       </div></div>`;
   } else if (cur === 2){
     body = `<div class="card"><h2>Cómo preparáis cada bebida</h2>
@@ -2371,17 +2381,17 @@ function renderSetup(){
         <div class="field"><label for="cf2">Avisar para retirar dinero a partir de (€)</label><input type="text" inputmode="decimal" id="cf2" value="${fmtIn(cfg("retiradaUmbral", 200))}"></div>
         <div class="field"><label for="cf3">Días que abrís a la semana</label><select id="cf3">${[1,2,3,4,5,6,7].map(n => `<option ${n === cfg("diasSemana", 6) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
       </div>
-      <label class="check"><input type="checkbox" id="cf5" ${vasosCaja() ? "checked" : ""}> Mientras cobro, preparo yo los vasos (hielo, leche fría y nombre) para que la barra solo añada el espresso o el matcha</label>
+      <label class="check"><input type="checkbox" id="cf5" ${vasosCaja() ? "checked" : ""}> Mientras cobro, preparo yo los vasos (hielo, leche fría y nombre) para que en la cafetera solo se añada el espresso o el matcha</label>
       ${open ? `<p class="hint">La caja ya está abierta desde las ${hhmm(shift.openedAt)}.</p>` : `<label class="check"><input type="checkbox" id="cf4" checked> Abrir la caja ahora con este fondo</label>`}</div>`;
   } else {
     body = barraOnly
-      ? `<div class="card"><h2>Listo para la barra</h2><p class="hint">En esta pantalla verás cada bebida con el nombre del cliente y un aviso al llegar. Toca la pantalla una vez para activar el sonido. La carta, precios y caja se configuran desde el móvil de caja.</p></div>`
+      ? `<div class="card"><h2>Listo para la cafetera</h2><p class="hint">En esta pantalla verás cada bebida con el nombre del cliente y un aviso al llegar. Toca la pantalla una vez para activar el sonido. La carta, precios y caja se configuran desde el móvil de caja.</p></div>`
       : steps.length === 2
-      ? `<div class="card"><h2>Hecho</h2><p class="hint">Este dispositivo se abrirá en ${tmpRole === "barra" ? "la Barra" : "Pedidos"}.</p></div>`
+      ? `<div class="card"><h2>Hecho</h2><p class="hint">Este dispositivo se abrirá en ${tmpRole === "barra" ? "la Cafetera" : "el Mostrador"}.</p></div>`
       : `<div class="card"><h2>Todo listo</h2>
         <ul class="lines" style="gap:8px">
           <li><span class="q">1</span><span>Abre el mismo enlace en el iPad de Laura, «Añadir a pantalla de inicio», y que entre con su correo.</span></li>
-          <li><span class="q">2</span><span>En el iPad, que elija <b>Barra</b> al abrirla y toque la pantalla una vez para el sonido.</span></li>
+          <li><span class="q">2</span><span>En el iPad, que elija <b>Cafetera</b> al abrirla y toque la pantalla una vez para el sonido.</span></li>
           <li><span class="q">3</span><span>Haz un pedido de prueba, anúlalo y comprueba que la caja cuadra.</span></li>
           <li><span class="q">4</span><span>Al acabar el día, cierra la caja contando billetes y monedas: así salen las estadísticas y las compras sugeridas.</span></li>
         </ul>
@@ -2528,7 +2538,7 @@ setInterval(() => {
   // En la caja: aviso si un pedido lleva más de 5 minutos esperando a la barra
   if (role !== "barra" && view === "pedidos"){
     const late = orders.filter(o => o.status === "nuevo" && mins(o.createdAt) >= 5 && !lateWarned.has(o.id));
-    if (late.length){ late.forEach(o => lateWarned.add(o.id)); beep("new"); toast(`${late.map(o => o.customer).join(", ")} ${late.length > 1 ? "llevan" : "lleva"} más de 5 min en barra: echa una mano`); }
+    if (late.length){ late.forEach(o => lateWarned.add(o.id)); beep("new"); toast(`${late.map(o => o.customer).join(", ")} ${late.length > 1 ? "llevan" : "lleva"} más de 5 min en la cafetera: echa una mano`); }
   }
 }, 30000);
 
