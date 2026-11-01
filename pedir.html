@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Pide en Utopía</title>
+<meta name="description" content="Pide desde tu móvil en Utopía Coffee Club y paga en caja.">
+<meta name="theme-color" content="#f1e9db">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
+<style>
+/* Página del cliente: estilo de las cartas de Utopía (papel crema, granate, Bebas + Barlow Condensed) */
+:root{
+  --bg:#f1e9db; --surface:#faf5ec; --ink:#5e0f1c; --text:#3b0a12; --muted:#8a4a52; --line:#dcc6bd;
+  --ok:#066d77; --ok-soft:#d9ebe9; --warn:#a8680f; --warn-soft:#f4e4c6; --danger:#c2360f;
+  --display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
+  --body:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--body);font-size:18px;font-weight:500;line-height:1.35;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 130px}
+[hidden]{display:none!important}
+main{max-width:560px;margin:0 auto}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.lockup{text-align:center;color:var(--ink);display:grid;justify-items:center;gap:2px;padding-block:22px 10px}
+.word{font-family:var(--display);font-size:clamp(3.6rem,18vw,5rem);line-height:.86;letter-spacing:.03em}
+.club{font-family:var(--display);font-size:1.35rem;letter-spacing:.2em}
+.rule{display:flex;align-items:center;gap:10px;width:min(60%,220px);margin-top:6px}
+.rule::before,.rule::after{content:"";flex:1;height:1.5px;background:var(--ink)}
+.rule svg{width:18px;height:18px}
+.intro{text-align:center;color:var(--muted);margin:4px 0 0}
+.pill{display:inline-block;margin-top:8px;border:1.5px solid var(--ink);color:var(--ink);border-radius:999px;padding:3px 12px;font-weight:700;font-size:.95rem;letter-spacing:.04em}
+h2{font-family:var(--display);font-weight:400;color:var(--ink);font-size:1.9rem;letter-spacing:.07em;margin:24px 0 8px;display:flex;align-items:center;gap:12px}
+h2::after{content:"";flex:1;height:1.5px;background:var(--ink)}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:0}
+.item .n{font-weight:600;font-size:1.15rem;letter-spacing:.03em;min-width:0;overflow-wrap:anywhere}
+.item .p{color:var(--muted)}
+.step{display:flex;align-items:center;gap:6px}
+.step button{width:42px;height:42px;border-radius:12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);font-size:1.4rem;font-weight:700;line-height:1}
+.step button.add{background:var(--ink);color:var(--bg)}
+.step span{min-width:2ch;text-align:center;font-weight:700;font-size:1.15rem}
+.chips{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 12px;font-size:.95rem;font-weight:600;color:var(--muted)}
+.chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:12px;margin-top:16px}
+label{font-size:.85rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:1.2rem;min-width:0}
+.total{display:flex;justify-content:space-between;align-items:baseline;font-family:var(--display);font-size:2.2rem;color:var(--ink);letter-spacing:.04em}
+.btn{border:0;border-radius:14px;background:var(--ink);color:var(--bg);font-family:var(--display);font-size:1.6rem;letter-spacing:.06em;padding:14px 18px;width:100%}
+.btn.ghost{background:none;color:var(--muted);font-family:var(--body);font-size:1rem;letter-spacing:0;padding:10px;text-decoration:underline}
+.btn:disabled{opacity:.5}
+.err{color:var(--danger);font-weight:700}
+.note{color:var(--muted);font-size:.95rem;margin:0}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--ink);color:var(--bg);display:flex;align-items:center;gap:12px;
+  padding:12px max(16px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.bar span{flex:1;font-weight:700;font-size:1.1rem}
+.bar button{border:0;border-radius:12px;background:var(--bg);color:var(--ink);font-family:var(--display);font-size:1.4rem;letter-spacing:.06em;padding:10px 18px}
+.closed{text-align:center;margin-top:28px}
+.closed b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;color:var(--ink);letter-spacing:.05em}
+/* Estado del pedido */
+.status{text-align:center;display:grid;gap:10px;margin-top:10px}
+.status .who{font-family:var(--display);font-size:clamp(3rem,15vw,4.4rem);line-height:.95;color:var(--ink);letter-spacing:.03em;overflow-wrap:anywhere}
+.status .num{font-family:var(--display);font-size:1.6rem;color:var(--muted);letter-spacing:.08em}
+.big{border-radius:16px;padding:18px;font-size:1.25rem;font-weight:600}
+.big b{display:block;font-family:var(--display);font-weight:400;font-size:2.2rem;letter-spacing:.05em;line-height:1.05}
+.big.pay{background:var(--warn-soft);border:2px solid var(--warn);color:var(--text)}
+.big.pay b{color:var(--warn)}
+.big.prep{background:var(--surface);border:2px solid var(--line)}
+.big.prep b{color:var(--ink)}
+.big.ready{background:var(--ok-soft);border:2px solid var(--ok)}
+.big.ready b{color:var(--ok)}
+.big.ready{animation:glow 1.4s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 8px rgba(6,109,119,.15)}}
+@media (prefers-reduced-motion:reduce){.big.ready{animation:none}}
+.track{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.track i{height:6px;border-radius:3px;background:var(--line)}
+.track i.on{background:var(--ink)}
+.track span{font-size:.85rem;color:var(--muted);font-style:normal}
+.summary{list-style:none;margin:0;padding:0;display:grid;gap:4px;text-align:left}
+.loading{text-align:center;color:var(--muted);margin-top:30px}
+</style>
+</head>
+<body>
+<main>
+  <header class="lockup">
+    <span class="word">UTOPÍA</span><span class="club">COFFEE CLUB</span>
+    <div class="rule" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(35 12 12)" fill="#5e0f1c"/><path d="M12 2.5c-3 3.5 3 6.5 0 10s3 6 0 9" transform="rotate(35 12 12)" stroke="#f1e9db" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></div>
+  </header>
+
+  <p class="loading" id="loading">Cargando la carta…</p>
+
+  <!-- Carta -->
+  <div id="vMenu" hidden>
+    <p class="intro">Pide desde aquí y recógelo en el mostrador.<br><span class="pill">Pago en caja · solo efectivo</span></p>
+    <div id="menu"></div>
+    <div class="card" id="checkout" hidden>
+      <div><label for="name">Tu nombre</label></div>
+      <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="Te llamaremos por este nombre" enterkeyhint="send">
+      <div class="total"><span>Total</span><span id="total">0,00 €</span></div>
+      <p class="note">Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.</p>
+      <p class="err" id="err" hidden></p>
+      <button type="button" class="btn" id="order">Hacer pedido</button>
+    </div>
+  </div>
+
+  <!-- Cerrado -->
+  <div id="vClosed" class="closed" hidden>
+    <b>Ahora no tomamos pedidos por el móvil</b>
+    <p class="note">Pide directamente en el mostrador. ¡Te esperamos!</p>
+  </div>
+
+  <!-- Estado del pedido -->
+  <div id="vStatus" class="status" hidden>
+    <div class="num" id="sNum"></div>
+    <div class="who" id="sWho"></div>
+    <div class="track" aria-hidden="true"><i id="t1"></i><i id="t2"></i><i id="t3"></i><span>Pagar</span><span>Preparando</span><span>¡Listo!</span></div>
+    <div id="sBox"></div>
+    <div class="card" style="margin-top:6px"><ul class="summary" id="sItems"></ul><div class="total" style="font-size:1.6rem"><span>Total</span><span id="sTotal"></span></div></div>
+    <button type="button" class="btn ghost" id="cancel" hidden>Cancelar pedido</button>
+    <button type="button" class="btn" id="again" hidden>Hacer otro pedido</button>
+  </div>
+</main>
+
+<div class="bar" id="bar" hidden><span id="barTxt"></span><button type="button" id="toCheckout">Pedir</button></div>
+
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eur = n => (Number(n)||0).toLocaleString("es-ES", {style:"currency", currency:"EUR"});
+const pad = n => String(n).padStart(3, "0");
+const ls = {get:k => { try { return localStorage.getItem(k); } catch(e){ return null; } }, set:(k,v) => { try { localStorage.setItem(k, v); } catch(e){} }, del:k => { try { localStorage.removeItem(k); } catch(e){} }};
+const CFG = window.UTOPIA_CONFIG || {};
+const sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {auth:{persistSession:false, autoRefreshToken:false}}) : null;
+const ORDER = ["Fuera de carta", "Matcha", "Cafés", "Repostería"];
+let products = [], cart = new Map(), current = null, pollT = null, lastStatus = null;
+
+function show(v){ ["vMenu","vClosed","vStatus"].forEach(x => $("#"+x).hidden = x !== v); $("#loading").hidden = true; renderBar(); }
+
+/* ---------- carta ---------- */
+async function loadMenu(){
+  if (!sb){ $("#loading").textContent = "No se pudo cargar la carta."; return; }
+  const {data, error} = await sb.rpc("carta_publica");
+  if (error){ $("#loading").textContent = "No se pudo cargar la carta. Revisa tu conexión y recarga."; return; }
+  if (!data.abierto){ show("vClosed"); return; }
+  products = data.productos || [];
+  [...cart.keys()].forEach(id => { if (!products.find(p => p.id === id)) cart.delete(id); });
+  renderMenu(); show("vMenu");
+}
+function renderMenu(){
+  const groups = new Map();
+  products.slice().sort((a,b) => { const ga = ORDER.indexOf(a.group), gb = ORDER.indexOf(b.group); return (ga < 0 ? 9 : ga) - (gb < 0 ? 9 : gb) || (a.order||0) - (b.order||0); })
+    .forEach(p => { if (!groups.has(p.group)) groups.set(p.group, []); groups.get(p.group).push(p); });
+  $("#menu").innerHTML = [...groups].map(([g, list]) => `<h2>${esc(g || "Carta")}</h2>` + list.map(p => {
+    const c = cart.get(p.id), q = c?.qty || 0;
+    return `<div class="item"><span class="n">${esc(p.name)}<br><span class="p">${eur(p.price)}</span></span>
+      <span class="step">${q ? `<button type="button" data-dec="${p.id}" aria-label="Quitar ${esc(p.name)}">−</button><span>${q}</span>` : ""}<button type="button" class="add" data-inc="${p.id}" aria-label="Añadir ${esc(p.name)}">+</button></span>
+      ${q && p.frio ? `<span class="chips">${["Sin hielo","Poco hielo"].map(t => `<button type="button" data-note="${p.id}" data-t="${t}" aria-pressed="${c.note === t}">${t}</button>`).join("")}</span>` : ""}
+    </div>`;
+  }).join("")).join("");
+  renderBar();
+}
+function cartInfo(){ let n = 0, t = 0; cart.forEach((c, id) => { const p = products.find(x => x.id === id); if (p){ n += c.qty; t += c.qty * Number(p.price); } }); return {n, t}; }
+function renderBar(){
+  const {n, t} = cartInfo(), onMenu = !$("#vMenu").hidden;
+  $("#bar").hidden = !(onMenu && n > 0);
+  $("#barTxt").textContent = `${n} ${n === 1 ? "producto" : "productos"} · ${eur(t)}`;
+  $("#checkout").hidden = !n;
+  $("#total").textContent = eur(t);
+}
+$("#menu").addEventListener("click", e => {
+  const inc = e.target.closest("[data-inc]"), dec = e.target.closest("[data-dec]"), nt = e.target.closest("[data-note]");
+  if (inc){ const c = cart.get(inc.dataset.inc) || {qty:0, note:""}; if (c.qty < 10) c.qty++; cart.set(inc.dataset.inc, c); }
+  else if (dec){ const c = cart.get(dec.dataset.dec); if (c){ c.qty--; if (c.qty <= 0) cart.delete(dec.dataset.dec); } }
+  else if (nt){ const c = cart.get(nt.dataset.note); if (c) c.note = c.note === nt.dataset.t ? "" : nt.dataset.t; }
+  else return;
+  renderMenu();
+});
+$("#toCheckout").addEventListener("click", () => { $("#checkout").scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => { if (!$("#name").value) $("#name").focus({preventScroll:true}); }, 400); });
+$("#name").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#order").click(); } });
+$("#name").value = ls.get("utopia_nombre") || "";
+
+/* ---------- pedir ---------- */
+let actx = null;
+function unlock(){ try { actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if (actx.state !== "running") actx.resume(); } catch(e){} }
+function ding(){
+  try { navigator.vibrate && navigator.vibrate([250,120,250]); } catch(e){}
+  try { if (!actx || actx.state !== "running") return; [880, 1175, 1568].forEach((f,i) => { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; const t = actx.currentTime + i*.18; g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.3, t+.02); g.gain.exponentialRampToValueAtTime(.0001, t+.25); o.connect(g).connect(actx.destination); o.start(t); o.stop(t+.27); }); } catch(e){}
+}
+const ERR = {cerrado:"Ahora mismo no tomamos pedidos por el móvil. Pide en el mostrador.", nombre:"Escribe tu nombre para que te llamemos.", agotado:"Se acaba de agotar algo de tu pedido. Lo hemos quitado: revísalo.", lleno:"Hay muchos pedidos pendientes ahora mismo. Pide en el mostrador, por favor.", productos:"Revisa tu pedido: como mucho 10 de cada cosa y 20 en total."};
+$("#order").addEventListener("click", async () => {
+  unlock();
+  const name = $("#name").value.trim(), err = $("#err"); err.hidden = true;
+  if (!name){ err.textContent = ERR.nombre; err.hidden = false; $("#name").focus(); return; }
+  const items = [...cart].map(([id, c]) => ({id, qty:c.qty, note:c.note || ""}));
+  if (!items.length) return;
+  const btn = $("#order"); btn.disabled = true; btn.textContent = "Enviando…";
+  try {
+    const {data, error} = await sb.rpc("pedido_cliente", {p_nombre:name, p_items:items});
+    if (error){
+      const code = Object.keys(ERR).find(k => String(error.message).includes(k));
+      err.textContent = code ? ERR[code] : "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."; err.hidden = false;
+      if (code === "agotado" || code === "cerrado") loadMenu();
+      return;
+    }
+    ls.set("utopia_nombre", name);
+    current = {id:data.id, token:data.token};
+    ls.set("utopia_pedido", JSON.stringify({...current, t:Date.now()}));
+    cart.clear(); renderMenu();
+    lastStatus = null; showStatus({status:"porcobrar", num:data.num, customer:name, total:data.total, items}); startPoll();
+  } catch(e){
+    err.textContent = "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."; err.hidden = false;
+  } finally { btn.disabled = false; btn.textContent = "Hacer pedido"; }
+});
+
+/* ---------- seguimiento ---------- */
+function showStatus(s){
+  show("vStatus");
+  $("#sNum").textContent = s.num ? "Pedido nº " + pad(s.num) : "";
+  $("#sWho").textContent = s.customer || "";
+  $("#sTotal").textContent = eur(s.total);
+  $("#sItems").innerHTML = (s.items||[]).map(i => `<li><b>${i.qty}×</b> ${esc(i.name || (products.find(p => p.id === i.id)||{}).name || "")}${i.note ? ` · <span class="p">${esc(i.note)}</span>` : ""}</li>`).join("");
+  const st = s.status, step = st === "porcobrar" ? 1 : st === "nuevo" ? 2 : (st === "listo" || st === "entregado") ? 3 : 0;
+  ["t1","t2","t3"].forEach((t,i) => $("#"+t).classList.toggle("on", step > i));
+  let box = "";
+  if (st === "porcobrar") box = `<div class="big pay"><b>Pasa por caja a pagar</b>${eur(s.total)} en efectivo. Di tu nombre al llegar.</div>`;
+  else if (st === "nuevo") box = `<div class="big prep"><b>Lo estamos preparando</b>Te avisamos aquí cuando esté listo. Puedes dejar esta pantalla abierta.</div>`;
+  else if (st === "listo") box = `<div class="big ready"><b>¡Tu pedido está listo!</b>Recógelo en el mostrador.</div>`;
+  else if (st === "entregado") box = `<div class="big prep"><b>¡Que lo disfrutes!</b>Gracias por venir a Utopía.</div>`;
+  else box = `<div class="big prep"><b>Pedido cancelado</b>Si quieres, puedes hacer otro.</div>`;
+  $("#sBox").innerHTML = box;
+  $("#cancel").hidden = st !== "porcobrar";
+  $("#again").hidden = !(st === "entregado" || st === "anulado");
+  if (lastStatus && lastStatus !== st && st === "listo") ding();
+  lastStatus = st;
+  if (st === "entregado" || st === "anulado"){ stopPoll(); ls.del("utopia_pedido"); }
+}
+async function poll(){
+  if (!current) return;
+  try {
+    const {data, error} = await sb.rpc("estado_pedido", {p_id:current.id, p_token:current.token});
+    if (error) return;
+    if (!data){ stopPoll(); ls.del("utopia_pedido"); current = null; loadMenu(); return; }
+    showStatus(data);
+  } catch(e){}
+}
+function startPoll(){ stopPoll(); pollT = setInterval(poll, 5000); }
+function stopPoll(){ clearInterval(pollT); pollT = null; }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && current) poll(); });
+$("#cancel").addEventListener("click", async e => {
+  const b = e.currentTarget;
+  if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "¿Seguro? Toca otra vez para cancelar"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Cancelar pedido"; }, 4000); return; }
+  b.disabled = true;
+  try { await sb.rpc("cancelar_pedido", {p_id:current.id, p_token:current.token}); await poll(); } finally { b.disabled = false; b.dataset.armed = ""; b.textContent = "Cancelar pedido"; }
+});
+$("#again").addEventListener("click", () => { current = null; lastStatus = null; ls.del("utopia_pedido"); loadMenu(); window.scrollTo(0,0); });
+document.addEventListener("pointerdown", unlock, {once:true});
+
+/* ---------- inicio: si ya hay un pedido en curso, se muestra ---------- */
+(async () => {
+  let saved = null; try { saved = JSON.parse(ls.get("utopia_pedido") || "null"); } catch(e){}
+  if (saved && sb && Date.now() - (saved.t||0) < 6*3600000){
+    current = {id:saved.id, token:saved.token};
+    const {data} = await sb.rpc("estado_pedido", {p_id:current.id, p_token:current.token}).catch(() => ({data:null}));
+    if (data && data.status !== "entregado" && data.status !== "anulado"){ lastStatus = data.status; showStatus(data); startPoll(); loadMenuQuiet(); return; }
+    ls.del("utopia_pedido"); current = null;
+  }
+  loadMenu();
+})();
+async function loadMenuQuiet(){ try { const {data} = await sb.rpc("carta_publica"); if (data) products = data.productos || []; } catch(e){} }
+})();
+</script>
+</body>
+</html>

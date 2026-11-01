@@ -9,6 +9,12 @@ App de pedidos, barra, caja y números de Utopía Coffee Club. Se instala como i
 - **Solo entra el equipo**: la tabla `equipo` guarda los correos autorizados. Cualquier otro correo no ve ni guarda nada.
 - **Sin cobertura**: `sw.js` guarda la app en el dispositivo para que abra sin internet, y los pedidos hechos sin conexión se envían solos al volver.
 
+## Pedidos de clientes por QR
+
+- `pedir.html` es la página que abre el cliente al escanear `cartel-qr.pdf` / `qr.png`. No necesita cuenta.
+- El cliente solo puede ver la carta disponible (sin recetas ni costes) y crear su pedido mediante funciones de la base de datos con límites (máx. 10 de cada producto, 20 en total, 15 pedidos sin pagar a la vez). Solo se puede pedir con la caja abierta y con «Aceptar pedidos de clientes por QR» activado en Ajustes.
+- El pedido queda «por cobrar»: aparece en Pedidos → Cobrar, se cobra en efectivo y entonces pasa a la barra. El cliente ve el estado en su móvil (pagar → preparando → listo).
+
 ## Puesta en marcha
 
 1. En Supabase, ejecutar `supabase/schema.sql` y luego `supabase/seed.sql` (carta y suministros).

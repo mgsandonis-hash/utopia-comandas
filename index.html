@@ -277,6 +277,15 @@ body.in-setup .top .tabs,body.in-setup .cartbar{display:none!important}
 .notechips{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
 .notechips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:.88rem;font-weight:600;color:var(--muted)}
 .kpi b,.change b,.sug b,.role b{font-weight:400}
+/* Pedidos del móvil (QR) */
+.webord{border:1.5px solid var(--gold);background:var(--gold-soft)}
+.webord b{font-family:var(--display);font-weight:400;font-size:1.4rem;color:var(--ink)}
+.webord.old{opacity:.6;border-style:dashed}
+.webord.charging{outline:3px solid var(--accent)}
+.mbadge.web{background:var(--gold);color:#fff;animation:pulse 1.2s ease-in-out infinite}
+.webbanner{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:var(--gold-soft);border-color:var(--gold)}
+.qrbox{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.qrbox img{border-radius:8px;background:#fff;padding:6px}
 /* Fidelidad y sin conexión */
 .loyal{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:var(--gold-soft);border:1.5px solid var(--gold);border-radius:var(--r);padding:10px 12px}
 .loyal.on{background:var(--accent-soft);border-color:var(--accent)}
@@ -372,7 +381,7 @@ table.t tr:last-child td{border-bottom:0}
     <div class="banner row" id="shiftBanner" hidden><span id="bannerTxt" style="flex:1;min-width:200px"></span><button type="button" class="btn small" id="bannerBtn"></button></div>
     <div class="banner off" id="outboxBanner" role="status" hidden></div>
     <div class="modebar" role="tablist" aria-label="Modo">
-      <button type="button" role="tab" data-mode="cobrar" aria-selected="true">Cobrar</button>
+      <button type="button" role="tab" data-mode="cobrar" aria-selected="true">Cobrar <span class="mbadge web" id="webBadge" hidden></span></button>
       <button type="button" role="tab" data-mode="entregar" aria-selected="false">Entregar <span class="mbadge" id="modeBadge" hidden></span></button>
     </div>
 
@@ -380,6 +389,12 @@ table.t tr:last-child td{border-bottom:0}
       <div class="sec-h"><h2>Para entregar</h2><span class="count" id="readyCount"></span></div>
       <div class="ready-list" id="readyList"></div>
     </section>
+
+    <section class="m-cobrar" id="webSec" hidden>
+      <div class="sec-h"><h2>Pedidos del móvil</h2><span class="count" id="webCount"></span></div>
+      <div class="pending" id="webList"></div>
+    </section>
+    <div class="banner webbanner" id="webCharging" hidden></div>
 
     <section class="m-cobrar">
       <div id="menuGrid"></div>
@@ -657,6 +672,9 @@ table.t tr:last-child td{border-bottom:0}
         <p class="hint" id="roleTxt"></p>
         <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en caja mientras cobro</button>
           <button type="button" class="sw" id="autoToggle" aria-pressed="true">Avisar a caja solo al tachar la última bebida</button></div>
+        <div class="toggles"><button type="button" class="sw" id="webToggle" aria-pressed="true">Aceptar pedidos de clientes por QR</button></div>
+        <div class="qrbox"><img src="qr.png" alt="Código QR para pedir desde el móvil" width="132" height="132">
+          <p class="hint">Los clientes escanean, piden con su nombre y pagan en caja en efectivo. Solo se puede pedir con la caja abierta. <a href="cartel-qr.pdf" target="_blank" rel="noopener">Cartel para imprimir</a> · <a href="pedir.html" target="_blank" rel="noopener">Ver la página del cliente</a></p></div>
         <div class="toggles"><button type="button" class="sw" id="fidToggle" aria-pressed="true">Fidelidad: una bebida gratis</button>
           <label class="check" for="fidCada">cada <input type="number" id="fidCada" min="2" max="30" step="1" style="width:70px"> visitas</label></div>
         <div class="qgrid">
@@ -740,7 +758,7 @@ const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return nu
 const lsSet = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
 let role = lsGet("rol");            // "caja" | "barra" | "ambos" (por dispositivo)
 const cfg = (k, d) => (config && config[k] !== undefined && config[k] !== null && config[k] !== "") ? Number(config[k]) : d;
-const ACTIVE = o => o.status !== "anulado";
+const ACTIVE = o => o.status !== "anulado" && o.status !== "porcobrar";
 
 /* ---------- vistas ---------- */
 function pickView(){
@@ -886,6 +904,65 @@ function updateModeBadge(){
   b.classList.toggle("hot", p.ready > 0);
 }
 document.querySelectorAll(".modebar [data-mode]").forEach(b => b.addEventListener("click", () => setMode(b.dataset.mode)));
+
+/* ---------- pedidos hechos por clientes con el QR ---------- */
+let webOrderId = null;
+const WEB_CADUCA = 30*60000;
+function renderWeb(){
+  const list = orders.filter(o => o.status === "porcobrar").sort((a,b) => a.createdAt - b.createdAt);
+  const live = list.filter(o => Date.now() - o.createdAt < WEB_CADUCA);
+  $("#webSec").hidden = !list.length;
+  $("#webCount").textContent = list.length || "";
+  const b = $("#webBadge"); b.hidden = !live.length; b.textContent = live.length;
+  $("#webList").innerHTML = list.map(o => {
+    const old = Date.now() - o.createdAt >= WEB_CADUCA, charging = webOrderId === o.id;
+    return `<div class="pend wrap webord ${old ? "old" : ""} ${charging ? "charging" : ""}">
+      <span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
+      <b>${eur(o.total)}</b><span class="mins" data-t="${o.createdAt}">${minsTxt(o.createdAt)}</span>
+      <ul class="lines inorder">${(o.items||[]).map(it => `<li><span class="q">${it.qty}×</span><span class="iname"><span>${esc(it.name)}${it.note ? ` <span class="note">· ${esc(it.note)}</span>` : ""}</span></span></li>`).join("")}</ul>
+      <div class="row" style="flex-basis:100%">
+        ${charging ? `<span class="tag ok">Cobrando abajo…</span>` : `<button type="button" class="btn primary" data-webpay="${o.id}" style="flex:1">${old ? "Ha venido: cobrar" : "Cobrar"}</button>`}
+        <button type="button" class="btn ghost danger" data-webcancel="${o.id}">${old ? "Descartar" : "Anular"}</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+function startWebCharge(id){
+  const o = orders.find(x => x.id === id); if (!o) return;
+  cart.clear(); invMode = null; freeItemId = null; useNumber = false; $("#useNum").setAttribute("aria-pressed","false");
+  const gone = [];
+  (o.items||[]).forEach(it => {
+    const m = menu.find(x => x.id === it.id);
+    if (!m || !isOn(m)){ gone.push(it.name); return; }
+    const c = cart.get(it.id) || {qty:0, note:""}; c.qty += it.qty; c.note = [c.note, it.note].filter(Boolean).join(", "); cart.set(it.id, c);
+  });
+  webOrderId = id;
+  $("#cust").value = o.customer || ""; $("#recv").value = "";
+  setMode("cobrar"); renderAll(); renderRegular(); renderLoyal();
+  if (gone.length) toast(`Ya no hay: ${gone.join(", ")}. Díselo al cliente.`);
+  setTimeout(() => $("#ticketSec").scrollIntoView({behavior:"smooth", block:"start"}), 50);
+}
+function stopWebCharge(){ webOrderId = null; cart.clear(); $("#cust").value = ""; $("#recv").value = ""; renderAll(); }
+function renderWebCharging(){
+  const o = webOrderId && orders.find(x => x.id === webOrderId);
+  if (webOrderId && (!o || o.status !== "porcobrar")){ webOrderId = null; }
+  const box = $("#webCharging");
+  box.hidden = !webOrderId;
+  box.innerHTML = webOrderId ? `<span style="flex:1">Cobrando el pedido del móvil <b>#${pad(o.num)} ${esc(o.customer)}</b>. Al cobrar pasa a la barra.</span><button type="button" class="btn small" id="webStop">Dejarlo</button>` : "";
+  $("#sendBtn").textContent = webOrderId ? "Cobrado · pasar a barra" : "Cobrado · enviar a barra";
+}
+$("#v-pedidos").addEventListener("click", e => {
+  const pay = e.target.closest("[data-webpay]"), cn = e.target.closest("[data-webcancel]"), stop = e.target.closest("#webStop");
+  if (pay){ startWebCharge(pay.dataset.webpay); return; }
+  if (stop){ stopWebCharge(); return; }
+  if (cn && db){
+    confirmTap(cn, "w"+cn.dataset.webcancel, "¿Seguro? Toca otra vez", async () => {
+      if (webOrderId === cn.dataset.webcancel) stopWebCharge();
+      upd(cn.dataset.webcancel, {status:"anulado", cancelledAt:Date.now(), canceladoPor:"caja"}, "Pedido del móvil anulado");
+    });
+  }
+});
+const webOn = () => !(config && config.pedidosWeb === false);
 
 /* ---------- lo que entregas tú, producto a producto ---------- */
 const mine = it => it.station === "cocina";
@@ -1116,7 +1193,9 @@ $("#sendBtn").addEventListener("click", async () => {
   showErr("");
   if (!db){ showErr("No hay conexión con la base de datos. Abre la página con tu cuenta de claude.ai."); return; }
   if (!cart.size){ showErr("La comanda está vacía."); return; }
-  const nextNum = today().reduce((mx,o) => Math.max(mx, o.num||0), 0) + 1;
+  const webO = webOrderId ? orders.find(x => x.id === webOrderId && x.status === "porcobrar") : null;
+  if (webOrderId && !webO){ webOrderId = null; showErr("Ese pedido del móvil ya no está pendiente (lo han anulado o cobrado). Revisa el ticket."); renderAll(); return; }
+  const nextNum = webO ? webO.num : today().reduce((mx,o) => Math.max(mx, o.num||0), 0) + 1;
   const name = $("#cust").value.trim() || (useNumber ? "Nº " + nextNum : invMode === "casa" ? "Casa" : invMode === "invitacion" ? "Invitación" : "");
   if (!name){ showErr("Escribe el nombre del cliente o pulsa «Usar nº»."); $("#cust").focus(); return; }
   const items = [...cart].flatMap(([id,c]) => {
@@ -1142,8 +1221,13 @@ $("#sendBtn").addEventListener("click", async () => {
   const now = Date.now();
   const btn = $("#sendBtn"); btn.disabled = true;
   try {
-    const res = await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{num, customer:name, items, total, pay:"efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null, createdAt:now, day:dayKey(now),
-      status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]}});
+    const fields = {num, customer:name, items, total, pay:"efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
+      status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]};
+    // Un pedido del móvil se cobra ahora: cuenta desde este momento (para la caja y la espera en barra)
+    const res = webO
+      ? await writeOrQueue({k:"update", col:"orders", id:webO.id, data:{...fields, createdAt:now, day:dayKey(now), pedidoEn:webO.createdAt}})
+      : await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{...fields, createdAt:now, day:dayKey(now)}});
+    webOrderId = null;
     if (!useNumber && invMode !== "casa") saveRegular(name, items, now);
     cart.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null;
     useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
@@ -2118,7 +2202,7 @@ $("#seasonSeg").addEventListener("click", async e => {
 
 /* ---------- render general ---------- */
 function renderAll(){
-  if (view === "pedidos"){ renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
+  if (view === "pedidos"){ renderWeb(); renderWebCharging(); renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
   else if (view === "barra") renderBarra();
   else if (view === "caja") renderCaja();
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
@@ -2142,6 +2226,7 @@ function updateBanner(){
   const sea = (config && config.temporada) || "todo";
   document.querySelectorAll("#seasonSeg [data-season]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.season === sea)));
   $("#fidToggle").setAttribute("aria-pressed", String(fidOn()));
+  $("#webToggle").setAttribute("aria-pressed", String(webOn()));
   if (document.activeElement !== $("#fidCada")) $("#fidCada").value = fidCada();
   if (document.activeElement !== $("#jugP")) $("#jugP").value = jugCap().p;
   $("#roleTxt").textContent = role ? `Este dispositivo está configurado para ${ROLES[role]}.` : "Este dispositivo aún no tiene un uso elegido.";
@@ -2374,6 +2459,7 @@ async function setCfg(patch, msg){
   const nc = {...(config||{}), ...patch};
   try { await db.doc("config/app").set(nc); config = nc; updateBanner(); if (msg) toast(msg); } catch(e){ toast(saveErrMsg(e, "No se pudo guardar.")); }
 }
+$("#webToggle").addEventListener("click", () => setCfg({pedidosWeb: !webOn()}, !webOn() ? "Pedidos por QR activados" : "Pedidos por QR desactivados: el cliente verá que hay que pedir en el mostrador"));
 $("#fidToggle").addEventListener("click", () => setCfg({fidelidad: !fidOn()}, !fidOn() ? "Fidelidad activada" : "Fidelidad desactivada"));
 $("#fidCada").addEventListener("change", e => { const v = Math.round(Number(e.target.value)); if (v >= 2 && v <= 30) setCfg({fidelidadCada:v}, `Gratis cada ${v} visitas`); else toast("Pon un número de 2 a 30"); });
 $("#autoToggle").addEventListener("click", async () => {
@@ -2413,7 +2499,7 @@ function saveErrMsg(err, fallback){
 /* ---------- conexión ---------- */
 async function prune(){
   const limit = Date.now() - 2*86400000;
-  const old = orders.filter(o => (o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) < limit);
+  const old = orders.filter(o => ((o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) < limit) || (o.status === "porcobrar" && (o.createdAt||0) < Date.now() - 86400000));
   for (const o of old){ try { await db.collection("orders").doc(o.id).delete(); } catch(e){ break; } }
 }
 async function boot(){
@@ -2444,13 +2530,15 @@ async function boot(){
     ordersRaw = snap.docs.map(d => ({id:d.id, ...d.data()}));
     applyOrders();
     if (primed){
-      let newOne = false, readyOne = false;
+      let newOne = false, readyOne = false, webOne = [];
       orders.forEach(o => {
         const p = prevStatus.get(o.id);
-        if (p === undefined && o.status === "nuevo") newOne = true;
+        if ((p === undefined || p === "porcobrar") && o.status === "nuevo") newOne = true;
+        if (p === undefined && o.status === "porcobrar") webOne.push(o.customer);
         if (p !== undefined && p !== "listo" && o.status === "listo") readyOne = true;
       });
       if (view === "barra" && newOne) alertUser("new");
+      if (webOne.length && role !== "barra"){ alertUser("new"); toast(`Pedido del móvil: ${webOne.join(", ")}`); }
       if (view === "pedidos" && readyOne){ alertUser("ready"); if (pedMode === "cobrar" && !cart.size && !$("#cust").value.trim()) setMode("entregar"); }
     }
     prevStatus = new Map(orders.map(o => [o.id, o.status]));
