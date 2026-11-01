@@ -143,6 +143,8 @@
       .subscribe(status => { if (status === "SUBSCRIBED") reloadAll(); });
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reloadAll(); });
     addEventListener("online", reloadAll);
+    // Por si se pierde algún aviso en tiempo real: refresca cada 2 minutos con la app a la vista
+    setInterval(() => { if (document.visibilityState === "visible" && navigator.onLine) reloadAll(); }, 120000);
   }
 
   // ---------- acceso ----------
