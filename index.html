@@ -72,6 +72,7 @@ button{cursor:pointer}
 .subnav::-webkit-scrollbar{display:none}
 .subnav button{border:0;background:none;border-radius:999px;padding:6px 14px;font-weight:700;font-size:.95rem;color:var(--muted);white-space:nowrap;flex:none}
 .subnav button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
+.lowrow td{background:var(--danger-soft)}
 .esc input{width:100%;min-width:76px;max-width:120px;text-align:right}
 .esc td{vertical-align:middle}
 .ajnav{border-top:0;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
@@ -626,6 +627,7 @@ table.t tr:last-child td{border-bottom:0}
     <nav class="subnav ajnav" id="ajNav" aria-label="Ajustes">
       <button type="button" data-aj="carta">Carta</button>
       <button type="button" data-aj="suministros">Suministros</button>
+      <button type="button" data-aj="compra">Lista de la compra</button>
       <button type="button" data-aj="qr">QR y pagos</button>
       <button type="button" data-aj="equipo">Equipo</button>
     </nav>
@@ -677,6 +679,16 @@ table.t tr:last-child td{border-bottom:0}
       </form></div></details></section>
       </div>
     </div>
+    <div data-ajp="compra" hidden><section>
+      <div class="sec-h"><h2>Lista de la compra</h2><span class="count" id="shopCount"></span></div>
+      <div class="row" style="align-items:flex-end;gap:10px;margin-bottom:10px">
+        <div class="field" style="max-width:200px"><label for="shopDays">Para cuántos días de apertura</label><input type="number" id="shopDays" min="1" max="30" step="1" inputmode="numeric" value="6"></div>
+        <button type="button" class="btn" id="shopCopy">Copiar lista</button>
+        <button type="button" class="btn primary" id="shopBuy" disabled>Apuntar lo marcado como comprado</button>
+      </div>
+      <div id="shopList"></div>
+      <p class="hint" style="margin-top:8px">Calculado con lo que gastáis cada día (recetas × ventas de los últimos 14 días), lo que os queda según el último conteo y el mínimo de cada suministro: <b>a comprar = gasto diario × días + mínimo − lo que queda</b>, redondeado a paquetes enteros. Marca lo que vayas comprando; «Apuntar» lo suma al stock y lo añade a gastos.</p>
+    </section></div>
     <div data-ajp="qr" hidden><section><div class="card" style="display:grid;gap:12px">
         <div class="toggles"><button type="button" class="sw" id="webToggle" aria-pressed="true">Aceptar pedidos de clientes por QR</button></div>
         <div class="qrbox"><img src="qr.png" alt="Código QR para pedir desde el móvil" width="132" height="132">
@@ -800,7 +812,7 @@ const goView = v => { if (location.hash !== "#"+v) location.hash = v; else setVi
 document.querySelectorAll(".tabs [data-view], #officeNav [data-view]").forEach(b => b.addEventListener("click", () => goView(b.dataset.view)));
 $(".tabs [data-office]").addEventListener("click", () => { const last = lsGet("oficina"); goView(OFFICE.includes(last) ? last : "caja"); });
 // Ajustes: subpestañas
-let ajTab = ["carta","suministros","qr","equipo"].includes(lsGet("ajTab")) ? lsGet("ajTab") : "carta";
+let ajTab = ["carta","suministros","compra","qr","equipo"].includes(lsGet("ajTab")) ? lsGet("ajTab") : "carta";
 function setAjTab(t){
   ajTab = t; lsSet("ajTab", t);
   document.querySelectorAll("#ajNav [data-aj]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.aj === t)));
@@ -2152,7 +2164,66 @@ function renderAjustes(){
     </div>`;
   }).join("") : `<div class="empty">Sin suministros.</div>`;
   renderEscandallos();
+  renderShop();
 }
+/* ---------- lista de la compra ---------- */
+const shopTicks = new Set();
+function shopRows(){
+  const days = Math.max(1, Math.min(30, Math.round(Number($("#shopDays").value) || cfg("diasCompra", 6))));
+  return insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))).map(i => {
+    const st = insState(i); if (!st.usedBy) return null;
+    const min = Number(i.minimo)||0, pk = Number(i.paquete)||0, left = st.left;
+    let need = null, why = "";
+    const pd = st.perDay > 0 ? st.perDay : null;
+    if (pd !== null && left !== null){ need = st.perDay*days + min - Math.max(0, left); why = `gastáis ${fmtUnits(st.perDay, i.unidad)}/día · quedan ${fmtUnits(Math.max(0,left), i.unidad)}`; }
+    else if (pd !== null){ need = pd*days; why = `gastáis ${fmtUnits(pd, i.unidad)}/día · sin contar el stock (cuéntalo en Inventario para afinar)`; }
+    else if (left !== null && left <= min){ need = Math.max(pk, min - left); why = `quedan ${fmtUnits(Math.max(0,left), i.unidad)}, por debajo del mínimo`; }
+    else return {i, need:0, packs:0, why: left === null ? "sin datos todavía" : `quedan ${fmtUnits(Math.max(0,left), i.unidad)}`, skip:true};
+    if (need <= 0) return {i, need:0, packs:0, why, skip:true};
+    const packs = pk > 0 ? Math.ceil(need/pk - 1e-9) : null;
+    const coste = packs && Number(i.precioPaquete) > 0 ? packs*Number(i.precioPaquete) : null;
+    return {i, need, packs, coste, why, urgent: left !== null && left <= min};
+  }).filter(Boolean);
+}
+const shopQty = r => r.packs ? `${r.packs} ${r.packs === 1 ? "paquete" : "paquetes"} (${fmtUnits(r.packs*Number(r.i.paquete), r.i.unidad)})` : fmtUnits(r.need, r.i.unidad);
+function renderShop(){
+  if (!$("#shopList")) return;
+  if (document.activeElement !== $("#shopDays")) $("#shopDays").value = cfg("diasCompra", 6);
+  const rows = shopRows(), buy = rows.filter(r => !r.skip), rest = rows.filter(r => r.skip);
+  const total = buy.reduce((a,r) => a + (r.coste||0), 0);
+  $("#shopCount").textContent = buy.length ? `${buy.length} ${buy.length === 1 ? "cosa" : "cosas"}${total ? " · " + eur(total) : ""}` : "";
+  $("#shopList").innerHTML = (buy.length ? `<div class="tablewrap"><table class="t"><thead><tr><th></th><th>Suministro</th><th class="n">Comprar</th><th class="n">Coste aprox.</th><th>Por qué</th></tr></thead><tbody>${buy.map(r => `<tr class="${r.urgent ? "lowrow" : ""}">
+      <td><input type="checkbox" data-shop="${r.i.id}" ${shopTicks.has(r.i.id) ? "checked" : ""} aria-label="Comprado: ${esc(r.i.nombre)}"></td>
+      <td><b>${esc(r.i.nombre)}</b>${r.urgent ? ` <span class="mins up">urgente</span>` : ""}</td><td class="n">${shopQty(r)}</td><td class="n">${r.coste ? eur(r.coste) : "—"}</td><td class="mins">${r.why}${r.packs === null ? " · pon cuánto trae un paquete en Escandallos" : ""}</td></tr>`).join("")}
+      ${total ? `<tr><td></td><td><b>Total</b></td><td></td><td class="n"><b>${eur(total)}</b></td><td></td></tr>` : ""}</tbody></table></div>`
+    : `<div class="empty">No hace falta comprar nada para esos días.</div>`)
+    + (rest.length ? `<p class="hint" style="margin-top:10px">Os llega: ${rest.map(r => `${esc(r.i.nombre)} (${r.why})`).join(" · ")}.</p>` : "");
+  $("#shopBuy").disabled = !buy.some(r => shopTicks.has(r.i.id) && r.packs);
+}
+$("#shopDays").addEventListener("change", () => { const v = Math.round(Number($("#shopDays").value)); if (v >= 1 && v <= 30) setCfg({diasCompra:v}); renderShop(); });
+$("#shopList").addEventListener("change", e => { const c = e.target.closest("[data-shop]"); if (!c) return; c.checked ? shopTicks.add(c.dataset.shop) : shopTicks.delete(c.dataset.shop); renderShop(); });
+$("#shopCopy").addEventListener("click", async () => {
+  const buy = shopRows().filter(r => !r.skip); if (!buy.length){ toast("No hay nada que comprar"); return; }
+  const total = buy.reduce((a,r) => a + (r.coste||0), 0);
+  const txt = `Lista de la compra · Utopía (${new Date().toLocaleDateString("es-ES")})\n` + buy.map(r => `- ${r.i.nombre}: ${shopQty(r)}${r.coste ? ` · ${eur(r.coste)}` : ""}`).join("\n") + (total ? `\nTotal aprox.: ${eur(total)}` : "");
+  try { await navigator.clipboard.writeText(txt); toast("Lista copiada: pégala en WhatsApp o en notas"); }
+  catch(e){ const ta = document.createElement("textarea"); ta.value = txt; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); toast("Lista copiada"); } catch(_){ toast("No se pudo copiar"); } ta.remove(); }
+});
+$("#shopBuy").addEventListener("click", async () => {
+  const buy = shopRows().filter(r => !r.skip && r.packs && shopTicks.has(r.i.id)); if (!buy.length || !db) return;
+  const btn = $("#shopBuy"); btn.disabled = true; const now = Date.now();
+  try {
+    for (const r of buy){
+      const ins = r.i, st = insState(ins), add = r.packs*Number(ins.paquete), base = st.left !== null ? Math.max(0, st.left) : 0;
+      const coste = Number(ins.precioPaquete) > 0 ? cents(r.packs*Number(ins.precioPaquete))/100 : null;
+      const compras = [...(Array.isArray(ins.compras) ? ins.compras : []), {t:now, paquetes:r.packs, cantidad:add, coste}].slice(-40);
+      await db.collection("insumos").doc(ins.id).update({stockContado: base + add, fechaConteo: now, compras});
+      if (coste) await db.collection("gastos").add({fecha:dayKey(now), concepto:`${ins.nombre} (${r.packs} paq.)`, categoria:catForIns(ins), importe:coste, origen:"compra", t:now});
+      shopTicks.delete(ins.id);
+    }
+    toast(`Apuntado: ${buy.map(r => r.i.nombre).join(", ")}`);
+  } catch(err){ toast(saveErrMsg(err, "No se pudo apuntar la compra.")); } finally { renderShop(); }
+});
 const UNAME = {g:"g", ml:"ml", ud:"ud"};
 const fmtPer = (cu, u) => cu === null ? "—" : `${cu.toLocaleString("es-ES", {minimumFractionDigits: cu < 0.1 ? 4 : 2, maximumFractionDigits: cu < 0.1 ? 4 : 2})} €/${UNAME[u] || u}`;
 // Coste de un producto con los costes que tenían los suministros antes del último cambio de precio
