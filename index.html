@@ -74,6 +74,8 @@ button{cursor:pointer}
 .subnav button[aria-pressed="true"]{background:var(--accent-soft);color:var(--ink)}
 .ajnav{border-top:0;margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px}
 .ajnav button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.boxrow{display:grid;grid-template-columns:110px minmax(0,1fr) 90px auto;gap:6px;align-items:center}
+@media (max-width:480px){ .boxrow{grid-template-columns:96px minmax(0,1fr) 72px auto} }
 /* Desplegables */
 details.fold > summary{list-style:none;cursor:pointer;margin-bottom:0}
 details.fold > summary::-webkit-details-marker{display:none}
@@ -589,6 +591,17 @@ table.t tr:last-child td{border-bottom:0}
       </div>
       <div class="kpis" id="statKpis"></div>
     </section>
+    <section><details class="fold" id="f-box" open><summary class="sec-h"><h2>Gente del box</h2><span class="count" id="boxCount"></span></summary><div class="foldbody">
+      <div class="kpis" id="boxKpis"></div>
+      <div class="tablewrap" style="margin-top:10px"><table class="t" id="boxTable"></table></div>
+      <div class="sugs" id="boxSugs" style="margin-top:10px"></div>
+      <div class="card" style="margin-top:10px;display:grid;gap:10px">
+        <div class="row"><label class="lbl" for="boxDay">Apuntar asistencia del día</label><input type="date" id="boxDay" style="width:auto"></div>
+        <div id="boxRows" style="display:grid;gap:8px"></div>
+        <div class="row"><button type="button" class="btn small" id="boxAdd">+ Clase</button><button type="button" class="btn small" id="boxCopy">Copiar clases de la semana pasada</button><button type="button" class="btn primary" id="boxSave" style="margin-left:auto">Guardar</button></div>
+        <p class="hint">Solo cuántas personas fueron a cada clase (lo ves en WodBuster). La app lo cruza con los pedidos que entran al acabar cada clase.</p>
+      </div>
+    </div></details></section>
     <section class="card">
       <div class="sec-h"><h2>Ventas por día</h2></div>
       <div class="vchart"><div class="vbars" id="dayBars"></div></div>
@@ -721,7 +734,7 @@ const WEEKDAYS_L = ["domingos","lunes","martes","miércoles","jueves","viernes",
 const fmtWait = ms => { const t = Math.round(ms/1000); return Math.floor(t/60) + ":" + String(t%60).padStart(2,"0") + " min"; };
 
 let db = null;
-let menu = [], orders = [], shift = null, closes = [], gastos = [], fijos = [], insumos = [];
+let menu = [], orders = [], shift = null, closes = [], gastos = [], fijos = [], insumos = [], asistencia = [];
 let gotMenu = false, gotOrders = false, gotShift = false, primed = false;
 let prevStatus = new Map();
 const cart = new Map();
@@ -835,11 +848,12 @@ const today = () => orders.filter(o => o.day === dayKey());
 /* ---------- agregados de ventas ---------- */
 function changeBreakdown(cc){ const r = {}; DENOMS_C.forEach(d => { while (cc >= d){ r[d] = (r[d]||0)+1; cc -= d; } }); return r; }
 function aggregate(list){
-  const a = {ventas:0, bizum:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}};
+  const a = {ventas:0, bizum:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}, mins:[]};
   list.filter(ACTIVE).forEach(o => {
     const tc = cents(o.total); a.n++; a.ventas += tc;
     a.propinas += cents(o.propina);
     if (o.pay === "bizum") a.bizum += tc;
+    if (!o.invitacion){ const d = new Date(o.createdAt); a.mins.push([d.getHours()*60 + d.getMinutes(), tc]); }
     (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
     // Productos que se piden juntos (para sugerir combos)
     if (!o.invitacion){ const ids = [...new Set((o.items||[]).map(i => i.id).filter(Boolean))].sort(); for (let x = 0; x < ids.length; x++) for (let y = x+1; y < ids.length; y++){ const k = ids[x] + "|" + ids[y]; a.pares[k] = (a.pares[k]||0) + 1; } }
@@ -861,7 +875,7 @@ function aggregate(list){
 const shiftOrders = () => (shift && shift.open) ? orders.filter(o => (o.createdAt||0) >= shift.openedAt) : [];
 // Registros por turno: cierres guardados + turno abierto en vivo
 function records(fromT){
-  const recs = closes.filter(c => (c.closedAt||0) >= fromT).map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:c.horas||{}, vueltas:c.vueltas||{}, espera:c.espera||{n:0, s:0, over:0, max:0}, invit:c.invit||{n:0,c:0}, fidel:c.fidel||{n:0,c:0}, propinas:cents(c.propinas), pares:c.pares||{}, bizum:cents(c.ventasBizum)}));
+  const recs = closes.filter(c => (c.closedAt||0) >= fromT).map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:c.horas||{}, vueltas:c.vueltas||{}, espera:c.espera||{n:0, s:0, over:0, max:0}, invit:c.invit||{n:0,c:0}, fidel:c.fidel||{n:0,c:0}, propinas:cents(c.propinas), pares:c.pares||{}, bizum:cents(c.ventasBizum), mins:c.mins||null}));
   if (shift && shift.open){ const a = aggregate(shiftOrders()); recs.push({day:dayKey(shift.openedAt), t:shift.openedAt, live:true, ...a}); }
   return recs;
 }
@@ -1681,7 +1695,7 @@ $("#closeBtn").addEventListener("click", e => {
       await db.collection("cierres").add({openedAt:shift.openedAt, closedAt:now, fondo:s.fondo/100, ventas:s.ventas/100, pedidos:s.n,
         entradas:s.entradas/100, salidas:s.salidas/100, esperado:s.esperado/100, contado:c/100, diferencia:(c-s.esperado)/100,
         movs:s.movs, desglose, productos:s.productos, horas:s.horas, vueltas:s.vueltas, espera:s.espera,
-        propinas:s.propTot/100, ventasBizum:s.bizum/100, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
+        propinas:s.propTot/100, ventasBizum:s.bizum/100, mins:s.mins, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
       await db.doc("turno/actual").set({open:false, closedAt:now});
       DENOMS.forEach((d,i) => { counts[i] = 0; $("#d-"+i).value = ""; $("#ds-"+i).textContent = eur(0); }); $("#closeTotal").value = "";
       toast("Caja cerrada");
@@ -1790,6 +1804,93 @@ function periodFrom(){
   if (period === "mes") return monthRange(0).from;
   return startOfDay(now - (Number(period)-1)*86400000);
 }
+/* ---------- gente del box (WodBuster) cruzada con los pedidos ---------- */
+const toMin = h => { const [a,b] = String(h||"").split(":").map(Number); return isNaN(a) ? null : a*60 + (b||0); };
+// Un pedido cuenta para la clase que acabó justo antes: de 45 min a 1 h 45 min después de empezar
+function classFor(m, ses){
+  let best = null;
+  ses.forEach(x => { const st = toMin(x.hora); if (st === null) return; if (m >= st + 45 && m < st + 105 && (!best || st > toMin(best.hora))) best = x; });
+  return best;
+}
+function dayMins(day){
+  const recs = records(new Date(day+"T00:00").getTime() - 1).filter(r => r.day === day);
+  const out = [];
+  recs.forEach(r => {
+    if (Array.isArray(r.mins)) r.mins.forEach(x => out.push(x));
+    else Object.entries(r.horas||{}).forEach(([h,v]) => { const per = v.n ? Math.round(v.c/v.n) : 0; for (let i = 0; i < v.n; i++) out.push([Number(h)*60+30, per]); });
+  });
+  return out;
+}
+let boxDraft = [], boxDraftDay = null;
+function loadBoxDraft(day){
+  const a = asistencia.find(x => x.id === day);
+  boxDraft = a && Array.isArray(a.sesiones) ? a.sesiones.map(x => ({...x})) : [];
+  if (!boxDraft.length) boxDraft = [{hora:"", clase:"", n:""}];
+  boxDraftDay = day; renderBoxRows();
+}
+function renderBoxRows(){
+  $("#boxRows").innerHTML = boxDraft.map((x,i) => `<div class="boxrow">
+    <input type="time" id="bx-h-${i}" data-bx="${i}" data-f="hora" value="${esc(x.hora)}" aria-label="Hora de la clase">
+    <input type="text" id="bx-c-${i}" data-bx="${i}" data-f="clase" value="${esc(x.clase)}" placeholder="Clase (WOD, Open Box…)" aria-label="Nombre de la clase">
+    <input type="number" id="bx-n-${i}" data-bx="${i}" data-f="n" value="${esc(x.n)}" min="0" max="200" inputmode="numeric" placeholder="Personas" aria-label="Personas">
+    <button type="button" class="btn ghost danger small" data-bxdel="${i}" aria-label="Quitar clase">✕</button></div>`).join("");
+}
+function renderBox(){
+  const from = periodFrom();
+  const days = asistencia.filter(a => new Date(a.id+"T12:00").getTime() >= from && Array.isArray(a.sesiones)).sort((a,b) => a.id.localeCompare(b.id));
+  if (!$("#boxDay").value) $("#boxDay").value = dayKey();
+  if (boxDraftDay !== $("#boxDay").value) loadBoxDraft($("#boxDay").value);
+  const byClass = {}; let personas = 0, pedClase = 0, ventClase = 0, sinClase = 0, ventSin = 0;
+  days.forEach(a => {
+    const ses = a.sesiones.filter(x => Number(x.n) > 0 && toMin(x.hora) !== null);
+    ses.forEach(x => { personas += Number(x.n); const k = WEEKDAYS[new Date(a.id+"T12:00").getDay()] + " " + x.hora + (x.clase ? " · " + x.clase : ""); const b = byClass[k] || (byClass[k] = {k, dias:0, n:0, ped:0, c:0, h:toMin(x.hora), wd:new Date(a.id+"T12:00").getDay()}); b.dias++; b.n += Number(x.n); });
+    dayMins(a.id).forEach(([m, c]) => {
+      const x = classFor(m, ses);
+      if (!x){ sinClase++; ventSin += c; return; }
+      pedClase++; ventClase += c;
+      const k = WEEKDAYS[new Date(a.id+"T12:00").getDay()] + " " + x.hora + (x.clase ? " · " + x.clase : ""); byClass[k].ped++; byClass[k].c += c;
+    });
+  });
+  $("#boxCount").textContent = personas ? `${personas} personas · ${Math.round(pedClase/personas*100)}% pide` : "";
+  $("#boxKpis").innerHTML = !days.length ? `<div class="empty" style="grid-column:1/-1">Apunta abajo cuánta gente fue a cada clase y verás qué parte del box pasa por la cafetería.</div>` : `
+    <div class="kpi"><b>${personas}</b><span>personas en ${days.length} ${days.length === 1 ? "día" : "días"} con datos</span></div>
+    <div class="kpi key"><b>${Math.round(pedClase/personas*100)}%</b><span>piden al salir de clase (${pedClase} pedidos)</span></div>
+    <div class="kpi"><b>${eurC(Math.round(ventClase/personas))}</b><span>de venta por persona del box</span></div>
+    <div class="kpi"><b>${sinClase}</b><span>pedidos fuera de las clases · ${eurC(ventSin)}</span></div>`;
+  const rows = Object.values(byClass).sort((a,b) => a.wd - b.wd || a.h - b.h);
+  $("#boxTable").innerHTML = rows.length ? `<thead><tr><th>Clase</th><th class="n">Días</th><th class="n">Personas</th><th class="n">Pedidos al salir</th><th class="n">% que pide</th><th class="n">Ventas</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.k)}</td><td class="n">${r.dias}</td><td class="n">${r.n}</td><td class="n">${r.ped}</td><td class="n ${r.n && r.ped/r.n < .2 ? "up" : r.n && r.ped/r.n >= .4 ? "okc" : ""}">${r.n ? Math.round(r.ped/r.n*100) : 0}%</td><td class="n">${eurC(r.c)}</td></tr>`).join("")}</tbody>` : "";
+  const sg = [];
+  const big = rows.filter(r => r.n >= 5);
+  if (big.length >= 2){
+    const best = big.slice().sort((a,b) => b.ped/b.n - a.ped/a.n)[0], worst = big.slice().sort((a,b) => a.ped/a.n - b.ped/b.n)[0];
+    if (best !== worst) sg.push(sug("", `La que más tira: ${esc(best.k)}`, `${Math.round(best.ped/best.n*100)}% de esa clase pide al salir. Ten la cafetera y los vasos listos 10 minutos antes de que acabe.`));
+    if (worst.ped/worst.n < .25) sg.push(sug("warn", `La que menos pide: ${esc(worst.k)}`, `Solo el ${Math.round(worst.ped/worst.n*100)}%. Prueba a anunciar algo al acabar la clase (un fuera de carta, la oferta de fidelidad) o a sacar el QR a la vista de esa clase.`));
+  }
+  const busiest = rows.slice().sort((a,b) => b.n/b.dias - a.n/a.dias)[0];
+  if (busiest && busiest.dias >= 2) sg.push(sug("", `Clase con más gente: ${esc(busiest.k)}`, `De media ${Math.round(busiest.n/busiest.dias)} personas. Es la hora punta de la cafetera.`));
+  $("#boxSugs").innerHTML = sg.join("");
+}
+$("#boxDay").addEventListener("change", e => loadBoxDraft(e.target.value || dayKey()));
+$("#boxRows").addEventListener("input", e => { const i = e.target.dataset.bx; if (i === undefined) return; boxDraft[i][e.target.dataset.f] = e.target.value; });
+$("#boxRows").addEventListener("click", e => { const d = e.target.closest("[data-bxdel]"); if (!d) return; boxDraft.splice(Number(d.dataset.bxdel), 1); if (!boxDraft.length) boxDraft.push({hora:"", clase:"", n:""}); renderBoxRows(); });
+$("#boxAdd").addEventListener("click", () => { boxDraft.push({hora:"", clase:"", n:""}); renderBoxRows(); const last = $("#bx-h-" + (boxDraft.length-1)); if (last) last.focus(); });
+$("#boxCopy").addEventListener("click", () => {
+  const d = new Date(($("#boxDay").value || dayKey()) + "T12:00"); d.setDate(d.getDate() - 7);
+  const prev = asistencia.find(x => x.id === dayKey(d.getTime()));
+  if (!prev || !Array.isArray(prev.sesiones) || !prev.sesiones.length){ toast("No hay clases apuntadas ese día de la semana pasada"); return; }
+  boxDraft = prev.sesiones.map(x => ({hora:x.hora, clase:x.clase, n:""})); renderBoxRows(); toast("Clases copiadas: pon cuántas personas fueron");
+});
+$("#boxSave").addEventListener("click", async () => {
+  if (!db) return;
+  const day = $("#boxDay").value || dayKey();
+  const ses = boxDraft.map(x => ({hora:String(x.hora||"").slice(0,5), clase:String(x.clase||"").trim().slice(0,30), n:Math.max(0, Math.round(Number(x.n)||0))})).filter(x => x.hora && x.n > 0);
+  try {
+    if (!ses.length){ await db.collection("asistencia").doc(day).delete(); toast("Asistencia borrada"); return; }
+    ses.sort((a,b) => toMin(a.hora) - toMin(b.hora));
+    await db.collection("asistencia").doc(day).set({sesiones:ses, total:ses.reduce((a,x) => a + x.n, 0), t:Date.now()});
+    toast(`Guardado: ${ses.reduce((a,x) => a + x.n, 0)} personas`);
+  } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+});
 function renderDatos(){
   document.querySelectorAll("#periodChips .chip").forEach(c => c.setAttribute("aria-pressed", String(c.dataset.p === period)));
   const from = periodFrom(), m = merge(records(from));
@@ -2272,7 +2373,7 @@ function renderAll(){
   else if (view === "barra") renderBarra();
   else if (view === "caja") renderCaja();
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
-  else if (view === "datos"){ renderDatos(); renderDur(); renderSlow(); renderCombos(); }
+  else if (view === "datos"){ renderDatos(); renderBox(); renderDur(); renderSlow(); renderCombos(); }
   else renderAjustes();
   updateBanner();
   $("#v-pedidos").dataset.mode = pedMode;
@@ -2629,6 +2730,7 @@ async function boot(){
   db.collection("fijos").onSnapshot(snap => { fijos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); }, err => {});
   db.collection("insumos").onSnapshot(snap => { insumos = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
   setTimeout(flushOutbox, 3000);
+  db.collection("asistencia").onSnapshot(snap => { asistencia = snap.docs.map(d => ({id:d.id, ...d.data()})); if (boxDraftDay && !document.activeElement?.dataset?.bx) loadBoxDraft(boxDraftDay); if (view === "datos") renderBox(); }, err => {});
   db.collection("clientes").orderBy("t", "desc").limit(300).onSnapshot(snap => { clientes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRegular(); }, err => {});
 }
 boot();
