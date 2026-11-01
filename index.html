@@ -1004,11 +1004,11 @@ const deliveredSet = o => new Set(Array.isArray(o.entregados) ? o.entregados : [
 function myHint(it){
   const m = itemMenu(it), r = m?.receta || {}, k = prepKind(m, it.name);
   if (k === "matcha"){
-    const vaso = isCold(m, it.name) ? `vaso con ${iceTxt(m, it)}${Number(r.coco) ? ` + ${r.coco} ml coco` : ""}${extrasTxt(r)}` : "vaso caliente" + extrasTxt(r);
-    return `${Number(r.matcha) || 3} g matcha + 35 ml agua, batir · ${vaso}`;
+    const vaso = isCold(m, it.name) ? `vaso con ${iceTxt(m, it)}${Number(r.coco) ? ` + ${r.coco} ml coco` : ""}${extrasTxt(r, ["agua"])}` : "vaso caliente" + extrasTxt(r, ["agua"]);
+    return `${Number(r.matcha) || 3} g matcha + ${Number(r.agua) || 35} ml agua, batir · ${vaso}`;
   }
-  if (k === "coldbrew") return "vaso con hielo + cold brew";
-  if (k === "batch") return "vaso caliente + batch";
+  if (k === "coldbrew") return `vaso con ${hasIce(m, it.name) ? iceTxt(m, it) : "hielo"} + cold brew${extrasTxt(r)}`;
+  if (k === "batch") return "vaso caliente + batch" + extrasTxt(r);
   return "";
 }
 function itemLine(o, it, i){
@@ -1365,13 +1365,14 @@ function prepKind(m, name){
 const hasIce = (m, name) => m && typeof m.conHielo === "boolean" ? m.conHielo : isCold(m, name);
 function iceTxt(m, it){
   const note = it.note || "", g = Number(m?.receta?.hielo) || 0;
+  const n = c => `${num1(c)} hielo${c === 1 ? "" : "s"}`;
   if (/sin hielo/i.test(note)) return "sin hielo";
-  if (/poco hielo/i.test(note)) return g ? `poco hielo (~${Math.round(g/2)} g)` : "poco hielo";
-  return g ? `hielo ${g} g` : "hielo";
+  if (/poco hielo/i.test(note)) return g > 1 ? `poco hielo (${n(Math.max(1, Math.floor(g/2)))})` : "poco hielo";
+  return g ? n(g) : "hielo";
 }
 // Ingredientes extra que hay que acordarse de echar
-const EXTRAS = {"pure-mango":"puré de mango", "mascarpone":"mezcla mascarpone"};
-const extrasTxt = r => Object.entries(EXTRAS).filter(([k]) => Number(r?.[k]) > 0).map(([k, n]) => { const i = insumos.find(x => x.id === k); return ` + ${num1(Number(r[k]))} ${i ? i.unidad : "g"} ${n}`; }).join("");
+const EXTRAS = {"pure-mango":"puré de mango", "mascarpone":"mezcla mascarpone", "mezcla-cloud":"mezcla cloud", "chocolate":"chocolate", "agua":"agua"};
+const extrasTxt = (r, skip = []) => Object.entries(EXTRAS).filter(([k]) => !skip.includes(k) && Number(r?.[k]) > 0).map(([k, n]) => { const i = insumos.find(x => x.id === k); return ` + ${num1(Number(r[k]))} ${i ? i.unidad : "g"} ${n}`; }).join("");
 const CUP_KEYS = ["vaso-caliente", "vaso-frio", "tapa", "hielo", "pegatina"];
 function isCold(m, name){
   const r = m?.receta || {};
@@ -2082,7 +2083,7 @@ function renderAjustes(){
             <option value="0" ${Number(m.receta?.tapa)>0?"":"selected"}>No</option><option value="1" ${Number(m.receta?.tapa)>0?"selected":""}>Sí</option></select></div>
           <div class="field"><label for="m-${m.id}-ice">Hielo</label><select id="m-${m.id}-ice" data-ice="${m.id}">
             <option value="0" ${hasIce(m)?"":"selected"}>No</option><option value="1" ${hasIce(m)?"selected":""}>Sí</option></select></div>
-          ${hasIce(m) ? `<div class="field"><label for="r-${m.id}-hielo">Cantidad de hielo (g)</label><input type="text" inputmode="decimal" id="r-${m.id}-hielo" data-rid="${m.id}" data-ins="hielo" value="${Number(m.receta?.hielo) ? String(m.receta.hielo).replace(".",",") : ""}" placeholder="Ej. 150"></div>` : ""}
+          ${hasIce(m) ? `<div class="field"><label for="r-${m.id}-hielo">Hielos (cubitos)</label><input type="text" inputmode="decimal" id="r-${m.id}-hielo" data-rid="${m.id}" data-ins="hielo" value="${Number(m.receta?.hielo) ? String(m.receta.hielo).replace(".",",") : ""}" placeholder="2"></div>` : ""}
         </div>
         ${cupOf(m) ? `<p class="hint" style="margin:-4px 0 8px">Lleva pegatina (todos los vasos la llevan).</p>` : ""}
         <div class="lbl">Receta · cantidad por unidad vendida</div>
@@ -2128,7 +2129,7 @@ $("#menuEdit").addEventListener("change", async e => {
   const el = e.target;
   const extra = el.dataset.cup ? {id:el.dataset.cup, patch:{receta:{"vaso-caliente": el.value === "caliente" ? 1 : 0, "vaso-frio": el.value === "frio" ? 1 : 0, pegatina: el.value ? 1 : 0}}}
     : el.dataset.tapa ? {id:el.dataset.tapa, patch:{receta:{tapa: Number(el.value)}}}
-    : el.dataset.ice ? {id:el.dataset.ice, patch: el.value === "1" ? {conHielo:true} : {conHielo:false, receta:{hielo:0}}} : null;
+    : el.dataset.ice ? {id:el.dataset.ice, patch: el.value === "1" ? {conHielo:true, ...(Number(menu.find(x => x.id === el.dataset.ice)?.receta?.hielo) > 0 ? {} : {receta:{hielo: cfg("hielosFrio", 2)}})} : {conHielo:false, receta:{hielo:0}}} : null;
   if (extra){ try { await db.collection("menu").doc(extra.id).update(extra.patch); toast("Guardado"); } catch(err){ toast("No se pudo guardar."); } return; }
   if (el.dataset.rid){
     const v = el.value.trim() === "" ? 0 : parseMoney(el.value);
@@ -2583,7 +2584,7 @@ async function saveStep(cur){
     if (n){
       if (isNaN(p)){ setupErr("Pon el precio del producto fuera de carta."); return false; }
       const st = $("#spS").value;
-      await db.collection("menu").add({name:n, price:p, group: st === "cocina" ? "Repostería" : "Cafés", station:st, especial:true, disponible:true, order:menu.length+1, receta: st === "cocina" ? {} : {"vaso-frio":1, pegatina:1}, ...(st === "cocina" ? {} : {conHielo:true})});
+      await db.collection("menu").add({name:n, price:p, group: st === "cocina" ? "Repostería" : "Cafés", station:st, especial:true, disponible:true, order:menu.length+1, receta: st === "cocina" ? {} : {"vaso-frio":1, pegatina:1, hielo: cfg("hielosFrio", 2)}, ...(st === "cocina" ? {} : {conHielo:true})});
     }
     return true;
   }
