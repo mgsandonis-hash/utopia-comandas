@@ -278,6 +278,9 @@ body.in-setup .top .tabs,body.in-setup .cartbar{display:none!important}
 .notechips{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}
 .notechips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:.88rem;font-weight:600;color:var(--muted)}
 .kpi b,.change b,.sug b,.role b{font-weight:400}
+/* Bizum */
+.bizumbox{background:var(--ready-soft);border:1.5px solid var(--ready);border-radius:10px;padding:12px 14px;font-size:1.05rem}
+.tag.biz{background:var(--ready-soft);color:var(--ready)}
 /* Pedidos del móvil (QR) */
 .webord{border:1.5px solid var(--gold);background:var(--gold-soft)}
 .webord b{font-family:var(--display);font-weight:400;font-size:1.4rem;color:var(--ink)}
@@ -415,6 +418,8 @@ table.t tr:last-child td{border-bottom:0}
           <button type="button" class="sw" id="invBtn" aria-pressed="false">Invitación</button>
           <button type="button" class="sw" id="casaBtn" aria-pressed="false">Consumo propio</button>
         </div>
+        <div class="seg" id="paySeg"><button type="button" data-pay="efectivo" aria-pressed="true">Efectivo</button><button type="button" data-pay="bizum" aria-pressed="false">Bizum</button></div>
+        <div class="bizumbox" id="bizumArea" hidden></div>
         <div id="cashArea" style="display:grid;gap:12px">
           <div class="field"><label for="recv">Te da (efectivo)</label>
             <input type="text" id="recv" inputmode="decimal" autocomplete="off" placeholder="Importe exacto">
@@ -674,6 +679,7 @@ table.t tr:last-child td{border-bottom:0}
         <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en caja mientras cobro</button>
           <button type="button" class="sw" id="autoToggle" aria-pressed="true">Avisar a caja solo al tachar la última bebida</button></div>
         <div class="toggles"><button type="button" class="sw" id="webToggle" aria-pressed="true">Aceptar pedidos de clientes por QR</button></div>
+        <div class="field" style="max-width:260px"><label for="bizumIn">Número de Bizum (vacío = sin Bizum)</label><input type="text" id="bizumIn" inputmode="tel" autocomplete="off" placeholder="600 00 00 00"></div>
         <div class="qrbox"><img src="qr.png" alt="Código QR para pedir desde el móvil" width="132" height="132">
           <p class="hint">Los clientes escanean, piden con su nombre y pagan en caja en efectivo. Solo se puede pedir con la caja abierta. <a href="cartel-qr.pdf" target="_blank" rel="noopener">Cartel para imprimir</a> · <a href="pedir.html" target="_blank" rel="noopener">Ver la página del cliente</a></p></div>
         <div class="toggles"><button type="button" class="sw" id="fidToggle" aria-pressed="true">Fidelidad: una bebida gratis</button>
@@ -839,10 +845,11 @@ const today = () => orders.filter(o => o.day === dayKey());
 /* ---------- agregados de ventas ---------- */
 function changeBreakdown(cc){ const r = {}; DENOMS_C.forEach(d => { while (cc >= d){ r[d] = (r[d]||0)+1; cc -= d; } }); return r; }
 function aggregate(list){
-  const a = {ventas:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}};
+  const a = {ventas:0, bizum:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}};
   list.filter(ACTIVE).forEach(o => {
     const tc = cents(o.total); a.n++; a.ventas += tc;
     a.propinas += cents(o.propina);
+    if (o.pay === "bizum") a.bizum += tc;
     (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
     // Productos que se piden juntos (para sugerir combos)
     if (!o.invitacion){ const ids = [...new Set((o.items||[]).map(i => i.id).filter(Boolean))].sort(); for (let x = 0; x < ids.length; x++) for (let y = x+1; y < ids.length; y++){ const k = ids[x] + "|" + ids[y]; a.pares[k] = (a.pares[k]||0) + 1; } }
@@ -864,17 +871,18 @@ function aggregate(list){
 const shiftOrders = () => (shift && shift.open) ? orders.filter(o => (o.createdAt||0) >= shift.openedAt) : [];
 // Registros por turno: cierres guardados + turno abierto en vivo
 function records(fromT){
-  const recs = closes.filter(c => (c.closedAt||0) >= fromT).map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:c.horas||{}, vueltas:c.vueltas||{}, espera:c.espera||{n:0, s:0, over:0, max:0}, invit:c.invit||{n:0,c:0}, fidel:c.fidel||{n:0,c:0}, propinas:cents(c.propinas), pares:c.pares||{}}));
+  const recs = closes.filter(c => (c.closedAt||0) >= fromT).map(c => ({day:dayKey(c.openedAt), t:c.openedAt, ventas:cents(c.ventas), n:c.pedidos||0, productos:c.productos||{}, horas:c.horas||{}, vueltas:c.vueltas||{}, espera:c.espera||{n:0, s:0, over:0, max:0}, invit:c.invit||{n:0,c:0}, fidel:c.fidel||{n:0,c:0}, propinas:cents(c.propinas), pares:c.pares||{}, bizum:cents(c.ventasBizum)}));
   if (shift && shift.open){ const a = aggregate(shiftOrders()); recs.push({day:dayKey(shift.openedAt), t:shift.openedAt, live:true, ...a}); }
   return recs;
 }
 function merge(recs){
-  const m = {ventas:0, n:0, productos:{}, horas:{}, days:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0,c:0}, fidel:{n:0,c:0}, propinas:0, pares:{}};
+  const m = {ventas:0, bizum:0, n:0, productos:{}, horas:{}, days:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0,c:0}, fidel:{n:0,c:0}, propinas:0, pares:{}};
   recs.forEach(r => {
     m.ventas += r.ventas; m.n += r.n;
     if (r.invit){ m.invit.n += r.invit.n||0; m.invit.c += r.invit.c||0; }
     if (r.fidel){ m.fidel.n += r.fidel.n||0; m.fidel.c += r.fidel.c||0; }
     m.propinas += r.propinas||0;
+    m.bizum += r.bizum||0;
     Object.entries(r.pares||{}).forEach(([k,v]) => m.pares[k] = (m.pares[k]||0) + v);
     const e = r.espera || {}; m.espera.n += e.n||0; m.espera.s += e.s||0; m.espera.over += e.over||0; m.espera.max = Math.max(m.espera.max, e.max||0);
     const d = m.days[r.day] || (m.days[r.day] = {ventas:0, n:0, t:r.t}); d.ventas += r.ventas; d.n += r.n;
@@ -919,14 +927,27 @@ function renderWeb(){
     const old = Date.now() - o.createdAt >= WEB_CADUCA, charging = webOrderId === o.id;
     return `<div class="pend wrap webord ${old ? "old" : ""} ${charging ? "charging" : ""}">
       <span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
-      <b>${eur(o.total)}</b><span class="mins" data-t="${o.createdAt}">${minsTxt(o.createdAt)}</span>
+      <b>${eur(o.total)}</b>${o.metodo === "bizum" ? `<span class="tag biz">Bizum</span>` : ""}<span class="mins" data-t="${o.createdAt}">${minsTxt(o.createdAt)}</span>
       <ul class="lines inorder">${(o.items||[]).map(it => `<li><span class="q">${it.qty}×</span><span class="iname"><span>${esc(it.name)}${it.note ? ` <span class="note">· ${esc(it.note)}</span>` : ""}</span></span></li>`).join("")}</ul>
       <div class="row" style="flex-basis:100%">
-        ${charging ? `<span class="tag ok">Cobrando abajo…</span>` : `<button type="button" class="btn primary" data-webpay="${o.id}" style="flex:1">${old ? "Ha venido: cobrar" : "Cobrar"}</button>`}
+        ${charging ? `<span class="tag ok">Cobrando abajo…</span>` : o.metodo === "bizum"
+          ? `<button type="button" class="btn primary" data-webbizum="${o.id}" style="flex:1">Bizum recibido</button><button type="button" class="btn small" data-webpay="${o.id}">Paga en efectivo</button>`
+          : `<button type="button" class="btn primary" data-webpay="${o.id}" style="flex:1">${old ? "Ha venido: cobrar" : "Cobrar"}</button>`}
         <button type="button" class="btn ghost danger" data-webcancel="${o.id}">${old ? "Descartar" : "Anular"}</button>
       </div>
     </div>`;
   }).join("");
+}
+// Un toque cuando llega la notificación del banco: pasa directo a la barra
+async function payWebBizum(o){
+  const now = Date.now(), items = o.items || [];
+  const hasBar = items.some(i => i.station !== "cocina");
+  const needsPrep = items.some(i => i.station === "cocina" && prepKind(itemMenu(i), i.name) === "matcha");
+  const st = hasBar ? "nuevo" : needsPrep ? "listo" : "entregado";
+  await upd(o.id, {status:st, pay:"bizum", metodo:"bizum", received:o.total, change:0, propina:0, entregados:[],
+    readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, createdAt:now, day:dayKey(now), pedidoEn:o.createdAt},
+    `#${pad(o.num)} ${o.customer} · Bizum ${eur(o.total)} · ${hasBar ? "pasa a barra" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}`);
+  saveRegular(o.customer, items, now);
 }
 function startWebCharge(id){
   const o = orders.find(x => x.id === id); if (!o) return;
@@ -937,7 +958,7 @@ function startWebCharge(id){
     if (!m || !isOn(m)){ gone.push(it.name); return; }
     const c = cart.get(it.id) || {qty:0, note:""}; c.qty += it.qty; c.note = [c.note, it.note].filter(Boolean).join(", "); cart.set(it.id, c);
   });
-  webOrderId = id;
+  webOrderId = id; payMethod = "efectivo";
   $("#cust").value = o.customer || ""; $("#recv").value = "";
   setMode("cobrar"); renderAll(); renderRegular(); renderLoyal();
   if (gone.length) toast(`Ya no hay: ${gone.join(", ")}. Díselo al cliente.`);
@@ -955,6 +976,12 @@ function renderWebCharging(){
 $("#v-pedidos").addEventListener("click", e => {
   const pay = e.target.closest("[data-webpay]"), cn = e.target.closest("[data-webcancel]"), stop = e.target.closest("#webStop");
   if (pay){ startWebCharge(pay.dataset.webpay); return; }
+  const bz = e.target.closest("[data-webbizum]");
+  if (bz && db){
+    const o = orders.find(x => x.id === bz.dataset.webbizum && x.status === "porcobrar"); if (!o) return;
+    confirmTap(bz, "bz"+o.id, `¿Te han llegado ${eur(o.total)}? Toca otra vez`, () => { bz.disabled = true; payWebBizum(o); });
+    return;
+  }
   if (stop){ stopWebCharge(); return; }
   if (cn && db){
     confirmTap(cn, "w"+cn.dataset.webcancel, "¿Seguro? Toca otra vez", async () => {
@@ -1044,7 +1071,9 @@ function renderMenuGrid(){
   if (off.length) html += `<div class="soldout">Agotado: ${off.map(m => esc(m.name)).join(", ")}</div>`;
   box.innerHTML = html;
 }
-let invMode = null, freeItemId = null;   // invitación / consumo propio, y producto gratis por fidelidad
+let invMode = null, freeItemId = null, payMethod = "efectivo";
+const bizumNum = () => String((config && config.bizum) || "").replace(/\D/g, "");
+const fmtTel = t => t.replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4");   // invitación / consumo propio, y producto gratis por fidelidad
 function cartTotal(){
   let full = 0, n = 0;
   cart.forEach((c,id) => { const m = menu.find(x => x.id === id); if (m){ full += c.qty*(Number(m.price)||0); n += c.qty; } });
@@ -1070,7 +1099,13 @@ function renderCart(){
   $("#cartTotal").innerHTML = (invMode || disc) && full ? `<s class="mins">${eur(full)}</s> ${eur(t)}` : eur(t);
   $("#invBtn").setAttribute("aria-pressed", String(invMode === "invitacion"));
   $("#casaBtn").setAttribute("aria-pressed", String(invMode === "casa"));
-  $("#cashArea").hidden = !!invMode;
+  if (payMethod === "bizum" && !bizumNum()) payMethod = "efectivo";
+  $("#paySeg").hidden = !!invMode || !bizumNum();
+  $("#paySeg").querySelectorAll("[data-pay]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pay === payMethod)));
+  const biz = payMethod === "bizum" && !invMode;
+  $("#cashArea").hidden = !!invMode || biz;
+  $("#bizumArea").hidden = !biz;
+  $("#bizumArea").innerHTML = biz ? `Bizum de <b>${eur(t)}</b> al <b>${fmtTel(bizumNum())}</b>. Pulsa cobrado cuando te llegue la notificación del banco.` : "";
   renderLoyal();
   $("#cartSum").textContent = `${n} ${n===1?"artículo":"artículos"} · ${eur(t)}`;
   $("#cartBar").hidden = !(view === "pedidos" && pedMode === "cobrar" && n > 0);
@@ -1092,6 +1127,7 @@ function renderCash(){
   $("#changeAmt").textContent = eurC(Math.abs(ch));
 }
 $("#recv").addEventListener("input", renderCash);
+$("#paySeg").addEventListener("click", e => { const b = e.target.closest("[data-pay]"); if (!b) return; payMethod = b.dataset.pay; renderCart(); });
 $("#quickCash").addEventListener("click", e => {
   const b = e.target.closest("[data-cash]"); if (!b) return;
   $("#recv").value = b.dataset.cash === "exact" ? "" : (Number(b.dataset.cash)/100).toFixed(2).replace(".", ",");
@@ -1211,9 +1247,10 @@ $("#sendBtn").addEventListener("click", async () => {
     return [{...base, qty:c.qty, price}];
   });
   const total = Math.round(items.reduce((s,i) => s + i.qty*i.price, 0)*100)/100;
-  const rc = invMode ? 0 : receivedCents(), tc = cents(total);
+  const biz = payMethod === "bizum" && !invMode;
+  const rc = invMode ? 0 : biz ? cents(total) : receivedCents(), tc = cents(total);
   if (rc < tc){ showErr(`Faltan ${eurC(tc-rc)}. Revisa lo que te ha dado.`); $("#recv").focus(); return; }
-  const tip = !invMode && $("#tipChk").checked ? rc - tc : 0;
+  const tip = !invMode && !biz && $("#tipChk").checked ? rc - tc : 0;
   const hasBar = items.some(i => i.station !== "cocina");
   // Si lleva algo que preparas tú (matcha), queda en Para entregar; si es solo servir, se entrega en el acto
   const needsPrep = items.some(i => i.station === "cocina" && prepKind(itemMenu(i), i.name) === "matcha");
@@ -1222,7 +1259,7 @@ $("#sendBtn").addEventListener("click", async () => {
   const now = Date.now();
   const btn = $("#sendBtn"); btn.disabled = true;
   try {
-    const fields = {num, customer:name, items, total, pay:"efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
+    const fields = {num, customer:name, items, total, pay: biz ? "bizum" : "efectivo", metodo: biz ? "bizum" : "efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
       status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]};
     // Un pedido del móvil se cobra ahora: cuenta desde este momento (para la caja y la espera en barra)
     const res = webO
@@ -1230,7 +1267,7 @@ $("#sendBtn").addEventListener("click", async () => {
       : await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{...fields, createdAt:now, day:dayKey(now)}});
     webOrderId = null;
     if (!useNumber && invMode !== "casa") saveRegular(name, items, now);
-    cart.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null;
+    cart.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null; payMethod = "efectivo";
     useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
     renderMenuGrid(); renderCart();
     window.scrollTo({top:0, behavior:"smooth"});
@@ -1470,7 +1507,7 @@ function shiftSummary(){
   const fondo = cents(shift.fondo);
   const propManual = (Array.isArray(shift.propinas) ? shift.propinas : []).reduce((s,p) => s + cents(p.importe), 0);
   const propTot = a.propinas + propManual;
-  return {...a, entradas, salidas, fondo, movs, propManual, propTot, esperado: fondo + a.ventas + propTot + entradas - salidas};
+  return {...a, entradas, salidas, fondo, movs, propManual, propTot, efectivo: a.ventas - a.bizum, esperado: fondo + (a.ventas - a.bizum) + propTot + entradas - salidas};
 }
 let closeExpress = false;
 function countedCents(){
@@ -1523,7 +1560,7 @@ function renderCaja(){
     $("#tipTotal").textContent = s.propTot ? eurC(s.propTot) : "";
     $("#cashStats").innerHTML = `
       <div class="kpi"><b>${eurC(s.fondo)}</b><span>fondo inicial</span></div>
-      <div class="kpi"><b>${eurC(s.ventas)}</b><span>ventas · ${s.n} ${s.n === 1 ? "pedido" : "pedidos"}</span></div>
+      <div class="kpi"><b>${eurC(s.ventas)}</b><span>ventas · ${s.n} ${s.n === 1 ? "pedido" : "pedidos"}${s.bizum ? `<br>${eurC(s.efectivo)} efectivo · ${eurC(s.bizum)} Bizum` : ""}</span></div>
       <div class="kpi"><b>${eurC(s.entradas)}</b><span>entradas</span></div>
       <div class="kpi"><b>${eurC(s.salidas)}</b><span>salidas</span></div>
       <div class="kpi"><b>${eurC(s.propTot)}</b><span>propinas</span></div>
@@ -1630,7 +1667,7 @@ $("#closeBtn").addEventListener("click", e => {
       await db.collection("cierres").add({openedAt:shift.openedAt, closedAt:now, fondo:s.fondo/100, ventas:s.ventas/100, pedidos:s.n,
         entradas:s.entradas/100, salidas:s.salidas/100, esperado:s.esperado/100, contado:c/100, diferencia:(c-s.esperado)/100,
         movs:s.movs, desglose, productos:s.productos, horas:s.horas, vueltas:s.vueltas, espera:s.espera,
-        propinas:s.propTot/100, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
+        propinas:s.propTot/100, ventasBizum:s.bizum/100, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
       await db.doc("turno/actual").set({open:false, closedAt:now});
       DENOMS.forEach((d,i) => { counts[i] = 0; $("#d-"+i).value = ""; $("#ds-"+i).textContent = eur(0); }); $("#closeTotal").value = "";
       toast("Caja cerrada");
@@ -1746,7 +1783,7 @@ function renderDatos(){
   const best = dayList.slice().sort((a,b) => b[1].ventas - a[1].ventas)[0];
   const units = Object.values(m.productos).reduce((a,p) => a + p.qty, 0);
   $("#statKpis").innerHTML = `
-    <div class="kpi key"><b>${eurC(m.ventas)}</b><span>ventas</span></div>
+    <div class="kpi key"><b>${eurC(m.ventas)}</b><span>ventas${m.bizum ? ` · ${eurC(m.bizum)} por Bizum` : ""}</span></div>
     <div class="kpi"><b>${m.n}</b><span>pedidos · ${units} productos</span></div>
     <div class="kpi"><b>${eurC(m.n ? Math.round(m.ventas/m.n) : 0)}</b><span>ticket medio</span></div>
     <div class="kpi"><b>${dayList.length ? eurC(Math.round(m.ventas/dayList.length)) : eur(0)}</b><span>media por día abierto</span></div>
@@ -2150,10 +2187,10 @@ function buildWorkbook(X){
     res.push([new Date(y, mo-1, 1).toLocaleDateString("es-ES", {month:"long", year:"numeric"}), Object.keys(ms.days).length, ms.n, r2(ventas), ms.n ? r2(ventas/ms.n) : 0, r2(gv), r2(fijoMes), r2(ben), ventas ? ben/ventas : 0]);
   });
   // Cierres
-  const cie = [["Fecha", "Abre", "Cierra", "Pedidos", "Ventas", "Ticket medio", "Propinas", "Entradas", "Salidas", "Debía haber", "Contado", "Diferencia", "Espera media (min)"]];
+  const cie = [["Fecha", "Abre", "Cierra", "Pedidos", "Ventas", "De ellas Bizum", "Ticket medio", "Propinas", "Entradas", "Salidas", "Debía haber", "Contado", "Diferencia", "Espera media (min)"]];
   closes.slice().sort((a,b) => a.openedAt - b.openedAt).forEach(c => {
     const e = c.espera || {};
-    cie.push([new Date(c.openedAt).toLocaleDateString("es-ES"), hhmm(c.openedAt), hhmm(c.closedAt), c.pedidos||0, Number(c.ventas)||0, c.pedidos ? r2(c.ventas/c.pedidos) : 0, Number(c.propinas)||0, Number(c.entradas)||0, Number(c.salidas)||0, Number(c.esperado)||0, Number(c.contado)||0, Number(c.diferencia)||0, e.n ? Math.round(e.s/e.n/600)/100 : ""]);
+    cie.push([new Date(c.openedAt).toLocaleDateString("es-ES"), hhmm(c.openedAt), hhmm(c.closedAt), c.pedidos||0, Number(c.ventas)||0, Number(c.ventasBizum)||0, c.pedidos ? r2(c.ventas/c.pedidos) : 0, Number(c.propinas)||0, Number(c.entradas)||0, Number(c.salidas)||0, Number(c.esperado)||0, Number(c.contado)||0, Number(c.diferencia)||0, e.n ? Math.round(e.s/e.n/600)/100 : ""]);
   });
   // Productos
   const all = merge(records(0)), totalV = all.ventas/100;
@@ -2169,7 +2206,7 @@ function buildWorkbook(X){
   gas.push([], ["Gastos fijos mensuales"]); fijos.forEach(f => gas.push(["", f.concepto, f.categoria, Number(f.importe)||0, "Fijo"]));
   const wb = X.utils.book_new();
   X.utils.book_append_sheet(wb, mk(res, [3,4,5,6,7], [8], [18,12,10,12,12,14,12,12,9], 3), "Resumen");
-  X.utils.book_append_sheet(wb, mk(cie, [4,5,6,7,8,9,10,11], [], [12,7,7,9,11,11,10,10,10,12,11,11,16]), "Cierres de caja");
+  X.utils.book_append_sheet(wb, mk(cie, [4,5,6,7,8,9,10,11,12], [], [12,7,7,9,11,13,11,10,10,10,12,11,11,16]), "Cierres de caja");
   X.utils.book_append_sheet(wb, mk(pro, [2,4,5,6], [3], [30,10,12,14,12,16,16]), "Productos");
   X.utils.book_append_sheet(wb, mk(gas, [3], [], [12,34,26,11,20]), "Gastos");
   return wb;
@@ -2231,6 +2268,7 @@ function updateBanner(){
   document.querySelectorAll("#seasonSeg [data-season]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.season === sea)));
   $("#fidToggle").setAttribute("aria-pressed", String(fidOn()));
   $("#webToggle").setAttribute("aria-pressed", String(webOn()));
+  if (document.activeElement !== $("#bizumIn")) $("#bizumIn").value = bizumNum() ? fmtTel(bizumNum()) : "";
   if (document.activeElement !== $("#fidCada")) $("#fidCada").value = fidCada();
   if (document.activeElement !== $("#jugP")) $("#jugP").value = jugCap().p;
   $("#roleTxt").textContent = role ? `Este dispositivo está configurado para ${ROLES[role]}.` : "Este dispositivo aún no tiene un uso elegido.";
@@ -2463,6 +2501,11 @@ async function setCfg(patch, msg){
   const nc = {...(config||{}), ...patch};
   try { await db.doc("config/app").set(nc); config = nc; updateBanner(); if (msg) toast(msg); } catch(e){ toast(saveErrMsg(e, "No se pudo guardar.")); }
 }
+$("#bizumIn").addEventListener("change", e => {
+  const d = e.target.value.replace(/\D/g, "");
+  if (d && d.length !== 9){ toast("El número de Bizum debe tener 9 cifras"); return; }
+  setCfg({bizum:d}, d ? "Bizum: " + fmtTel(d) : "Bizum desactivado");
+});
 $("#webToggle").addEventListener("click", () => setCfg({pedidosWeb: !webOn()}, !webOn() ? "Pedidos por QR activados" : "Pedidos por QR desactivados: el cliente verá que hay que pedir en el mostrador"));
 $("#fidToggle").addEventListener("click", () => setCfg({fidelidad: !fidOn()}, !fidOn() ? "Fidelidad activada" : "Fidelidad desactivada"));
 $("#fidCada").addEventListener("change", e => { const v = Math.round(Number(e.target.value)); if (v >= 2 && v <= 30) setCfg({fidelidadCada:v}, `Gratis cada ${v} visitas`); else toast("Pon un número de 2 a 30"); });
@@ -2538,7 +2581,7 @@ async function boot(){
       orders.forEach(o => {
         const p = prevStatus.get(o.id);
         if ((p === undefined || p === "porcobrar") && o.status === "nuevo") newOne = true;
-        if (p === undefined && o.status === "porcobrar") webOne.push(o.customer);
+        if (p === undefined && o.status === "porcobrar") webOne.push(o.customer + (o.metodo === "bizum" ? " (Bizum " + eur(o.total) + ")" : ""));
         if (p !== undefined && p !== "listo" && o.status === "listo") readyOne = true;
       });
       if (view === "barra" && newOne) alertUser("new");

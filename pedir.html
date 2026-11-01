@@ -83,6 +83,16 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
 .track i{height:6px;border-radius:3px;background:var(--line)}
 .track i.on{background:var(--ink)}
 .track span{font-size:.85rem;color:var(--muted);font-style:normal}
+.paysel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+.paysel button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px;display:grid;gap:2px;text-align:center}
+.paysel button b{font-family:var(--display);font-weight:400;font-size:1.5rem;letter-spacing:.06em;color:var(--ink)}
+.paysel button span{color:var(--muted);font-size:.95rem}
+.paysel button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink)}
+.paysel button[aria-pressed="true"] b,.paysel button[aria-pressed="true"] span{color:var(--bg)}
+.bz{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:8px 10px;margin:8px 0;text-align:left}
+.bz span{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.bz strong{font-size:1.2rem;color:var(--text);overflow-wrap:anywhere}
+.copy{border:1.5px solid var(--warn);background:none;color:var(--warn);border-radius:999px;padding:4px 12px;font-weight:700}
 .summary{list-style:none;margin:0;padding:0;display:grid;gap:4px;text-align:left}
 .loading{text-align:center;color:var(--muted);margin-top:30px}
 </style>
@@ -98,13 +108,20 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
 
   <!-- Carta -->
   <div id="vMenu" hidden>
-    <p class="intro">Pide desde aquí y recógelo en el mostrador.<br><span class="pill">Pago en caja · solo efectivo</span></p>
+    <p class="intro">Pide desde aquí y recógelo en el mostrador.<br><span class="pill" id="payPill">Pago en caja · solo efectivo</span></p>
     <div id="menu"></div>
     <div class="card" id="checkout" hidden>
       <div><label for="name">Tu nombre</label></div>
       <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="Te llamaremos por este nombre" enterkeyhint="send">
       <div class="total"><span>Total</span><span id="total">0,00 €</span></div>
-      <p class="note">Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.</p>
+      <div id="payChoice" hidden>
+        <div><label>¿Cómo pagas?</label></div>
+        <div class="paysel">
+          <button type="button" data-m="efectivo" aria-pressed="true"><b>En caja</b><span>Efectivo</span></button>
+          <button type="button" data-m="bizum" aria-pressed="false"><b>Bizum</b><span>Desde tu móvil</span></button>
+        </div>
+      </div>
+      <p class="note" id="payNote">Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.</p>
       <p class="err" id="err" hidden></p>
       <button type="button" class="btn" id="order">Hacer pedido</button>
     </div>
@@ -142,7 +159,15 @@ const ls = {get:k => { try { return localStorage.getItem(k); } catch(e){ return 
 const CFG = window.UTOPIA_CONFIG || {};
 const sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {auth:{persistSession:false, autoRefreshToken:false}}) : null;
 const ORDER = ["Fuera de carta", "Matcha", "Cafés", "Repostería"];
-let products = [], cart = new Map(), current = null, pollT = null, lastStatus = null;
+let products = [], cart = new Map(), current = null, pollT = null, lastStatus = null, bizum = null, metodo = "efectivo";
+const fmtTel = t => String(t||"").replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4");
+function renderPay(){
+  $("#payChoice").hidden = !bizum;
+  if (!bizum) metodo = "efectivo";
+  document.querySelectorAll(".paysel [data-m]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metodo)));
+  $("#payPill").textContent = bizum ? "Paga en caja en efectivo o por Bizum" : "Pago en caja · solo efectivo";
+  $("#payNote").textContent = metodo === "bizum" ? "Al pedir te damos el número de Bizum y el importe. Empezamos a prepararlo en cuanto nos llegue." : "Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.";
+}
 
 function show(v){ ["vMenu","vClosed","vStatus"].forEach(x => $("#"+x).hidden = x !== v); $("#loading").hidden = true; renderBar(); }
 
@@ -152,7 +177,7 @@ async function loadMenu(){
   const {data, error} = await sb.rpc("carta_publica");
   if (error){ $("#loading").textContent = "No se pudo cargar la carta. Revisa tu conexión y recarga."; return; }
   if (!data.abierto){ show("vClosed"); return; }
-  products = data.productos || [];
+  products = data.productos || []; bizum = data.bizum || null; renderPay();
   [...cart.keys()].forEach(id => { if (!products.find(p => p.id === id)) cart.delete(id); });
   renderMenu(); show("vMenu");
 }
@@ -185,6 +210,7 @@ $("#menu").addEventListener("click", e => {
   else return;
   renderMenu();
 });
+document.querySelector(".paysel").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; metodo = b.dataset.m; renderPay(); });
 $("#toCheckout").addEventListener("click", () => { $("#checkout").scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => { if (!$("#name").value) $("#name").focus({preventScroll:true}); }, 400); });
 $("#name").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#order").click(); } });
 $("#name").value = ls.get("utopia_nombre") || "";
@@ -205,7 +231,7 @@ $("#order").addEventListener("click", async () => {
   if (!items.length) return;
   const btn = $("#order"); btn.disabled = true; btn.textContent = "Enviando…";
   try {
-    const {data, error} = await sb.rpc("pedido_cliente", {p_nombre:name, p_items:items});
+    const {data, error} = await sb.rpc("pedido_cliente_pago", {p_nombre:name, p_items:items, p_metodo:metodo});
     if (error){
       const code = Object.keys(ERR).find(k => String(error.message).includes(k));
       err.textContent = code ? ERR[code] : "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."; err.hidden = false;
@@ -216,7 +242,7 @@ $("#order").addEventListener("click", async () => {
     current = {id:data.id, token:data.token};
     ls.set("utopia_pedido", JSON.stringify({...current, t:Date.now()}));
     cart.clear(); renderMenu();
-    lastStatus = null; showStatus({status:"porcobrar", num:data.num, customer:name, total:data.total, items}); startPoll();
+    lastStatus = null; showStatus({status:"porcobrar", num:data.num, customer:name, total:data.total, items, metodo:data.metodo, bizum:data.bizum || bizum}); startPoll();
   } catch(e){
     err.textContent = "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."; err.hidden = false;
   } finally { btn.disabled = false; btn.textContent = "Hacer pedido"; }
@@ -232,7 +258,15 @@ function showStatus(s){
   const st = s.status, step = st === "porcobrar" ? 1 : st === "nuevo" ? 2 : (st === "listo" || st === "entregado") ? 3 : 0;
   ["t1","t2","t3"].forEach((t,i) => $("#"+t).classList.toggle("on", step > i));
   let box = "";
-  if (st === "porcobrar") box = `<div class="big pay"><b>Pasa por caja a pagar</b>${eur(s.total)} en efectivo. Di tu nombre al llegar.</div>`;
+  if (st === "porcobrar" && s.metodo === "bizum" && s.bizum){
+    const concepto = `Utopía ${pad(s.num)} ${s.customer}`;
+    box = `<div class="big pay"><b>Haz un Bizum de ${eur(s.total)}</b>
+      <div class="bz"><span>Al número</span><strong>${fmtTel(s.bizum)}</strong><button type="button" class="copy" data-copy="${s.bizum}">Copiar</button></div>
+      <div class="bz"><span>Importe</span><strong>${eur(s.total)}</strong><button type="button" class="copy" data-copy="${String(Number(s.total).toFixed(2)).replace(".", ",")}">Copiar</button></div>
+      <div class="bz"><span>Concepto</span><strong>${esc(concepto)}</strong><button type="button" class="copy" data-copy="${esc(concepto)}">Copiar</button></div>
+      En cuanto nos llegue, empezamos a prepararlo. ¿Prefieres efectivo? Dilo en caja.</div>`;
+  }
+  else if (st === "porcobrar") box = `<div class="big pay"><b>Pasa por caja a pagar</b>${eur(s.total)} en efectivo. Di tu nombre al llegar.</div>`;
   else if (st === "nuevo") box = `<div class="big prep"><b>Lo estamos preparando</b>Te avisamos aquí cuando esté listo. Puedes dejar esta pantalla abierta.</div>`;
   else if (st === "listo") box = `<div class="big ready"><b>¡Tu pedido está listo!</b>Recógelo en el mostrador.</div>`;
   else if (st === "entregado") box = `<div class="big prep"><b>¡Que lo disfrutes!</b>Gracias por venir a Utopía.</div>`;
@@ -261,6 +295,13 @@ $("#cancel").addEventListener("click", async e => {
   if (b.dataset.armed !== "1"){ b.dataset.armed = "1"; b.textContent = "¿Seguro? Toca otra vez para cancelar"; setTimeout(() => { b.dataset.armed = ""; b.textContent = "Cancelar pedido"; }, 4000); return; }
   b.disabled = true;
   try { await sb.rpc("cancelar_pedido", {p_id:current.id, p_token:current.token}); await poll(); } finally { b.disabled = false; b.dataset.armed = ""; b.textContent = "Cancelar pedido"; }
+});
+$("#sBox").addEventListener("click", async e => {
+  const b = e.target.closest("[data-copy]"); if (!b) return;
+  const txt = b.dataset.copy;
+  try { await navigator.clipboard.writeText(txt); b.textContent = "Copiado"; }
+  catch(err){ const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); b.textContent = "Seleccionado"; }
+  setTimeout(() => b.textContent = "Copiar", 1800);
 });
 $("#again").addEventListener("click", () => { current = null; lastStatus = null; ls.del("utopia_pedido"); loadMenu(); window.scrollTo(0,0); });
 document.addEventListener("pointerdown", unlock, {once:true});
