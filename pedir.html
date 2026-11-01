@@ -83,12 +83,9 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
 .track i{height:6px;border-radius:3px;background:var(--line)}
 .track i.on{background:var(--ink)}
 .track span{font-size:.85rem;color:var(--muted);font-style:normal}
-.paysel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
-.paysel button{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:12px;display:grid;gap:2px;text-align:center}
-.paysel button b{font-family:var(--display);font-weight:400;font-size:1.5rem;letter-spacing:.06em;color:var(--ink)}
-.paysel button span{color:var(--muted);font-size:.95rem}
-.paysel button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink)}
-.paysel button[aria-pressed="true"] b,.paysel button[aria-pressed="true"] span{color:var(--bg)}
+.paysel{text-align:center}
+.paysel button{border:0;background:none;color:var(--muted);font-size:.95rem;text-decoration:underline;padding:6px}
+.paybadge{display:inline-block;background:var(--warn-soft);color:var(--warn);border-radius:999px;padding:2px 10px;font-weight:700;font-size:.9rem}
 .bz{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;background:#fff;border-radius:10px;padding:8px 10px;margin:8px 0;text-align:left}
 .bz span{font-size:.85rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .bz strong{font-size:1.2rem;color:var(--text);overflow-wrap:anywhere}
@@ -114,16 +111,10 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
       <div><label for="name">Tu nombre</label></div>
       <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="Te llamaremos por este nombre" enterkeyhint="send">
       <div class="total"><span>Total</span><span id="total">0,00 €</span></div>
-      <div id="payChoice" hidden>
-        <div><label>¿Cómo pagas?</label></div>
-        <div class="paysel">
-          <button type="button" data-m="efectivo" aria-pressed="true"><b>En caja</b><span>Efectivo</span></button>
-          <button type="button" data-m="bizum" aria-pressed="false"><b>Bizum</b><span>Desde tu móvil</span></button>
-        </div>
-      </div>
       <p class="note" id="payNote">Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.</p>
       <p class="err" id="err" hidden></p>
       <button type="button" class="btn" id="order">Hacer pedido</button>
+      <div id="payChoice" class="paysel" hidden><button type="button" id="payAlt"></button></div>
     </div>
   </div>
 
@@ -162,11 +153,12 @@ const ORDER = ["Fuera de carta", "Matcha", "Cafés", "Repostería"];
 let products = [], cart = new Map(), current = null, pollT = null, lastStatus = null, bizum = null, metodo = "efectivo";
 const fmtTel = t => String(t||"").replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4");
 function renderPay(){
+  // El efectivo es la forma de pago normal; Bizum queda como última opción, discreta, debajo del botón
   $("#payChoice").hidden = !bizum;
   if (!bizum) metodo = "efectivo";
-  document.querySelectorAll(".paysel [data-m]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === metodo)));
-  $("#payPill").textContent = bizum ? "Paga en caja en efectivo o por Bizum" : "Pago en caja · solo efectivo";
-  $("#payNote").textContent = metodo === "bizum" ? "Al pedir te damos el número de Bizum y el importe. Empezamos a prepararlo en cuanto nos llegue." : "Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.";
+  $("#payPill").textContent = "Pago en caja · efectivo";
+  $("#payAlt").textContent = metodo === "bizum" ? "Mejor pago en efectivo en caja" : "¿No llevas efectivo? Pagar por Bizum";
+  $("#payNote").innerHTML = metodo === "bizum" ? '<span class="paybadge">Pagarás por Bizum</span> Al pedir te damos el número y el importe. Empezamos a prepararlo en cuanto nos llegue.' : "Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.";
 }
 
 function show(v){ ["vMenu","vClosed","vStatus"].forEach(x => $("#"+x).hidden = x !== v); $("#loading").hidden = true; renderBar(); }
@@ -210,7 +202,7 @@ $("#menu").addEventListener("click", e => {
   else return;
   renderMenu();
 });
-document.querySelector(".paysel").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; metodo = b.dataset.m; renderPay(); });
+$("#payAlt").addEventListener("click", () => { metodo = metodo === "bizum" ? "efectivo" : "bizum"; renderPay(); });
 $("#toCheckout").addEventListener("click", () => { $("#checkout").scrollIntoView({behavior:"smooth", block:"center"}); setTimeout(() => { if (!$("#name").value) $("#name").focus({preventScroll:true}); }, 400); });
 $("#name").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); $("#order").click(); } });
 $("#name").value = ls.get("utopia_nombre") || "";
