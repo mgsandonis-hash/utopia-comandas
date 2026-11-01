@@ -600,6 +600,7 @@ table.t tr:last-child td{border-bottom:0}
         <div id="boxRows" style="display:grid;gap:8px"></div>
         <div class="row"><button type="button" class="btn small" id="boxAdd">+ Clase</button><button type="button" class="btn small" id="boxCopy">Copiar clases de la semana pasada</button><button type="button" class="btn primary" id="boxSave" style="margin-left:auto">Guardar</button></div>
         <p class="hint">Solo cuántas personas fueron a cada clase (lo ves en WodBuster). La app lo cruza con los pedidos que entran al acabar cada clase.</p>
+        <div class="field"><label for="boxStaff">Dueños, coaches y nosotros (sus pedidos se cuentan aparte)</label><input type="text" id="boxStaff" autocomplete="off" placeholder="Nombres separados por comas"></div>
       </div>
     </div></details></section>
     <section class="card">
@@ -853,7 +854,7 @@ function aggregate(list){
     const tc = cents(o.total); a.n++; a.ventas += tc;
     a.propinas += cents(o.propina);
     if (o.pay === "bizum") a.bizum += tc;
-    if (!o.invitacion){ const d = new Date(o.createdAt); a.mins.push([d.getHours()*60 + d.getMinutes(), tc]); }
+    if (!o.invitacion){ const d = new Date(o.createdAt); a.mins.push([d.getHours()*60 + d.getMinutes(), tc, slug(o.customer||"")]); }
     (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
     // Productos que se piden juntos (para sugerir combos)
     if (!o.invitacion){ const ids = [...new Set((o.items||[]).map(i => i.id).filter(Boolean))].sort(); for (let x = 0; x < ids.length; x++) for (let y = x+1; y < ids.length; y++){ const k = ids[x] + "|" + ids[y]; a.pares[k] = (a.pares[k]||0) + 1; } }
@@ -1835,16 +1836,23 @@ function renderBoxRows(){
     <input type="number" id="bx-n-${i}" data-bx="${i}" data-f="n" value="${esc(x.n)}" min="0" max="200" inputmode="numeric" placeholder="Personas" aria-label="Personas">
     <button type="button" class="btn ghost danger small" data-bxdel="${i}" aria-label="Quitar clase">✕</button></div>`).join("");
 }
+const boxStaffList = () => Array.isArray(config && config.boxStaff) ? config.boxStaff : [];
+$("#boxStaff").addEventListener("change", e => {
+  const list = e.target.value.split(",").map(x => x.trim()).filter(Boolean).slice(0, 20);
+  setCfg({boxStaff:list}, list.length ? "No cuentan como alumnos: " + list.join(", ") : "Lista vacía").then(renderBox);
+});
 function renderBox(){
   const from = periodFrom();
   const days = asistencia.filter(a => new Date(a.id+"T12:00").getTime() >= from && Array.isArray(a.sesiones)).sort((a,b) => a.id.localeCompare(b.id));
   if (!$("#boxDay").value) $("#boxDay").value = dayKey();
   if (boxDraftDay !== $("#boxDay").value) loadBoxDraft($("#boxDay").value);
-  const byClass = {}; let personas = 0, pedClase = 0, ventClase = 0, sinClase = 0, ventSin = 0;
+  const staff = boxStaffList().map(slug);
+  const byClass = {}; let personas = 0, pedClase = 0, ventClase = 0, sinClase = 0, ventSin = 0, staffPed = 0, staffC = 0;
   days.forEach(a => {
     const ses = a.sesiones.filter(x => Number(x.n) > 0 && toMin(x.hora) !== null);
     ses.forEach(x => { personas += Number(x.n); const k = WEEKDAYS[new Date(a.id+"T12:00").getDay()] + " " + x.hora + (x.clase ? " · " + x.clase : ""); const b = byClass[k] || (byClass[k] = {k, dias:0, n:0, ped:0, c:0, h:toMin(x.hora), wd:new Date(a.id+"T12:00").getDay()}); b.dias++; b.n += Number(x.n); });
-    dayMins(a.id).forEach(([m, c]) => {
+    dayMins(a.id).forEach(([m, c, who]) => {
+      if (who && staff.includes(who)){ staffPed++; staffC += c; return; }
       const x = classFor(m, ses);
       if (!x){ sinClase++; ventSin += c; return; }
       pedClase++; ventClase += c;
@@ -1856,7 +1864,9 @@ function renderBox(){
     <div class="kpi"><b>${personas}</b><span>personas en ${days.length} ${days.length === 1 ? "día" : "días"} con datos</span></div>
     <div class="kpi key"><b>${Math.round(pedClase/personas*100)}%</b><span>piden al salir de clase (${pedClase} pedidos)</span></div>
     <div class="kpi"><b>${eurC(Math.round(ventClase/personas))}</b><span>de venta por persona del box</span></div>
-    <div class="kpi"><b>${sinClase}</b><span>pedidos fuera de las clases · ${eurC(ventSin)}</span></div>`;
+    <div class="kpi"><b>${sinClase}</b><span>pedidos fuera de las clases · ${eurC(ventSin)}</span></div>
+    ${staffPed ? `<div class="kpi"><b>${staffPed}</b><span>del equipo · ${eurC(staffC)} (no cuentan en el %)</span></div>` : ""}`;
+  if (document.activeElement !== $("#boxStaff")) $("#boxStaff").value = boxStaffList().join(", ");
   const rows = Object.values(byClass).sort((a,b) => a.wd - b.wd || a.h - b.h);
   $("#boxTable").innerHTML = rows.length ? `<thead><tr><th>Clase</th><th class="n">Días</th><th class="n">Personas</th><th class="n">Pedidos al salir</th><th class="n">% que pide</th><th class="n">Ventas</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.k)}</td><td class="n">${r.dias}</td><td class="n">${r.n}</td><td class="n">${r.ped}</td><td class="n ${r.n && r.ped/r.n < .2 ? "up" : r.n && r.ped/r.n >= .4 ? "okc" : ""}">${r.n ? Math.round(r.ped/r.n*100) : 0}%</td><td class="n">${eurC(r.c)}</td></tr>`).join("")}</tbody>` : "";
   const sg = [];
