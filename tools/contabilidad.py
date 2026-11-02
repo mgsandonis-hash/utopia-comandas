@@ -85,7 +85,7 @@ line(22,"Sacado del cajón",S("Retirada de caja","F"),"Retiradas de caja apuntad
 line(23,"Cobrado por Bizum",f'=SUMIFS({RNG("E")},{RNG("C")},"Venta",{RNG("D")},"Bizum")',"Está en la cuenta del Bizum")
 head(25,"Objetivo: entrada del piso")
 line(26,"Dinero para la entrada del piso",DATA.get("objetivo") or None,"Pon aquí cuánto necesitáis",color="0000FF",fill="FFFF00" if not DATA.get("objetivo") else None)
-line(27,"Dinero reunido",DATA.get("reunido_formula","=B6+B22+B23"),"Recuperado fuera de la cafetería + sacado del cajón + Bizum (dinero que ya no está en la cafetería)",bold=True)
+line(27,"Dinero reunido","=B6+B13","Recuperado (cafetera, cata, evento) + beneficio de la caja (ventas y otros ingresos) − gastos de suministros",bold=True)
 line(28,"Falta","=IF(B26>0,MAX(0,B26-B27),0)","",bold=True,fill=SOFT,color=WINE)
 line(29,"% conseguido","=IF(B26>0,MIN(1,B27/B26),0)","",bold=True,fmt="0.0%")
 r=31
