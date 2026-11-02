@@ -10,8 +10,8 @@
   const aref = (sheet, c1, r1, c2, r2) => `'${sheet.replace(/'/g, "''")}'!$${colL(c1)}$${r1+1}:$${colL(c2)}$${r2+1}`;
 
   /* ---------- estilos ---------- */
-  const FMT = {eur:164, pct:9, int:3, num1:165, eur0:166};
-  const NUMFMTS = `<numFmts count="3"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/><numFmt numFmtId="165" formatCode="#,##0.0"/><numFmt numFmtId="166" formatCode="#,##0\\ &quot;€&quot;"/></numFmts>`;
+  const FMT = {eur:164, pct:9, int:3, num1:165, eur0:166, eur4:167};
+  const NUMFMTS = `<numFmts count="4"><numFmt numFmtId="167" formatCode="#,##0.0000\\ &quot;€&quot;"/><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/><numFmt numFmtId="165" formatCode="#,##0.0"/><numFmt numFmtId="166" formatCode="#,##0\\ &quot;€&quot;"/></numFmts>`;
   const FONTS = [
     `<font><sz val="11"/><color rgb="FF${C.text}"/><name val="Calibri"/><family val="2"/></font>`,              // 0 normal
     `<font><b/><sz val="26"/><color rgb="FF${C.cream}"/><name val="Bebas Neue"/></font>`,                         // 1 título
@@ -117,8 +117,10 @@ ${cols}<sheetData>${body}</sheetData>${merges}
       cols.forEach((k, j) => {
         const v = rw[j];
         const neg = k.tone && typeof v === "number" && v < 0;
-        sh.set(c0+j, r0+1+i, v, sx({font: neg ? 9 : 0, fill, border:1, fmt: FMT[k.fmt] || 0, h: k.fmt ? "right" : "left", indent: k.fmt ? 0 : 1}));
+        sh.set(c0+j, r0+1+i, v, sx({font: neg ? 9 : 0, fill, border:1, fmt: FMT[k.fmt] || 0, h: k.fmt ? "right" : "left", indent: k.fmt ? 0 : 1, wrap: !k.fmt, v: "top"}));
       });
+      const lines = Math.max(1, ...cols.map((k, j) => k.fmt ? 1 : Math.ceil(String(rw[j] ?? "").length / Math.max(4, ((sh.widths[c0+j] || 12) - 2) * 1.05))));
+      if (lines > 1) sh.heights[r0+1+i] = 15 * lines + 4;
     });
     const rEnd = r0 + Math.max(rows.length, 1);
     if (!rows.length) cols.forEach((k, j) => sh.set(c0+j, r0+1, j ? "" : "Sin datos todavía", sx({font:8, fill:FILL.white, border:1, indent:1})));
@@ -332,7 +334,38 @@ ${charts.map((ch, i) => `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>
       table(sh, r, 1, "Fijos", [{h:"Concepto"}, {h:"Categoría"}, {h:"Al mes", fmt:"eur", total:"sum"}], d.fijos, {totals:true});
       sheets.push(sh);
     }
+    if (d.interno) addInterno(sheets, d.interno, sub);
     return pack(JSZip, sheets);
+  }
+  /* Hoja de varias tablas: secciones [{h:"Título", cols, rows, totals, note, chart}] */
+  function listSheet(name, title, sub, widths, secs){
+    const sh = new Sheet(name, widths);
+    let r = banner(sh, title, sub, widths.length);
+    secs.forEach(sc => {
+      if (sc.intro){ r = note(sh, r, sc.intro, widths.length); r++; }
+      if (sc.h) r = section(sh, r, sc.h, widths.length);
+      const t = table(sh, r, 0, sc.tname || name, sc.cols, sc.rows, {totals: !!sc.totals, headH: 30});
+      r = t.next;
+      if (sc.chart && t.n){ chart(sh, t, {...sc.chart, at:{c:0, r, w: Math.min(widths.length, 8), h:15}}); r += 16; }
+      if (sc.note){ r = note(sh, r, sc.note, widths.length); r++; }
+    });
+    return sh;
+  }
+  function addInterno(sheets, I, sub){
+    const first = [
+      listSheet("Sugerencias", "SUGERENCIAS DE LA APP", sub, [20, 44, 70, 12], [{intro:"Todo lo que la app os recomienda ahora mismo, reunido de Caja, Gastos, Datos y Suministros. «Aviso» = conviene actuar; «Idea» = para tenerlo en cuenta.", cols:[{h:"Apartado"}, {h:"Sugerencia"}, {h:"Detalle"}, {h:"Tipo"}], rows:I.sugerencias}]),
+      listSheet("A tener en cuenta", "A TENER EN CUENTA PARA EL FUTURO", sub, [24, 60, 44], [{cols:[{h:"Tema"}, {h:"Qué vigilar"}, {h:"Cómo está ahora"}], rows:I.futuro}])
+    ];
+    sheets.unshift(...first);
+    sheets.push(listSheet("Escandallos", "ESCANDALLOS", sub, [28, 14, 12, 9, 16, 16, 11], [{intro:"Coste por gramo, ml o unidad de cada ingrediente = lo pagado ÷ lo que trae. Es lo que usan las recetas para calcular el coste de cada bebida.", cols:[{h:"Ingrediente"}, {h:"Lo pagado", fmt:"eur"}, {h:"Contiene", fmt:"int"}, {h:"Unidad"}, {h:"Coste por unidad", fmt:"eur4"}, {h:"Coste anterior", fmt:"eur4"}, {h:"Cambio", fmt:"pct", tone:true}], rows:I.escandallos}]));
+    sheets.push(listSheet("Coste por bebida", "COSTE POR BEBIDA", sub, [28, 12, 12, 10, 12, 16, 16], [{cols:[{h:"Producto"}, {h:"Os cuesta", fmt:"eur"}, {h:"Precio cliente", fmt:"eur"}, {h:"% coste", fmt:"pct"}, {h:"Margen", fmt:"eur", tone:true}, {h:"Si sube: mismo margen", fmt:"eur"}, {h:"Si sube: mismo %", fmt:"eur"}], rows:I.costes,
+      chart:{type:"bar", title:"Lo que os cuesta cada bebida", cat:0, series:[{col:1, color:"5E0F1C"}, {col:2, color:"A8680F"}], fmt:'#,##0.00 "€"', gap:40},
+      note:"Margen = precio − coste de ingredientes (sin fijos). Si sube un suministro: «mismo margen» = precio + lo que ha subido el coste; «mismo %» = precio × coste nuevo ÷ coste anterior."},
+      {h:"Recetas", tname:"Recetas", cols:[{h:"Producto"}, {h:"Ingrediente"}, {h:"Cantidad", fmt:"num1"}, {h:"Unidad"}, {h:"Coste", fmt:"eur"}], rows:I.recetas}]));
+    sheets.push(listSheet("Inventario", "INVENTARIO Y COMPRA", sub, [28, 9, 14, 14, 13, 12, 22, 13], [{cols:[{h:"Suministro"}, {h:"Unidad"}, {h:"Quedan", fmt:"num1"}, {h:"Gasto al día", fmt:"num1"}, {h:"Días que quedan", fmt:"num1"}, {h:"Mínimo", fmt:"num1"}, {h:"A comprar"}, {h:"Coste aprox.", fmt:"eur", total:"sum"}], rows:I.inventario, totals:true,
+      note:"«Quedan» sale del último conteo menos lo vendido desde entonces. Si está vacío es que no se ha contado: contadlo en Ajustes → Suministros → Inventario. «A comprar» es para los días de la lista de la compra."},
+      {h:"Últimas compras", tname:"Compras", cols:[{h:"Fecha"}, {h:"Suministro"}, {h:"Paquetes", fmt:"int"}, {h:"Cantidad", fmt:"num1"}, {h:"Coste", fmt:"eur", total:"sum"}], rows:I.compras, totals:true}]));
+    if (I.box && I.box.length) sheets.push(listSheet("Gente del box", "GENTE DEL BOX", sub, [14, 10, 22, 12], [{cols:[{h:"Día"}, {h:"Hora"}, {h:"Clase"}, {h:"Personas", fmt:"int", total:"sum"}], rows:I.box, totals:true}]));
   }
   const api = {build};
   if (typeof module !== "undefined" && module.exports) module.exports = api; else window.UtopiaInforme = api;

@@ -579,6 +579,13 @@ table.t tr:last-child td{border-bottom:0}
         <button type="button" class="btn primary" id="xlsBtn">Descargar Excel</button>
       </div>
     </section>
+    <section>
+      <div class="sec-h"><h2>Hoja para nosotros</h2></div>
+      <div class="card row" style="justify-content:space-between">
+        <p class="hint" style="flex:1;min-width:220px">Todo lo del informe más las sugerencias de la app, lo que hay que vigilar, escandallos, coste de cada bebida, recetas, inventario, compras y gente del box. Se abre en Google Sheets: súbela a Google Drive y ábrela con Hojas de cálculo.</p>
+        <button type="button" class="btn" id="xlsIntBtn">Descargar hoja</button>
+      </div>
+    </section>
   </div>
 
   <!-- OFICINA · DATOS -->
@@ -2066,7 +2073,7 @@ function renderSupply(){
     const st = insState(ins);
     if (!st.usedBy) return null;
     const u = ins.unidad, min = Number(ins.minimo)||0;
-    if (st.perDay === null){
+    if (!st.perDay){
       return {order:3, html:sug("", esc(ins.nombre), st.left !== null ? `Te quedan unos ${fmtUnits(Math.max(0,st.left), u)}. Tras el primer cierre de caja calcularé cuánto gastáis al día.` : "Tras el primer cierre de caja calcularé cuánto gastáis al día.")};
     }
     const week = st.perDay*7;
@@ -2530,6 +2537,59 @@ function informeData(){
   };
 }
 const WEEKDAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+// Hoja interna: sugerencias de toda la app + lo que conviene vigilar + datos de trabajo
+function informeInterno(){
+  const r2 = v => Math.round(v*100)/100, fmtD = t => new Date(t).toLocaleDateString("es-ES");
+  const fuentes = [["Caja", renderCajaSugs, "#cajaSugs"], ["Beneficio", renderGastos, "#profitSugs"], ["Precios", renderPrices, "#priceSugs"], ["Coste por bebida", renderEscandallos, "#costSugs"],
+    ["Compras", renderSupply, "#supplySugs"], ["Productos que no salen", renderSlow, "#slowSugs"], ["Combos", renderCombos, "#comboSugs"], ["Gente del box", renderBox, "#boxSugs"]];
+  const sugerencias = [];
+  fuentes.forEach(([area, fn, sel]) => {
+    try { fn(); } catch(e){}
+    document.querySelectorAll(sel + " .sug").forEach(el => {
+      const t = el.querySelector("b")?.textContent.trim() || "", d = (el.querySelector("p")?.textContent || "").replace(/\s+/g, " ").trim();
+      if (t || d) sugerencias.push([area, t, d, /\b(warn|alert)\b/.test(el.className) ? "Aviso" : "Idea"]);
+    });
+  });
+  sugerencias.sort((a,b) => (a[3] === "Aviso" ? 0 : 1) - (b[3] === "Aviso" ? 0 : 1));
+  // Lo que conviene vigilar
+  const futuro = [];
+  const sinContar = insumos.filter(i => insState(i).usedBy && (i.stockContado === null || i.stockContado === undefined));
+  futuro.push(["Stock", "Contad el stock de cada suministro al menos una vez por semana (Ajustes → Suministros → Inventario). Sin conteo, la lista de la compra pide de más.", sinContar.length ? `Sin contar: ${sinContar.map(i => i.nombre).join(", ")}` : "Todo contado"]);
+  const sinPrecio = insumos.filter(i => insState(i).usedBy && !costUnit(i));
+  futuro.push(["Escandallos", "Cada vez que cambie el precio de algo, actualizad lo pagado y lo que trae: la app recalcula el coste de las bebidas y avisa si toca subir precios.", sinPrecio.length ? `Sin precio: ${sinPrecio.map(i => i.nombre).join(", ")}` : "Todos con precio"]);
+  const sinReceta = menu.filter(m => isOn(m) && !Object.values(m.receta||{}).some(v => Number(v) > 0));
+  futuro.push(["Recetas", "Todo producto que se vende debería tener receta, si no, no cuenta en compras ni en costes.", sinReceta.length ? `Sin receta: ${sinReceta.map(m => m.name).join(", ")}` : "Todos con receta"]);
+  const caros = costRows().filter(r => r.pct !== null && r.pct > costObj());
+  futuro.push(["Márgenes", `Bebidas cuyo ingrediente pasa del ${Math.round(costObj()*100)}% del precio: revisad receta, proveedor o precio.`, caros.length ? caros.map(r => `${r.m.name} (${Math.round(r.pct*100)}%)`).join(", ") : "Ninguna"]);
+  const yr = new Date().getFullYear(), bizY = closes.filter(c => new Date(c.openedAt).getFullYear() === yr).reduce((a,c) => a + (Number(c.ventasBizum)||0), 0);
+  futuro.push(["Bizum", "Llevad la cuenta de los cobros por Bizum a lo largo del año y consultad con vuestra gestoría cómo declararlos.", `Cobrado por Bizum en ${yr}: ${eur(bizY)}`]);
+  const desc = closes.reduce((a,c) => a + (Number(c.diferencia)||0), 0);
+  futuro.push(["Cuadre de caja", "Si los descuadres se repiten, revisad vueltas y pagos de caja; apuntad siempre las salidas de dinero.", `Descuadre acumulado: ${eur(desc)} en ${closes.length} ${closes.length === 1 ? "cierre" : "cierres"}`]);
+  futuro.push(["Gente del box", "Apuntad la asistencia de cada clase para saber qué parte del box pasa por la cafetería y a qué hora reforzar.", `${asistencia.length} ${asistencia.length === 1 ? "día" : "días"} con datos`]);
+  const est = insumos.filter(i => /hielo|agua/i.test(i.nombre));
+  if (est.length) futuro.push(["Cantidades estimadas", "El hielo (cubitos por bolsa) y el agua por bebida son estimaciones: contadlo un fin de semana y ajustadlo en escandallos y recetas.", est.map(i => `${i.nombre}: ${fmtIn(i.paquete) || "?"} ${i.unidad} por compra`).join(" · ")]);
+  futuro.push(["Tickets y facturas", "Esta app no emite tickets ni facturas oficiales: seguid con un sistema homologado (Veri*factu).", "—"]);
+  futuro.push(["Copias", "Descargad esta hoja una vez al mes y guardadla en Drive: es vuestra copia de seguridad de los números.", `Última: ${fmtD(Date.now())}`]);
+  // Escandallos
+  const escandallos = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))).map(i => {
+    const cu = costUnit(i), prev = Number(i.costeAnterior) > 0 ? Number(i.costeAnterior) : null;
+    return [i.nombre, Number(i.precioPaquete) || "", Number(i.paquete) || "", i.unidad, cu || "", prev || "", cu && prev ? cu/prev - 1 : ""];
+  });
+  const costes = costRows().filter(r => r.has).map(r => [r.m.name, r.cost ? r2(r.cost) : "", r.price, r.pct !== null ? r.pct : "", r.cost ? r2(r.price - r.cost) : "", r.up ? r.sugMin : "", r.up ? r.sugPct : ""]);
+  const recetas = [];
+  sortMenu(menu).forEach(m => Object.entries(m.receta || {}).forEach(([iid, q]) => { q = Number(q) || 0; if (!q) return; const i = insumos.find(x => x.id === iid); const cu = i && costUnit(i); recetas.push([m.name, i ? i.nombre : iid, q, i ? i.unidad : "", cu ? r2(q*cu*100)/100 : ""]); }));
+  const shop = {}; shopRows().forEach(r => shop[r.i.id] = r);
+  const inventario = insumos.slice().sort((a,b) => String(a.nombre).localeCompare(String(b.nombre))).map(i => {
+    const st = insState(i), sr = shop[i.id];
+    return [i.nombre, i.unidad, st.left !== null ? Math.max(0, Math.round(st.left*10)/10) : "", st.perDay ? Math.round(st.perDay*10)/10 : "", st.left !== null && st.perDay > 0 ? Math.round(Math.max(0, st.left)/st.perDay*10)/10 : "", Number(i.minimo) || 0, sr && !sr.skip ? shopQty(sr) : "", sr && sr.coste ? r2(sr.coste) : ""];
+  });
+  const compras = [];
+  insumos.forEach(i => (Array.isArray(i.compras) ? i.compras : []).forEach(c => compras.push([c.t, i.nombre, c.paquetes || "", c.cantidad || "", Number(c.coste) || ""])));
+  compras.sort((a,b) => b[0] - a[0]);
+  const box = [];
+  asistencia.slice().sort((a,b) => a.id.localeCompare(b.id)).forEach(a => (a.sesiones||[]).forEach(x => box.push([new Date(a.id+"T12:00").toLocaleDateString("es-ES"), x.hora || "", x.clase || "", Number(x.n) || 0])));
+  return {sugerencias, futuro, escandallos, costes, recetas, inventario, compras: compras.slice(0, 60).map(c => [fmtD(c[0]), ...c.slice(1)]), box};
+}
 $("#xlsBtn").addEventListener("click", async () => {
   const btn = $("#xlsBtn"); btn.disabled = true; const old = btn.textContent; btn.textContent = "Preparando…";
   try {
@@ -2545,6 +2605,20 @@ $("#xlsBtn").addEventListener("click", async () => {
   } finally { btn.disabled = false; btn.textContent = old; }
 });
 
+$("#xlsIntBtn").addEventListener("click", async () => {
+  const btn = $("#xlsIntBtn"); btn.disabled = true; const old = btn.textContent; btn.textContent = "Preparando…";
+  try {
+    const dl = await claude.use("downloads");
+    if (!dl){ toast("No se pudo descargar el archivo en este dispositivo."); return; }
+    await loadInforme();
+    const blob = await window.UtopiaInforme.build(window.JSZip, {...informeData(), interno: informeInterno()});
+    await dl.save({filename:`Utopia-para-nosotros-${dayKey()}.xlsx`, data: blob});
+    toast("Hoja guardada: súbela a Google Drive para abrirla en Sheets");
+  } catch(e){
+    if (e && e.code === "declined") return;
+    toast(e && e.message === "No se pudo cargar" ? "No se pudo preparar la hoja. Revisa la conexión." : "No se pudo descargar la hoja.");
+  } finally { btn.disabled = false; btn.textContent = old; renderAll(); }
+});
 $("#seasonSeg").addEventListener("click", async e => {
   const b = e.target.closest("[data-season]"); if (!b || !db) return;
   const sea = b.dataset.season; b.disabled = true;
