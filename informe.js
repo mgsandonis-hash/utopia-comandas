@@ -111,7 +111,7 @@ ${cols}<sheetData>${body}</sheetData>${merges}
     sh.set(0, row, text, sx({font:8, wrap:true, v:"top"})); if (span > 1) sh.merges.push(`A${row+1}:${ref(span-1, row)}`);
     sh.heights[row] = Math.max(18, Math.ceil(String(text).length / (span*11)) * 14); return row + 1;
   }
-  let tableSeq = 0, NO_TABLES = false;
+  let tableSeq = 0, NO_TABLES = false, NO_CHARTS = false;
   /* Tabla con cabecera granate, filas alternas, filtros y fila de totales opcional.
      cols: [{h:"Ventas", fmt:"eur", total:"sum"|"avg"|"label"|fn, tone:true}] */
   function table(sh, row, col, name, cols, rows, opts = {}){
@@ -153,7 +153,7 @@ ${cols}<sheetData>${body}</sheetData>${merges}
   }
   /* Gráfico anclado en celdas. type: col | bar | line | doughnut. series: [{name, col}] con col = columna de la tabla */
   function chart(sh, t, spec){
-    if (!t.n) return;
+    if (!t.n || NO_CHARTS) return;
     sh.charts.push({...spec, sheet: sh.name, cat: {c: t.c0 + spec.cat, r1: t.r0+1, r2: t.rEnd, head: t.r0}, series: spec.series.map(s => ({...s, c: t.c0 + s.col, r1: t.r0+1, r2: t.rEnd, head: t.r0}))});
   }
 
@@ -266,7 +266,7 @@ ${charts.map((ch, i) => `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>
           productos:[[nombre,grupo,uds,ventas,pct,precio,coste,margen]],
           gastos:[[fecha,concepto,categoria,importe,origen]], categorias:[[cat,importe]], fijos:[[concepto,categoria,importe]] } */
   function build(JSZip, d){
-    xfs.length = 0; xfKey.clear(); sx(); tableSeq = 0; sst = []; sstMap = new Map(); sstCount = 0; NO_TABLES = !!d.interno;
+    xfs.length = 0; xfKey.clear(); sx(); tableSeq = 0; sst = []; sstMap = new Map(); sstCount = 0; NO_TABLES = !!d.interno || !!d.simple; NO_CHARTS = !!d.simple;
     const sheets = [];
     const sub = `${d.periodo} · Generado el ${d.generado}`;
 
