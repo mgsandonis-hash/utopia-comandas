@@ -304,6 +304,11 @@ body.in-setup .top .tabs,body.in-setup .cartbar{display:none!important}
 .notechips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:.88rem;font-weight:600;color:var(--muted)}
 .kpi b,.change b,.sug b,.role b{font-weight:400}
 /* Bizum */
+.debebox{background:var(--gold-soft);border-color:var(--gold)}
+.debewarn{background:var(--gold-soft);border-left:4px solid var(--gold);border-radius:8px;padding:8px 12px;font-weight:600}
+.deudor{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
+.deudor .dhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.deudor .dline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:.95rem}
 .bizumbox{background:var(--ready-soft);border:1.5px solid var(--ready);border-radius:10px;padding:12px 14px;font-size:1.05rem}
 .tag.biz{background:var(--ready-soft);color:var(--ready)}
 /* Pedidos del móvil (QR) */
@@ -448,8 +453,10 @@ table.t tr:last-child td{border-bottom:0}
           <button type="button" class="sw" id="invBtn" aria-pressed="false">Invitación</button>
           <button type="button" class="sw" id="casaBtn" aria-pressed="false">Consumo propio</button>
         </div>
-        <div class="seg" id="paySeg"><button type="button" data-pay="efectivo" aria-pressed="true">Efectivo</button><button type="button" data-pay="bizum" aria-pressed="false">Bizum</button></div>
+        <div class="seg" id="paySeg"><button type="button" data-pay="efectivo" aria-pressed="true">Efectivo</button><button type="button" data-pay="debe" aria-pressed="false">Lo debe</button><button type="button" data-pay="bizum" aria-pressed="false">Bizum</button></div>
         <div class="bizumbox" id="bizumArea" hidden></div>
+        <div class="bizumbox debebox" id="debeArea" hidden></div>
+        <div class="debewarn" id="debeWarn" hidden></div>
         <div id="cashArea" style="display:grid;gap:12px">
           <div class="field"><label for="recv">Te da (efectivo)</label>
             <input type="text" id="recv" inputmode="decimal" autocomplete="off" placeholder="Importe exacto">
@@ -507,6 +514,16 @@ table.t tr:last-child td{border-bottom:0}
         <div class="sec-h"><h2>Turno abierto</h2><span class="count" id="shiftSince"></span></div>
         <div class="kpis" id="cashStats"></div>
       </section>
+      <section><details class="fold" id="f-deudas" open><summary class="sec-h"><h2>Nos deben</h2><span class="count" id="debtTotal"></span></summary><div class="foldbody"><div class="ticket">
+          <p class="hint">Quien se lleva algo sin pagar. Al cobrar en el mostrador elige «Lo debe» y se apunta solo; también lo puedes apuntar aquí. Cuando pague, toca cómo lo ha pagado: si es en efectivo entra en la caja de hoy.</p>
+          <div id="debtList"></div>
+          <form class="addform" id="debtForm" style="margin-top:6px">
+            <div class="field"><label for="dName">Quién</label><input type="text" id="dName" required autocomplete="off" placeholder="Nombre" maxlength="40" list="debtNames"></div>
+            <div class="field"><label for="dAmt">Cuánto (€)</label><input type="text" id="dAmt" required inputmode="decimal" autocomplete="off" placeholder="2,20"></div>
+            <div class="field"><label for="dTxt">De qué</label><input type="text" id="dTxt" autocomplete="off" placeholder="Hot latte" maxlength="80"></div>
+            <button class="btn" type="submit">Apuntar deuda</button>
+          </form><datalist id="debtNames"></datalist>
+        </div></div></details></section>
       <section><details class="fold" id="f-tips"><summary class="sec-h"><h2>Propinas</h2><span class="count" id="tipTotal"></span></summary><div class="foldbody"><div class="ticket">
           <p class="hint">Si os dejan propina y va al cajón, apúntala: así la caja cuadra y sabéis cuánto sacáis. Las vueltas que se dejan al cobrar se suman solas.</p>
           <div class="quick" id="tipQuick"><button type="button" data-tip="5">+0,05 €</button><button type="button" data-tip="10">+0,10 €</button><button type="button" data-tip="20">+0,20 €</button><button type="button" data-tip="50">+0,50 €</button><button type="button" data-tip="100">+1 €</button><button type="button" data-tip="200">+2 €</button></div>
@@ -895,11 +912,12 @@ const today = () => orders.filter(o => o.day === dayKey());
 /* ---------- agregados de ventas ---------- */
 function changeBreakdown(cc){ const r = {}; DENOMS_C.forEach(d => { while (cc >= d){ r[d] = (r[d]||0)+1; cc -= d; } }); return r; }
 function aggregate(list){
-  const a = {ventas:0, bizum:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}, mins:[]};
+  const a = {ventas:0, bizum:0, debe:0, n:0, productos:{}, horas:{}, vueltas:{}, espera:{n:0, s:0, over:0, max:0}, invit:{n:0, c:0}, fidel:{n:0, c:0}, propinas:0, pares:{}, mins:[]};
   list.filter(ACTIVE).forEach(o => {
     const tc = cents(o.total); a.n++; a.ventas += tc;
     a.propinas += cents(o.propina);
     if (o.pay === "bizum") a.bizum += tc;
+    if (o.pay === "debe") a.debe += tc;
     if (!o.invitacion){ const d = new Date(o.createdAt); a.mins.push([d.getHours()*60 + d.getMinutes(), tc, slug(o.customer||"")]); }
     (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
     // Productos que se piden juntos (para sugerir combos)
@@ -1153,10 +1171,17 @@ function renderCart(){
   $("#invBtn").setAttribute("aria-pressed", String(invMode === "invitacion"));
   $("#casaBtn").setAttribute("aria-pressed", String(invMode === "casa"));
   if (payMethod === "bizum" && !bizumNum()) payMethod = "efectivo";
-  $("#paySeg").hidden = !!invMode || !bizumNum();
+  $("#paySeg").hidden = !!invMode;
+  $('#paySeg [data-pay="bizum"]').hidden = !bizumNum();
   $("#paySeg").querySelectorAll("[data-pay]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pay === payMethod)));
   const biz = payMethod === "bizum" && !invMode;
-  $("#cashArea").hidden = !!invMode || biz;
+  const debe = payMethod === "debe" && !invMode;
+  $("#cashArea").hidden = !!invMode || biz || debe;
+  $("#debeArea").hidden = !debe;
+  const who = $("#cust").value.trim();
+  $("#debeArea").innerHTML = debe ? (who && !useNumber ? `<b>${esc(who)}</b> se lleva ${eur(t)} sin pagar. Se apunta en Oficina → Caja → Nos deben.` : `Escribe el nombre de quien lo debe.`) : "";
+  const owes = who ? debtOf(who) : 0;
+  $("#debeWarn").hidden = !owes; if (owes) $("#debeWarn").textContent = `Ojo: ${who} ya os debe ${eurC(owes)}.`;
   $("#bizumArea").hidden = !biz;
   $("#bizumArea").innerHTML = biz ? `Bizum de <b>${eur(t)}</b> al <b>${fmtTel(bizumNum())}</b>. Pulsa cobrado cuando te llegue la notificación del banco.` : "";
   renderLoyal();
@@ -1229,7 +1254,37 @@ $("#toTicket").addEventListener("click", () => { $("#ticketSec").scrollIntoView(
 
 function showErr(msg){ const e = $("#sendErr"); e.textContent = msg; e.hidden = !msg; }
 /* Clientes habituales: su último pedido a un toque */
-let clientes = [], useNumber = false;
+let clientes = [], useNumber = false, deudas = [];
+/* ---------- nos deben ---------- */
+const pendientes = () => deudas.filter(d => !d.pagado);
+const debtOf = name => { const k = slug(name); return pendientes().filter(d => slug(d.nombre) === k).reduce((a,d) => a + cents(d.importe), 0); };
+async function addDebt(d){ if (!db) throw new Error("sin db"); await db.collection("deudas").add({...d, nombre:String(d.nombre).trim(), importe:Math.round(Number(d.importe)*100)/100, pagado:false}); }
+function renderDebts(){
+  if (!$("#debtList")) return;
+  const pend = pendientes(), by = new Map();
+  pend.slice().sort((a,b) => (a.t||0) - (b.t||0)).forEach(d => { const k = slug(d.nombre); if (!by.has(k)) by.set(k, {nombre:d.nombre, list:[], c:0}); const g = by.get(k); g.list.push(d); g.c += cents(d.importe); });
+  const total = pend.reduce((a,d) => a + cents(d.importe), 0);
+  $("#debtTotal").textContent = total ? `${eurC(total)} · ${by.size} ${by.size === 1 ? "persona" : "personas"}` : "";
+  const biz = !!bizumNum();
+  $("#debtList").innerHTML = by.size ? [...by.values()].sort((a,b) => b.c - a.c).map(g => `<div class="deudor">
+      <div class="dhead"><b style="font-size:1.1rem">${esc(g.nombre)}</b><b style="color:var(--gold)">${eurC(g.c)}</b>
+        ${g.list.length > 1 ? `<button type="button" class="btn small primary" data-debtall="${esc(slug(g.nombre))}" data-m="efectivo" style="margin-left:auto">Paga todo en efectivo</button>${biz ? `<button type="button" class="btn small" data-debtall="${esc(slug(g.nombre))}" data-m="bizum">Todo por Bizum</button>` : ""}` : ""}</div>
+      ${g.list.map(d => `<div class="dline"><span class="mins">${new Date(d.t||Date.now()).toLocaleDateString("es-ES", {day:"numeric", month:"short"})}</span><span style="flex:1;min-width:120px">${esc(d.concepto || "—")}</span><b>${eur(d.importe)}</b>
+        <button type="button" class="btn small primary" data-debtpay="${d.id}" data-m="efectivo">Pagado</button>${biz ? `<button type="button" class="btn small" data-debtpay="${d.id}" data-m="bizum">Por Bizum</button>` : ""}<button type="button" class="btn ghost danger small" data-debtdel="${d.id}" aria-label="Borrar deuda">✕</button></div>`).join("")}
+    </div>`).join("") : `<div class="empty">Nadie os debe nada.</div>`;
+  const names = [...new Set([...deudas.map(d => d.nombre), ...clientes.map(c => c.nombre)].filter(Boolean))].slice(0, 80);
+  $("#debtNames").innerHTML = names.map(n => `<option value="${esc(n)}"></option>`).join("");
+}
+async function payDebts(list, metodo){
+  if (!db || !list.length) return;
+  const tot = list.reduce((a,d) => a + cents(d.importe), 0), now = Date.now();
+  if (metodo === "efectivo" && !(shift && shift.open)){ toast("Abre la caja primero: el dinero tiene que entrar en el cuadre de hoy."); return; }
+  try {
+    for (const d of list) await db.collection("deudas").doc(d.id).update({pagado:true, pagadoT:now, metodoPago:metodo});
+    if (metodo === "efectivo") await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"entrada", importe:tot/100, concepto:`Paga lo que debía: ${list[0].nombre}`, deuda:true}]});
+    toast(`${list[0].nombre} ha pagado ${eurC(tot)}${metodo === "efectivo" ? " · entra en la caja" : " por Bizum"}`);
+  } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+}
 const slug = t => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 function findRegular(name){ const k = slug(name); return k ? clientes.find(c => c.id === k) : null; }
 async function saveRegular(name, items, now){
@@ -1244,7 +1299,7 @@ function renderRegular(){
   const ok = c.ultimo.filter(i => menu.find(m => m.id === i.id && isOn(m)));
   box.innerHTML = ok.length ? `<button type="button" class="regular" id="loadRegular"><b>Lo de siempre</b><span>${ok.map(i => `${i.qty}× ${esc(i.name)}${i.note ? " (" + esc(i.note) + ")" : ""}`).join(", ")}</span><small>${c.veces} ${c.veces === 1 ? "visita" : "visitas"}</small></button>` : "";
 }
-$("#cust").addEventListener("input", () => { renderRegular(); renderLoyal(); });
+$("#cust").addEventListener("input", () => { renderRegular(); renderCart(); });
 const fidOn = () => !(config && config.fidelidad === false);
 const fidCada = () => Math.max(2, cfg("fidelidadCada", 10));
 function renderLoyal(){
@@ -1302,10 +1357,11 @@ $("#sendBtn").addEventListener("click", async () => {
     return [{...base, qty:c.qty, price}];
   });
   const total = Math.round(items.reduce((s,i) => s + i.qty*i.price, 0)*100)/100;
-  const biz = payMethod === "bizum" && !invMode;
-  const rc = invMode ? 0 : biz ? cents(total) : receivedCents(), tc = cents(total);
+  const biz = payMethod === "bizum" && !invMode, debe = payMethod === "debe" && !invMode;
+  if (debe && (useNumber || !name || /^N[ºo°]\s?\d+$/i.test(name))){ showErr("Para apuntarlo como deuda escribe el nombre de quien lo debe."); $("#cust").focus(); return; }
+  const rc = invMode || debe ? (debe ? cents(total) : 0) : biz ? cents(total) : receivedCents(), tc = cents(total);
   if (rc < tc){ showErr(`Faltan ${eurC(tc-rc)}. Revisa lo que te ha dado.`); $("#recv").focus(); return; }
-  const tip = !invMode && !biz && $("#tipChk").checked ? rc - tc : 0;
+  const tip = !invMode && !biz && !debe && $("#tipChk").checked ? rc - tc : 0;
   const hasBar = items.some(i => i.station !== "cocina");
   // Si lleva algo que preparas tú (matcha), queda en Para entregar; si es solo servir, se entrega en el acto
   const needsPrep = items.some(i => i.station === "cocina" && prepKind(itemMenu(i), i.name) === "matcha");
@@ -1314,13 +1370,14 @@ $("#sendBtn").addEventListener("click", async () => {
   const now = Date.now();
   const btn = $("#sendBtn"); btn.disabled = true;
   try {
-    const fields = {num, customer:name, items, total, pay: biz ? "bizum" : "efectivo", metodo: biz ? "bizum" : "efectivo", received:rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
+    const fields = {num, customer:name, items, total, pay: biz ? "bizum" : debe ? "debe" : "efectivo", metodo: biz ? "bizum" : debe ? "debe" : "efectivo", received: debe ? 0 : rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
       status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]};
     // Un pedido del móvil se cobra ahora: cuenta desde este momento (para la caja y la espera en barra)
     const res = webO
       ? await writeOrQueue({k:"update", col:"orders", id:webO.id, data:{...fields, createdAt:now, day:dayKey(now), pedidoEn:webO.createdAt}})
       : await writeOrQueue({k:"set", col:"orders", id:db.collection("orders").doc().id, data:{...fields, createdAt:now, day:dayKey(now)}});
     webOrderId = null;
+    if (debe) addDebt({nombre:name, importe:total, concepto: items.map(i => `${i.qty > 1 ? i.qty + "× " : ""}${i.name}`).join(", "), t:now}).catch(() => toast("Ojo: no se pudo apuntar la deuda, apúntala a mano en Caja"));
     if (!useNumber && invMode !== "casa") saveRegular(name, items, now);
     cart.clear(); openNotes.clear(); $("#cust").value = ""; $("#recv").value = ""; $("#tipChk").checked = false; invMode = null; freeItemId = null; payMethod = "efectivo";
     useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
@@ -1578,7 +1635,7 @@ function shiftSummary(){
   const fondo = cents(shift.fondo);
   const propManual = (Array.isArray(shift.propinas) ? shift.propinas : []).reduce((s,p) => s + cents(p.importe), 0);
   const propTot = a.propinas + propManual;
-  return {...a, entradas, salidas, fondo, movs, propManual, propTot, efectivo: a.ventas - a.bizum, esperado: fondo + (a.ventas - a.bizum) + propTot + entradas - salidas};
+  return {...a, entradas, salidas, fondo, movs, propManual, propTot, efectivo: a.ventas - a.bizum - a.debe, esperado: fondo + (a.ventas - a.bizum - a.debe) + propTot + entradas - salidas};
 }
 let closeExpress = false;
 function countedCents(){
@@ -1593,6 +1650,18 @@ $("#closeMode").addEventListener("click", e => {
   renderArqueo();
 });
 $("#closeTotal").addEventListener("input", () => renderArqueo());
+$("#debtList").addEventListener("click", e => {
+  const p = e.target.closest("[data-debtpay]"), a = e.target.closest("[data-debtall]"), d = e.target.closest("[data-debtdel]");
+  if (p){ const x = deudas.find(y => y.id === p.dataset.debtpay); if (x) confirmTap(p, "dp"+x.id+p.dataset.m, `¿Cobrado ${eur(x.importe)}?`, () => payDebts([x], p.dataset.m)); }
+  if (a){ const list = pendientes().filter(y => slug(y.nombre) === a.dataset.debtall); const tot = list.reduce((s,y) => s + cents(y.importe), 0); confirmTap(a, "da"+a.dataset.debtall+a.dataset.m, `¿Cobrado ${eurC(tot)}?`, () => payDebts(list, a.dataset.m)); }
+  if (d) confirmTap(d, "dd"+d.dataset.debtdel, "¿Borrar?", async () => { try { await db.collection("deudas").doc(d.dataset.debtdel).delete(); toast("Deuda borrada"); } catch(err){ toast("No se pudo borrar."); } });
+});
+$("#debtForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const n = $("#dName").value.trim(), v = parsePrice($("#dAmt").value);
+  if (!n || isNaN(v) || v <= 0){ toast("Pon quién y cuánto"); return; }
+  try { await addDebt({nombre:n, importe:v, concepto:$("#dTxt").value.trim(), t:Date.now(), manual:true}); e.target.reset(); toast(`Apuntado: ${n} debe ${eur(v)}`); } catch(err){ toast(saveErrMsg(err, "No se pudo apuntar.")); }
+});
 $("#tipQuick").addEventListener("click", async e => {
   const b = e.target.closest("[data-tip]"); if (!b || !db || !shift || !shift.open) return;
   const p = {t:Date.now(), importe:Number(b.dataset.tip)/100};
@@ -1646,7 +1715,7 @@ function renderCaja(){
     $("#tipTotal").textContent = s.propTot ? eurC(s.propTot) : "";
     $("#cashStats").innerHTML = `
       <div class="kpi"><b>${eurC(s.fondo)}</b><span>fondo inicial</span></div>
-      <div class="kpi"><b>${eurC(s.ventas)}</b><span>ventas · ${s.n} ${s.n === 1 ? "pedido" : "pedidos"}${s.bizum ? `<br>${eurC(s.efectivo)} efectivo · ${eurC(s.bizum)} Bizum` : ""}</span></div>
+      <div class="kpi"><b>${eurC(s.ventas)}</b><span>ventas · ${s.n} ${s.n === 1 ? "pedido" : "pedidos"}${s.bizum || s.debe ? `<br>${eurC(s.efectivo)} efectivo${s.bizum ? ` · ${eurC(s.bizum)} Bizum` : ""}${s.debe ? ` · ${eurC(s.debe)} lo deben` : ""}` : ""}</span></div>
       <div class="kpi"><b>${eurC(s.entradas)}</b><span>entradas</span></div>
       <div class="kpi"><b>${eurC(s.salidas)}</b><span>salidas</span></div>
       <div class="kpi"><b>${eurC(s.propTot)}</b><span>propinas</span></div>
@@ -1756,7 +1825,7 @@ $("#closeBtn").addEventListener("click", e => {
       await db.collection("cierres").add({openedAt:shift.openedAt, closedAt:now, fondo:s.fondo/100, ventas:s.ventas/100, pedidos:s.n,
         entradas:s.entradas/100, salidas:s.salidas/100, esperado:s.esperado/100, contado:c/100, diferencia:(c-s.esperado)/100,
         movs:s.movs, desglose, productos:s.productos, horas:s.horas, vueltas:s.vueltas, espera:s.espera,
-        propinas:s.propTot/100, ventasBizum:s.bizum/100, mins:s.mins, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
+        propinas:s.propTot/100, ventasBizum:s.bizum/100, ventasDebe:s.debe/100, mins:s.mins, invit:s.invit, fidel:s.fidel, pares:s.pares, express: closeExpress});
       await db.doc("turno/actual").set({open:false, closedAt:now});
       DENOMS.forEach((d,i) => { counts[i] = 0; $("#d-"+i).value = ""; $("#ds-"+i).textContent = eur(0); }); $("#closeTotal").value = "";
       toast("Caja cerrada");
@@ -2638,7 +2707,7 @@ $("#seasonSeg").addEventListener("click", async e => {
 function renderAll(){
   if (view === "pedidos"){ renderWeb(); renderWebCharging(); renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
   else if (view === "barra") renderBarra();
-  else if (view === "caja") renderCaja();
+  else if (view === "caja"){ renderCaja(); renderDebts(); }
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
   else if (view === "datos"){ renderDatos(); renderBox(); renderDur(); renderSlow(); renderCombos(); }
   else renderAjustes();
@@ -2998,6 +3067,7 @@ async function boot(){
   db.collection("insumos").onSnapshot(snap => { insumos = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
   setTimeout(flushOutbox, 3000);
   db.collection("asistencia").onSnapshot(snap => { asistencia = snap.docs.map(d => ({id:d.id, ...d.data()})); if (boxDraftDay && !document.activeElement?.dataset?.bx) loadBoxDraft(boxDraftDay); if (view === "datos") renderBox(); }, err => {});
+  db.collection("deudas").onSnapshot(snap => { deudas = snap.docs.map(d => ({id:d.id, ...d.data()})); renderDebts(); if (view === "pedidos") renderCart(); }, err => {});
   db.collection("clientes").orderBy("t", "desc").limit(300).onSnapshot(snap => { clientes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRegular(); }, err => {});
 }
 boot();
