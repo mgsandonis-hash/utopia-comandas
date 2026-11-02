@@ -105,7 +105,7 @@ ${cols}<sheetData>${body}</sheetData>${merges}
     sh.set(0, row, text, sx({font:8, wrap:true, v:"top"})); if (span > 1) sh.merges.push(`A${row+1}:${ref(span-1, row)}`);
     sh.heights[row] = Math.max(18, Math.ceil(String(text).length / (span*11)) * 14); return row + 1;
   }
-  let tableSeq = 0;
+  let tableSeq = 0, NO_TABLES = false;
   /* Tabla con cabecera granate, filas alternas, filtros y fila de totales opcional.
      cols: [{h:"Ventas", fmt:"eur", total:"sum"|"avg"|"label"|fn, tone:true}] */
   function table(sh, row, col, name, cols, rows, opts = {}){
@@ -139,7 +139,7 @@ ${cols}<sheetData>${body}</sheetData>${merges}
       });
       sh.heights[totalRow] = 22;
     }
-    if (rows.length){
+    if (rows.length && !NO_TABLES){
       tableSeq++;
       sh.tables.push({id: tableSeq, name: (name.replace(/[^A-Za-z0-9_]/g, "") || "Tabla") + tableSeq, ref: `${ref(c0, r0)}:${ref(c1, rEnd)}`, cols: cols.map(k => k.h)});
     }
@@ -167,7 +167,7 @@ ${cols}<sheetData>${body}</sheetData>${merges}
         ? `<c:spPr><a:ln w="31750" cap="rnd"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:round/></a:ln></c:spPr><c:marker><c:symbol val="circle"/><c:size val="6"/><c:spPr><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:ln><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr></c:marker>`
         : isPie ? `<c:spPr><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr>${vals.map((v,k) => `<c:dPt><c:idx val="${k}"/><c:bubble3D val="0"/><c:spPr><a:solidFill><a:srgbClr val="${SERIES[k % SERIES.length]}"/></a:solidFill><a:ln w="19050"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr></c:dPt>`).join("")}`
         : `<c:spPr><a:solidFill><a:srgbClr val="${color}"/></a:solidFill><a:ln><a:noFill/></a:ln></c:spPr><c:invertIfNegative val="0"/>`;
-      const lbl = ch.labels ? `<c:dLbls><c:numFmt formatCode="${xe(isPie ? "0%" : (ch.labelFmt || "#,##0"))}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txPr(800, isPie ? "FFFFFF" : C.text, true)}<c:showLegendKey val="0"/><c:showVal val="${isPie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${isPie ? 1 : 0}"/><c:showBubbleSize val="0"/>${isPie ? "" : `<c:dLblPos val="${ch.type === "line" ? "t" : "outEnd"}"/>`}</c:dLbls>` : "";
+      const lbl = ch.labels ? `<c:dLbls><c:numFmt formatCode="${xe(isPie ? "0%" : (ch.labelFmt || "#,##0"))}" sourceLinked="0"/><c:spPr><a:noFill/><a:ln><a:noFill/></a:ln></c:spPr>${txPr(800, isPie ? "FFFFFF" : C.text, true)}${isPie ? "" : `<c:dLblPos val="${ch.type === "line" ? "t" : "outEnd"}"/>`}<c:showLegendKey val="0"/><c:showVal val="${isPie ? 0 : 1}"/><c:showCatName val="0"/><c:showSerName val="0"/><c:showPercent val="${isPie ? 1 : 0}"/><c:showBubbleSize val="0"/></c:dLbls>` : "";
       return `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:strRef><c:f>${xe(aref(ch.sheet, s.c, s.head, s.c, s.head))}</c:f>${strCache([String(name)])}</c:strRef></c:tx>${sp}${lbl}
 <c:cat><c:strRef><c:f>${xe(aref(ch.sheet, ch.cat.c, ch.cat.r1, ch.cat.c, ch.cat.r2))}</c:f>${strCache(catVals)}</c:strRef></c:cat>
 <c:val><c:numRef><c:f>${xe(aref(ch.sheet, s.c, s.r1, s.c, s.r2))}</c:f>${numCache(vals, ch.fmt || "General")}</c:numRef></c:val>${ch.type === "line" ? `<c:smooth val="0"/>` : ""}</c:ser>`;
@@ -254,7 +254,7 @@ ${charts.map((ch, i) => `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>
           productos:[[nombre,grupo,uds,ventas,pct,precio,coste,margen]],
           gastos:[[fecha,concepto,categoria,importe,origen]], categorias:[[cat,importe]], fijos:[[concepto,categoria,importe]] } */
   function build(JSZip, d){
-    xfs.length = 0; xfKey.clear(); sx(); tableSeq = 0;
+    xfs.length = 0; xfKey.clear(); sx(); tableSeq = 0; NO_TABLES = !!d.interno;
     const sheets = [];
     const sub = `${d.periodo} · Generado el ${d.generado}`;
 

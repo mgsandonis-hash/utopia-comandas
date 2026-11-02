@@ -610,7 +610,7 @@ table.t tr:last-child td{border-bottom:0}
         <div id="boxRows" style="display:grid;gap:8px"></div>
         <div class="row"><button type="button" class="btn small" id="boxAdd">+ Clase</button><button type="button" class="btn small" id="boxCopy">Copiar clases de la semana pasada</button><button type="button" class="btn primary" id="boxSave" style="margin-left:auto">Guardar</button></div>
         <p class="hint">Solo cuántas personas fueron a cada clase (lo ves en WodBuster). La app lo cruza con los pedidos que entran al acabar cada clase.</p>
-        <div class="field"><label for="boxStaff">Dueños, coaches y nosotros (sus pedidos se cuentan aparte)</label><input type="text" id="boxStaff" autocomplete="off" placeholder="Nombres separados por comas"><small class="hint">O pon una A delante del nombre al apuntar el pedido («A Laura»): cuenta como equipo aunque no esté en la lista.</small></div>
+        <div class="field"><label for="boxStaff">Dueños, coaches y nosotros (sus pedidos se cuentan aparte)</label><input type="text" id="boxStaff" autocomplete="off" placeholder="Nombres separados por comas"><small class="hint">O pon una A delante del nombre al apuntar el pedido («A Pepe» o «ALaura»): cuenta como equipo. Pegada al nombre solo funciona con los de esta lista.</small></div>
       </div>
     </div></details></section>
     <section class="card">
@@ -1912,7 +1912,7 @@ function renderBox(){
     const ses = a.sesiones.filter(x => Number(x.n) > 0 && toMin(x.hora) !== null);
     ses.forEach(x => { personas += Number(x.n); const k = WEEKDAYS[new Date(a.id+"T12:00").getDay()] + " " + x.hora + (x.clase ? " · " + x.clase : ""); const b = byClass[k] || (byClass[k] = {k, dias:0, n:0, ped:0, c:0, h:toMin(x.hora), wd:new Date(a.id+"T12:00").getDay()}); b.dias++; b.n += Number(x.n); });
     dayMins(a.id).forEach(([m, c, who]) => {
-      if (who && (/^a-./.test(who) || staff.includes(who))){ staffPed++; staffC += c; return; }
+      if (who && (/^a-./.test(who) || staff.includes(who) || (who[0] === "a" && staff.includes(who.slice(1))))){ staffPed++; staffC += c; return; }
       const x = classFor(m, ses);
       if (!x){ sinClase++; ventSin += c; return; }
       pedClase++; ventClase += c;
