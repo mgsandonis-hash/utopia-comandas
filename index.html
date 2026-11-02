@@ -1778,7 +1778,11 @@ $("#fCat").innerHTML = catOptions("Alquiler");
 function lastClose(){ return closes.reduce((a,c) => (!a || (c.closedAt||0) > (a.closedAt||0)) ? c : a, null); }
 function fondoAuto(){
   const c = lastClose();
-  return (c && c.contado !== undefined && c.contado !== null && !isNaN(Number(c.contado))) ? {v:Number(c.contado), from:c} : {v:cfg("fondoHabitual", 100), from:null};
+  const hab = cfg("fondoHabitual", 150);
+  if (!(c && c.contado !== undefined && c.contado !== null && !isNaN(Number(c.contado)))) return {v:hab, from:null};
+  const cont = Number(c.contado);
+  // Se empieza con el fondo habitual; si al cerrar quedó más, lo que sobra se saca
+  return cont > hab ? {v:hab, from:c, contado:cont, sacar: Math.round((cont - hab)*100)/100} : {v:cont, from:c, contado:cont};
 }
 let fondoPrefill = null;
 function renderCaja(){
@@ -1788,8 +1792,10 @@ function renderCaja(){
     const fa = fondoAuto(), inp = $("#fondo");
     // Se rellena solo si no lo has cambiado tú
     if (document.activeElement !== inp && (inp.value === "" || inp.value === fondoPrefill)){ inp.value = fmtIn(fa.v); fondoPrefill = inp.value; }
-    $("#fondoHint").innerHTML = fa.from
-      ? `Es lo que contasteis al cerrar el ${dmy(fa.from.closedAt)} a las ${hhmm(fa.from.closedAt)}: <b>${eur(fa.v)}</b>. Si sacasteis dinero después, cámbialo antes de abrir.`
+    $("#fondoHint").innerHTML = fa.from && fa.sacar
+      ? `Al cerrar el ${dmy(fa.from.closedAt)} contasteis <b>${eur(fa.contado)}</b>. Deja <b>${eur(fa.v)}</b> de fondo y saca <b>${eur(fa.sacar)}</b> del cajón.`
+      : fa.from
+      ? `Es lo que contasteis al cerrar el ${dmy(fa.from.closedAt)} a las ${hhmm(fa.from.closedAt)}: <b>${eur(fa.v)}</b>${fa.v < cfg("fondoHabitual", 150) ? `. Para llegar a los ${eur(cfg("fondoHabitual", 150))} de fondo faltan ${eur(cfg("fondoHabitual", 150) - fa.v)}` : ""}. Si sacasteis o metisteis dinero después, cámbialo antes de abrir.`
       : "Cuenta el cambio con el que empiezas el turno.";
   }
   $("#shiftSec").hidden = !open;
@@ -1835,11 +1841,11 @@ function renderCajaSugs(){
   const recent = closes.filter(c => c.vueltas && (c.closedAt||0) > Date.now() - 30*86400000);
   if (recent.length){
     const tot = {}; recent.forEach(c => Object.entries(c.vueltas).forEach(([d,n]) => tot[d] = (tot[d]||0)+n));
-    const plan = DENOMS_C.filter(d => d <= 2000).map(d => ({d, n: Math.ceil((tot[d]||0)/recent.length*1.3)})).filter(x => x.n > 0);
+    const plan = DENOMS_C.filter(d => d >= 10 && d <= 2000).map(d => ({d, n: Math.ceil((tot[d]||0)/recent.length*1.3)})).filter(x => x.n > 0);
     const totalFondo = plan.reduce((a,x) => a + x.d*x.n, 0);
-    if (plan.length) out.push(sug("", `Fondo recomendado: ${eurC(totalFondo)}`, `Según las vueltas de tus últimos ${recent.length} ${recent.length === 1 ? "turno" : "turnos"}, con margen: ${plan.map(x => `${x.n} × ${x.d >= 100 ? x.d/100 + " €" : x.d + " c"}`).join(" · ")}.`));
+    out.push(sug("", `Fondo de ${eur(cfg("fondoHabitual", 150))}`, `Reparto: 4 × 10 €, 6 × 5 €, 15 × 2 €, 20 × 1 €, 30 × 50 c, 50 × 20 c y 50 × 10 c (sin monedas de 5 c).${plan.length ? ` Según las vueltas de tus últimos ${recent.length} ${recent.length === 1 ? "turno" : "turnos"}, que no baje de: ${plan.map(x => `${x.n} × ${x.d >= 100 ? x.d/100 + " €" : x.d + " c"}`).join(" · ")} (${eurC(totalFondo)}).` : ""}`));
   } else {
-    out.push(sug("", `Fondo para empezar: ${eur(cfg("fondoHabitual", 100))}`, "Con precios entre 2,20 € y 4 € darás muchas vueltas en monedas. Para 100 €: 1 × 20 €, 4 × 10 €, 4 × 5 €, 5 × 2 €, 5 × 1 € y 5 € en monedas de 50 c, 20 c y 10 c. Tras unos cierres, la app lo ajusta a tus vueltas reales."));
+    out.push(sug("", `Fondo para empezar: ${eur(cfg("fondoHabitual", 150))}`, "Para 150 €: 4 × 10 €, 6 × 5 €, 15 × 2 €, 20 × 1 €, 30 × 50 c, 50 × 20 c y 50 × 10 c. Sin billetes de 20 € (los recibes) ni monedas de 5 c. Tras unos cierres, la app lo ajusta a tus vueltas reales."));
   }
   // Precios que obligan a monedas pequeñas
   const odd = menu.filter(m => isOn(m) && cents(m.price) % 50 !== 0);
@@ -2932,7 +2938,7 @@ function renderSetup(){
     const open = shift && shift.open;
     body = `<div class="card"><h2>La caja</h2>
       <div class="qgrid">
-        <div class="field"><label for="cf1">Fondo de cambio habitual (€)</label><input type="text" inputmode="decimal" id="cf1" value="${fmtIn(cfg("fondoHabitual", 100))}"></div>
+        <div class="field"><label for="cf1">Fondo de cambio habitual (€)</label><input type="text" inputmode="decimal" id="cf1" value="${fmtIn(cfg("fondoHabitual", 150))}"></div>
         <div class="field"><label for="cf2">Avisar para retirar dinero a partir de (€)</label><input type="text" inputmode="decimal" id="cf2" value="${fmtIn(cfg("retiradaUmbral", 200))}"></div>
         <div class="field"><label for="cf3">Días que abrís a la semana</label><select id="cf3">${[1,2,3,4,5,6,7].map(n => `<option ${n === cfg("diasSemana", 6) ? "selected" : ""}>${n}</option>`).join("")}</select></div>
       </div>
