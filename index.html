@@ -1848,6 +1848,15 @@ function monthRange(off){
   const from = d.getTime(); const e = new Date(d); e.setMonth(e.getMonth()+1);
   return {from, to:e.getTime(), key:dayKey(from).slice(0,7), label:d.toLocaleDateString("es-ES", {month:"long", year:"numeric"}), days:Math.round((e-d)/86400000)};
 }
+// Coste de lo vendido (y regalado): recetas × escandallos, con vaso, pegatina, hielo, agua…
+function costeVendido(productos){
+  let c = 0, sin = 0;
+  Object.entries(productos || {}).forEach(([k, p]) => { const m = menu.find(x => x.id === k) || menu.find(x => x.name === p.name); const pc = m ? productCost(m).c : 0; if (pc > 0) c += pc*p.qty; else sin += p.qty; });
+  return {c: Math.round(c*100), sin};
+}
+// Gastos que no son materia prima ni envases (limpieza, reparaciones…): las compras de suministros ya van en el coste de lo vendido
+const PROD_CATS = ["Café y matcha","Leche y bebidas vegetales","Repostería","Vasos y envases"];
+const esCompraProducto = g => g.origen === "compra" || PROD_CATS.includes(g.categoria);
 function monthSales(r){
   const recs = records(r.from).filter(x => x.t < r.to);
   return merge(recs);
@@ -1860,13 +1869,16 @@ function renderGastos(){
   const gm = gastos.filter(g => String(g.fecha||"").slice(0,7) === r.key);
   const variable = gm.reduce((a,g) => a + cents(g.importe), 0);
   const fijo = fijos.reduce((a,f) => a + cents(f.importe), 0);
-  const ben = ms.ventas - variable - fijo;
+  const cv = costeVendido(ms.productos), compras = gm.filter(esCompraProducto).reduce((a,g) => a + cents(g.importe), 0), otros = variable - compras;
+  const ben = ms.ventas - cv.c - otros - fijo;
   const margen = ms.ventas ? Math.round(ben/ms.ventas*100) : null;
   $("#profitKpis").innerHTML = `
     <div class="kpi"><b>${eurC(ms.ventas)}</b><span>ventas · ${ms.n} pedidos</span></div>
-    <div class="kpi"><b>${eurC(variable)}</b><span>gastos del mes</span></div>
+    <div class="kpi"><b>${eurC(cv.c)}</b><span>coste de lo vendido${ms.ventas ? ` · ${Math.round(cv.c/ms.ventas*100)}%` : ""}<br><span class="mins">ingredientes, vaso, pegatina, hielo, agua… (también lo invitado)${cv.sin ? ` · ${cv.sin} sin receta o sin precio` : ""}</span></span></div>
+    <div class="kpi"><b>${eurC(otros)}</b><span>otros gastos<br><span class="mins">limpieza, reparaciones…</span></span></div>
     <div class="kpi"><b>${eurC(fijo)}</b><span>gastos fijos</span></div>
-    <div class="kpi key ${ben < 0 ? "neg" : "pos"}"><b>${eurC(ben)}</b><span>beneficio${margen !== null ? ` · ${margen}% de las ventas` : ""}</span></div>`;
+    <div class="kpi key ${ben < 0 ? "neg" : "pos"}"><b>${eurC(ben)}</b><span>beneficio${margen !== null ? ` · ${margen}% de las ventas` : ""}</span></div>
+    <div class="kpi"><b>${eurC(compras)}</b><span>compras de suministros este mes<br><span class="mins">dinero que ha salido; no se resta dos veces</span></span></div>`;
   // Por categoría (gastos del mes + fijos)
   const byCat = {};
   gm.forEach(g => byCat[g.categoria||"Otros"] = (byCat[g.categoria||"Otros"]||0) + cents(g.importe));
@@ -1880,7 +1892,7 @@ function renderGastos(){
   const openDays = Object.keys(ms.days).length;
   const ticket = ms.n ? ms.ventas/ms.n : 0;
   if (fijo > 0 && ms.ventas > 0 && ticket > 0){
-    const ratio = Math.min(.95, variable/ms.ventas), contrib = 1 - ratio;
+    const ratio = Math.min(.95, (cv.c + otros)/ms.ventas), contrib = 1 - ratio;
     const needV = fijo / contrib, perDay = needV / Math.max(Math.round(cfg("diasSemana", 6)*4.33), 1);
     const pedDay = Math.ceil(perDay / ticket);
     out.push(sug(ben < 0 ? "warn" : "", `Punto de equilibrio: ${eurC(Math.round(needV))} al mes`, `Con lo que te cuesta cada venta este mes (${Math.round(ratio*100)}%) y tus fijos, necesitas vender unos ${eurC(Math.round(perDay))} por día abierto, unos ${pedDay} pedidos con tu ticket medio de ${eurC(Math.round(ticket))}.`));
@@ -2584,7 +2596,8 @@ function informeData(){
     const [y, mo] = k.split("-").map(Number);
     const from = new Date(y, mo-1, 1).getTime(), to = new Date(y, mo, 1).getTime();
     const ms = merge(recs.filter(x => x.t >= from && x.t < to));
-    const ventas = ms.ventas/100, gv = gastos.filter(g => String(g.fecha||"").slice(0,7) === k).reduce((a,g) => a + Number(g.importe||0), 0);
+    const ventas = ms.ventas/100, gmes = gastos.filter(g => String(g.fecha||"").slice(0,7) === k);
+    const gv = costeVendido(ms.productos).c/100 + gmes.filter(g => !esCompraProducto(g)).reduce((a,g) => a + Number(g.importe||0), 0);
     const ben = ventas - gv - fijoMes;
     return [new Date(y, mo-1, 1).toLocaleDateString("es-ES", {month:"long", year:"numeric"}), Object.keys(ms.days).length, ms.n, r2(ventas), ms.n ? r2(ventas/ms.n) : 0, r2(gv), r2(fijoMes), r2(ben), ventas ? ben/ventas : 0];
   });

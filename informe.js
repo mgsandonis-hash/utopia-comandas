@@ -264,16 +264,16 @@ ${charts.map((ch, i) => `<xdr:twoCellAnchor editAs="oneCell"><xdr:from><xdr:col>
       let r = banner(sh, "UTOPÍA COFFEE CLUB · INFORME DE NÚMEROS", sub, 9);
       const k = d.kpis;
       r = kpis(sh, r, [{label:"Ventas", value:k.ventas, fmt:"eur"}, {label:"Pedidos", value:k.pedidos, fmt:"int"}, {label:"Ticket medio", value:k.ticket, fmt:"eur"}, {label:"Beneficio", value:k.beneficio, fmt:"eur", tone: k.beneficio < 0 ? "bad" : ""}]);
-      r = kpis(sh, r, [{label:"Días abiertos", value:k.dias, fmt:"int"}, {label:"Venta media al día", value:k.dias ? k.ventas/k.dias : 0, fmt:"eur"}, {label:"Gastos (con fijos)", value:k.gastos, fmt:"eur"}, {label:"Margen", value:k.margen, fmt:"pct", tone: k.margen < 0 ? "bad" : ""}]);
+      r = kpis(sh, r, [{label:"Días abiertos", value:k.dias, fmt:"int"}, {label:"Venta media al día", value:k.dias ? k.ventas/k.dias : 0, fmt:"eur"}, {label:"Costes (con fijos)", value:k.gastos, fmt:"eur"}, {label:"Margen", value:k.margen, fmt:"pct", tone: k.margen < 0 ? "bad" : ""}]);
       r = section(sh, r, "Mes a mes", 9);
       const t = table(sh, r, 0, "Meses", [
         {h:"Mes"}, {h:"Días abiertos", fmt:"int", total:"sum"}, {h:"Pedidos", fmt:"int", total:"sum"}, {h:"Ventas", fmt:"eur", total:"sum"}, {h:"Ticket medio", fmt:"eur", total:(tr, R) => ({f:`IFERROR(${R(3)}/${R(2)},0)`, v: k.pedidos ? k.ventas/k.pedidos : 0})},
-        {h:"Gastos del mes", fmt:"eur", total:"sum"}, {h:"Gastos fijos", fmt:"eur", total:"sum"}, {h:"Beneficio", fmt:"eur", total:"sum", tone:true}, {h:"Margen", fmt:"pct", total:(tr, R) => ({f:`IFERROR(${R(7)}/${R(3)},0)`, v: k.margen})}
+        {h:"Coste y gastos", fmt:"eur", total:"sum"}, {h:"Gastos fijos", fmt:"eur", total:"sum"}, {h:"Beneficio", fmt:"eur", total:"sum", tone:true}, {h:"Margen", fmt:"pct", total:(tr, R) => ({f:`IFERROR(${R(7)}/${R(3)},0)`, v: k.margen})}
       ], d.meses, {totals:true});
       r = t.next;
       chart(sh, t, {type:"col", title:"Ventas, gastos y beneficio por mes", cat:0, series:[{col:3, color:C.wine}, {col:5, color:C.gold}, {col:7, color:C.teal}], fmt:'#,##0 "€"', at:{c:0, r, w:9, h:16}});
       r += 17;
-      r = note(sh, r, "Gastos fijos: el importe mensual actual de los fijos (alquiler, autónomos, luz…) aplicado a cada mes. Beneficio = ventas − gastos del mes − fijos. Las cifras salen de los cierres de caja de la app; el Bizum cuenta como venta.", 9);
+      r = note(sh, r, "Gastos fijos: el importe mensual actual de los fijos (alquiler, autónomos, luz…) aplicado a cada mes. Coste y gastos = coste de lo vendido según recetas y escandallos (ingredientes, vaso, pegatina, hielo, agua, también lo invitado) + otros gastos que no son compras de suministros. Beneficio = ventas − coste y gastos − fijos. Las cifras salen de los cierres de caja de la app; el Bizum cuenta como venta.", 9);
       sheets.push(sh);
     }
     // 2. Caja por día
