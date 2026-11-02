@@ -44,7 +44,7 @@ for i in range(N):
         if j==6: c.font=F(size=9, italic=True, color=MUTED)
 for col,w in zip("ABCDEFG",[13,34,18,15,14,14,58]): mv.column_dimensions[col].width=w
 mv.freeze_panes="A5"
-dv=DataValidation(type="list", formula1='"Inversión,Recuperación,Venta,Otro ingreso,Gasto,Retirada de caja,Aporte a caja"', allow_blank=True)
+dv=DataValidation(type="list", formula1='"Inversión,Recuperación,Venta,Otro ingreso,Gasto,Retirada de caja,Aporte a caja,Traspaso a cuenta común"', allow_blank=True)
 dv2=DataValidation(type="list", formula1='"Efectivo,Bizum,Banco,Tarjeta"', allow_blank=True)
 mv.add_data_validation(dv); mv.add_data_validation(dv2); dv.add(f"C{first}:C{last}"); dv2.add(f"D{first}:D{last}")
 mv.auto_filter.ref=f"A4:G{last}"
@@ -82,16 +82,18 @@ line(18,"% recuperado","=IF(B5=0,0,MIN(1,B16/B5))","",bold=True,fmt="0.0%")
 head(20,"Dónde está el dinero de la cafetería")
 line(21,"Fondo de cambio en el cajón",DATA.get("fondo",150),"Fondo de caja acordado (dato de Mario). Cámbialo si cambia el fondo",color="0000FF")
 line(22,"Sacado del cajón",S("Retirada de caja","F"),"Retiradas de caja apuntadas en Movimientos")
-line(23,"Cobrado por Bizum",f'=SUMIFS({RNG("E")},{RNG("C")},"Venta",{RNG("D")},"Bizum")',"Está en la cuenta del Bizum")
-head(25,"Objetivo: entrada del piso")
-line(26,"Dinero para la entrada del piso",DATA.get("objetivo") or None,"Pon aquí cuánto necesitáis",color="0000FF",fill="FFFF00" if not DATA.get("objetivo") else None)
-line(27,"Inversión que hay que devolver","=B5","Lo invertido en la cafetería: primero hay que cubrirlo")
-line(28,"Total que necesitáis","=B26+B27","Entrada del piso + inversión",bold=True)
-line(29,"Dinero reunido","=B6+B13","Recuperado (cafetera, cata, evento) + beneficio de la caja (ventas y otros ingresos) − gastos de suministros",bold=True)
-line(30,"Dinero ya libre para el piso","=MAX(0,B29-B27)","Lo reunido después de cubrir la inversión")
-line(31,"Falta","=MAX(0,B28-B29)","",bold=True,fill=SOFT,color=WINE)
-line(32,"% conseguido","=IF(B28>0,MIN(1,B29/B28),0)","",bold=True,fmt="0.0%")
-r=34
+line(23,"Cobrado por Bizum",f'=SUMIFS({RNG("E")},{RNG("C")},"Venta",{RNG("D")},"Bizum")',"Total de ventas cobradas por Bizum")
+line(24,"Bizum ya pasado a la cuenta común",S("Traspaso a cuenta común","E"),"Traspasos apuntados en Movimientos")
+line(25,"Bizum pendiente de pasar a la cuenta común","=B23-B24","",bold=True)
+head(28,"Objetivo: entrada del piso")
+line(29,"Dinero para la entrada del piso",DATA.get("objetivo") or None,"Pon aquí cuánto necesitáis",color="0000FF",fill="FFFF00" if not DATA.get("objetivo") else None)
+line(30,"Inversión que hay que devolver","=B5","Lo invertido en la cafetería: primero hay que cubrirlo")
+line(31,"Total que necesitáis","=B29+B30","Entrada del piso + inversión",bold=True)
+line(32,"Dinero reunido","=B6+B13","Recuperado (cafetera, cata, evento) + beneficio de la caja (ventas y otros ingresos) − gastos de suministros",bold=True)
+line(33,"Dinero ya libre para el piso","=MAX(0,B32-B30)","Lo reunido después de cubrir la inversión")
+line(34,"Falta","=MAX(0,B31-B32)","",bold=True,fill=SOFT,color=WINE)
+line(35,"% conseguido","=IF(B31>0,MIN(1,B32/B31),0)","",bold=True,fmt="0.0%")
+r=37
 rs.merge_cells(f"A{r}:C{r}"); rs[f"A{r}"]="Cómo usarla: añade cada movimiento en una fila nueva de Movimientos (fecha, concepto, tipo de la lista, forma de pago y el importe en Entrada o en Salida). Este resumen se actualiza solo. Ejemplo: «03/11/2026 · Ventas de la cafetería · Venta · Efectivo · 48,20»."
 rs[f"A{r}"].font=F(italic=True,size=9,color=MUTED); rs[f"A{r}"].alignment=Alignment(wrap_text=True,vertical="top"); rs.row_dimensions[r].height=40
 wb.save(OUT)
