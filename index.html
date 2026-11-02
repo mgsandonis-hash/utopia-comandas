@@ -521,6 +521,7 @@ table.t tr:last-child td{border-bottom:0}
             <div class="field"><label for="dName">Quién</label><input type="text" id="dName" required autocomplete="off" placeholder="Nombre" maxlength="40" list="debtNames"></div>
             <div class="field"><label for="dAmt">Cuánto (€)</label><input type="text" id="dAmt" required inputmode="decimal" autocomplete="off" placeholder="2,20"></div>
             <div class="field"><label for="dTxt">De qué</label><input type="text" id="dTxt" autocomplete="off" placeholder="Hot latte" maxlength="80"></div>
+            <label class="check" style="grid-column:1/-1"><input type="checkbox" id="dCash" checked> Lo cobré en la app como efectivo pero no ha pagado (lo resta de lo que debe haber en el cajón)</label>
             <button class="btn" type="submit">Apuntar deuda</button>
           </form><datalist id="debtNames"></datalist>
         </div></div></details></section>
@@ -1660,7 +1661,14 @@ $("#debtForm").addEventListener("submit", async e => {
   e.preventDefault();
   const n = $("#dName").value.trim(), v = parsePrice($("#dAmt").value);
   if (!n || isNaN(v) || v <= 0){ toast("Pon quién y cuánto"); return; }
-  try { await addDebt({nombre:n, importe:v, concepto:$("#dTxt").value.trim(), t:Date.now(), manual:true}); e.target.reset(); toast(`Apuntado: ${n} debe ${eur(v)}`); } catch(err){ toast(saveErrMsg(err, "No se pudo apuntar.")); }
+  const fromCash = $("#dCash").checked;
+  if (fromCash && !(shift && shift.open)){ toast("Con la caja cerrada no puedo restarlo del cajón: desmarca la casilla o abre la caja."); return; }
+  try {
+    const now = Date.now();
+    await addDebt({nombre:n, importe:v, concepto:$("#dTxt").value.trim(), t:now, manual:true, restadoCaja:fromCash});
+    if (fromCash) await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"salida", importe:v, concepto:`Lo debe: ${n}`, deuda:true}]});
+    e.target.reset(); $("#dCash").checked = true; toast(`Apuntado: ${n} debe ${eur(v)}${fromCash ? " · restado del cajón" : ""}`);
+  } catch(err){ toast(saveErrMsg(err, "No se pudo apuntar.")); }
 });
 $("#tipQuick").addEventListener("click", async e => {
   const b = e.target.closest("[data-tip]"); if (!b || !db || !shift || !shift.open) return;
