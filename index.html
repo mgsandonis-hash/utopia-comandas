@@ -453,7 +453,7 @@ table.t tr:last-child td{border-bottom:0}
           <button type="button" class="sw" id="invBtn" aria-pressed="false">Invitación</button>
           <button type="button" class="sw" id="casaBtn" aria-pressed="false">Consumo propio</button>
         </div>
-        <div class="seg" id="paySeg"><button type="button" data-pay="efectivo" aria-pressed="true">Efectivo</button><button type="button" data-pay="debe" aria-pressed="false">Lo debe</button><button type="button" data-pay="bizum" aria-pressed="false">Bizum</button></div>
+        <div class="seg" id="paySeg"><button type="button" data-pay="efectivo" aria-pressed="true">Efectivo</button><button type="button" data-pay="bizum" aria-pressed="false">Bizum</button></div>
         <div class="bizumbox" id="bizumArea" hidden></div>
         <div class="bizumbox debebox" id="debeArea" hidden></div>
         <div class="debewarn" id="debeWarn" hidden></div>
@@ -515,7 +515,7 @@ table.t tr:last-child td{border-bottom:0}
         <div class="kpis" id="cashStats"></div>
       </section>
       <section><details class="fold" id="f-deudas" open><summary class="sec-h"><h2>Nos deben</h2><span class="count" id="debtTotal"></span></summary><div class="foldbody"><div class="ticket">
-          <p class="hint">Quien se lleva algo sin pagar. Al cobrar en el mostrador elige «Lo debe» y se apunta solo; también lo puedes apuntar aquí. Cuando pague, toca cómo lo ha pagado: si es en efectivo entra en la caja de hoy.</p>
+          <p class="hint">Quien se lleva algo sin pagar: apúntalo aquí al hacer la caja. Cuando pague, toca cómo lo ha pagado: si es en efectivo entra en la caja de hoy.</p>
           <div id="debtList"></div>
           <form class="addform" id="debtForm" style="margin-top:6px">
             <div class="field"><label for="dName">Quién</label><input type="text" id="dName" required autocomplete="off" placeholder="Nombre" maxlength="40" list="debtNames"></div>
@@ -1181,7 +1181,7 @@ function renderCart(){
   const who = $("#cust").value.trim();
   $("#debeArea").innerHTML = debe ? (who && !useNumber ? `<b>${esc(who)}</b> se lleva ${eur(t)} sin pagar. Se apunta en Oficina → Caja → Nos deben.` : `Escribe el nombre de quien lo debe.`) : "";
   const owes = who ? debtOf(who) : 0;
-  $("#debeWarn").hidden = !owes; if (owes) $("#debeWarn").textContent = `Ojo: ${who} ya os debe ${eurC(owes)}.`;
+  $("#debeWarn").hidden = true; if (false && owes) $("#debeWarn").textContent = `Ojo: ${who} ya os debe ${eurC(owes)}.`;
   $("#bizumArea").hidden = !biz;
   $("#bizumArea").innerHTML = biz ? `Bizum de <b>${eur(t)}</b> al <b>${fmtTel(bizumNum())}</b>. Pulsa cobrado cuando te llegue la notificación del banco.` : "";
   renderLoyal();
