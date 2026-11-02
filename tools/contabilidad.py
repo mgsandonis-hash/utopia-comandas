@@ -72,7 +72,7 @@ line(6,"Recuperado fuera de la cafetería",S("Recuperación","E"),"Venta de la a
 line(7,"Pendiente antes de contar la cafetería","=B5-B6","",bold=True)
 head(9,"La cafetería")
 line(10,"Ventas",S("Venta","E"),"Efectivo + Bizum, de los cierres de caja")
-line(11,"Otros ingresos (propinas, bote…)",S("Otro ingreso","E"),"Revisa el «Bote café» en Movimientos")
+line(11,"Otros ingresos (propinas, bote…)",S("Otro ingreso","E"),"Propinas y bote antiguo")
 line(12,"Gastos",S("Gasto","F"),"Compras y gastos apuntados")
 line(13,"Beneficio de la cafetería","=B10+B11-B12","Ventas + otros ingresos − gastos",bold=True,fill=SOFT,color=WINE)
 head(15,"Recuperación de la inversión")
