@@ -704,6 +704,17 @@ table.t tr:last-child td{border-bottom:0}
       <section><div class="sec-h"><h2>Escandallos</h2></div>
         <p class="hint" style="margin-bottom:10px">Pon lo que pagasteis y cuánto traía. El coste por gramo (o ml, o unidad) sale solo y va directo a las recetas de la carta.</p>
         <div class="tablewrap"><table class="t esc" id="escTable"></table></div></section>
+      <section><details class="fold" id="f-adde" open><summary class="sec-h"><h2>Añadir suministro o ingrediente</h2></summary><div class="foldbody">
+      <form class="addform" data-insform="e">
+        <div class="field"><label for="eName">Nombre</label><input type="text" id="eName" data-k="nombre" required placeholder="Ej. Sirope de caramelo"></div>
+        <div class="field"><label for="eUnit">Unidad</label><select id="eUnit" data-k="unidad"><option value="g">gramos</option><option value="ml">ml</option><option value="ud">unidades</option></select></div>
+        <div class="field"><label for="ePaid">Lo pagado (€)</label><input type="text" id="ePaid" data-k="precioPaquete" inputmode="decimal" placeholder="6,50"></div>
+        <div class="field"><label for="eQty">Contiene</label><input type="text" id="eQty" data-k="paquete" inputmode="decimal" placeholder="1000"></div>
+        <div class="field"><label for="eMin">Avisar si quedan menos de</label><input type="text" id="eMin" data-k="minimo" inputmode="decimal" placeholder="200"></div>
+        <button class="btn primary" type="submit">Añadir</button>
+      </form>
+      <p class="hint" style="margin-top:6px">Al añadirlo sale en Escandallos, en Inventario y en la receta de cada producto (Oficina → Carta → Editar), listo para poner cuánto lleva.</p></div></details></section>
+
       <section><details class="fold" id="f-costebebida" open><summary class="sec-h"><h2>Coste por bebida</h2><span class="count" id="costCount"></span></summary><div class="foldbody">
         <div class="field" style="max-width:320px;margin-bottom:10px"><label for="costeObj">Máximo que se puede llevar el ingrediente (% del precio)</label><input type="number" id="costeObj" min="10" max="90" step="1" inputmode="numeric" placeholder="50"></div>
         <div class="sugs" id="costSugs" style="margin-bottom:10px"></div>
@@ -714,12 +725,16 @@ table.t tr:last-child td{border-bottom:0}
       <div data-supp="inv" hidden>
       <p class="hint" style="margin:14px 0 4px">Cuando compres, pulsa <b>Compré</b>: suma al stock y apunta el gasto. Toca <b>Editar</b> para el tamaño y precio del paquete o para contar lo que hay.</p>
       <div id="insEdit"></div>
-      <section><details class="fold" id="f-addins"><summary class="sec-h"><h2>Añadir suministro</h2></summary><div class="foldbody">      <form class="addform" id="insForm">
-        <div class="field"><label for="iName">Suministro</label><input type="text" id="iName" required placeholder="Ej. Puré de mango"></div>
-        <div class="field"><label for="iUnit">Unidad</label><select id="iUnit"><option value="g">gramos</option><option value="ml">ml</option><option value="ud">unidades</option></select></div>
-        <div class="field"><label for="iMin">Mínimo</label><input type="text" id="iMin" inputmode="decimal" placeholder="500"></div>
-        <button class="btn" type="submit">Añadir suministro</button>
-      </form></div></details></section>
+      <section><details class="fold" id="f-addi"><summary class="sec-h"><h2>Añadir suministro o ingrediente</h2></summary><div class="foldbody">
+      <form class="addform" data-insform="i">
+        <div class="field"><label for="iName">Nombre</label><input type="text" id="iName" data-k="nombre" required placeholder="Ej. Sirope de caramelo"></div>
+        <div class="field"><label for="iUnit">Unidad</label><select id="iUnit" data-k="unidad"><option value="g">gramos</option><option value="ml">ml</option><option value="ud">unidades</option></select></div>
+        <div class="field"><label for="iPaid">Lo pagado (€)</label><input type="text" id="iPaid" data-k="precioPaquete" inputmode="decimal" placeholder="6,50"></div>
+        <div class="field"><label for="iQty">Contiene</label><input type="text" id="iQty" data-k="paquete" inputmode="decimal" placeholder="1000"></div>
+        <div class="field"><label for="iMin">Avisar si quedan menos de</label><input type="text" id="iMin" data-k="minimo" inputmode="decimal" placeholder="200"></div>
+        <button class="btn primary" type="submit">Añadir</button>
+      </form>
+      <p class="hint" style="margin-top:6px">Al añadirlo sale en Escandallos, en Inventario y en la receta de cada producto (Oficina → Carta → Editar), listo para poner cuánto lleva.</p></div></details></section>
       </div>
     </div>
     <div data-ajp="compra" hidden><section>
@@ -965,6 +980,7 @@ function openCarta(){
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-printmenu]")) openCarta(); });
+document.addEventListener("click", e => { if (!e.target.closest("[data-goins]")) return; lsSet("oficina", "ajustes"); setAjTab("suministros"); setSupTab("esc"); goView("ajustes"); setTimeout(() => { const d = $("#f-adde"); if (d){ d.open = true; d.scrollIntoView({behavior:"smooth", block:"start"}); $("#eName").focus(); } }, 150); });
 $("#goCarta").addEventListener("click", () => { lsSet("oficina", "carta"); goView("carta"); });
 function setAjTab(t){
   ajTab = t; lsSet("ajTab", t);
@@ -2361,6 +2377,7 @@ function renderAjustes(){
         <div class="recipe">${insSorted.filter(i => !CUP_KEYS.includes(i.id)).length ? insSorted.filter(i => !CUP_KEYS.includes(i.id)).map(i => `<div class="field"><label for="r-${m.id}-${i.id}">${esc(i.nombre)} (${esc(i.unidad)})</label>
             <input type="text" inputmode="decimal" id="r-${m.id}-${i.id}" data-rid="${m.id}" data-ins="${i.id}" value="${Number(m.receta?.[i.id]) ? String(m.receta[i.id]).replace(".",",") : ""}" placeholder="0"></div>`).join("")
             : `<div class="empty">Añade suministros en la pestaña Suministros para poner recetas.</div>`}</div>
+        <div class="row"><button type="button" class="btn ghost small" data-goins>+ Añadir un ingrediente nuevo</button></div>
         <div class="row"><button type="button" class="btn ghost danger small" data-del="${m.id}" style="margin-left:auto">Borrar producto</button></div>` : ""}
       </div>`;
     }).join("");
@@ -2600,13 +2617,19 @@ $("#insEdit").addEventListener("click", async e => {
   }
   if (d) confirmTap(d, "i"+d.dataset.delins, "¿Seguro?", async () => { try { await db.collection("insumos").doc(d.dataset.delins).delete(); toast("Suministro borrado"); } catch(err){ toast("No se pudo borrar."); } });
 });
-$("#insForm").addEventListener("submit", async e => {
+document.querySelectorAll("[data-insform]").forEach(f => f.addEventListener("submit", async e => {
   e.preventDefault(); if (!db) return;
-  const nombre = $("#iName").value.trim(); if (!nombre){ toast("Pon un nombre"); return; }
-  const min = parseMoney($("#iMin").value);
-  try { await db.collection("insumos").add({nombre, unidad:$("#iUnit").value, minimo: isNaN(min) ? 0 : min, stockContado:null, fechaConteo:null}); e.target.reset(); toast("Suministro añadido"); }
-  catch(err){ toast("No se pudo añadir."); }
-});
+  const v = k => f.querySelector(`[data-k="${k}"]`).value.trim();
+  const nombre = v("nombre"); if (!nombre){ toast("Pon un nombre"); return; }
+  if (insumos.some(i => slug(i.nombre) === slug(nombre))){ toast("Ya existe un suministro con ese nombre"); return; }
+  const num = k => { const x = v(k); if (x === "") return 0; const n = parseMoney(x); return isNaN(n) || n < 0 ? NaN : n; };
+  const pp = num("precioPaquete"), pq = num("paquete"), mn = num("minimo");
+  if ([pp, pq, mn].some(isNaN)){ toast("Revisa los números"); return; }
+  try {
+    await db.collection("insumos").add({nombre, unidad: v("unidad"), precioPaquete: pp, paquete: pq, minimo: mn, stockContado:null, fechaConteo:null});
+    f.reset(); document.activeElement?.blur?.(); renderAll(); toast(`${nombre} añadido: ya puedes ponerlo en las recetas`);
+  } catch(err){ toast("No se pudo añadir."); }
+}));
 
 /* ---------- precios sugeridos ---------- */
 function fixedPerUnit(){
