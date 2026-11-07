@@ -773,7 +773,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 46</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 47</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -981,6 +981,9 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
+.stk{position:absolute;z-index:1;pointer-events:none}
+.stk-l{top:13mm;left:15mm;height:30mm}
+.stk-r{top:21mm;right:14mm;height:21mm}
 h2.mh{display:flex;align-items:center;gap:3mm}
 h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
 .procedencia{width:78%;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:6mm;padding:calc(1mm*var(--k)) 0}
@@ -1008,6 +1011,8 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
 </style></head><body>
 <div class="bar"><button type="button" id="pdfBtn">Descargar PDF</button><button type="button" class="alt" onclick="window.print()">Imprimir</button><span id="barMsg">A4 · listo para imprimir</span></div>
 <div class="fit" id="fit"><div class="sheet" id="sheet">
+  <img class="stk stk-l" src="${new URL("stickers/gafas.png", location.href).href}" alt="">
+  <img class="stk stk-r" src="${new URL("stickers/estira.png", location.href).href}" alt="">
   <header><div class="brand">UTOPÍA</div><div class="sub">COFFEE CLUB</div><div class="rule"><b>CARTA</b></div></header>
   <main>
     ${origenHTML()}
