@@ -867,7 +867,7 @@ function cartaHTML(){
   const item = m => `<li><div class="ln"><span class="nm">${esc(m.name)}</span><span class="dots"></span><span class="pr">${price(m.price)}</span></div>${m.desc ? `<p class="ds">${esc(m.desc)}</p>` : ""}</li>`;
   // Con frías y calientes, van una al lado de la otra si no caben a una columna
   const drinkSecs = groups.filter(([g]) => g.startsWith("Bebidas")), otherSecs = groups.filter(([g]) => !g.startsWith("Bebidas"));
-  const many = drinkSecs.length === 2 && (normal.length + esp.length) > 9;
+  const many = false; // una sección debajo de otra
   const sec = ([g, l]) => `<section><h2>${esc(g)}</h2><ul>${l.map(item).join("")}</ul></section>`;
   const qr = new URL("qr.png", location.href).href;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -895,18 +895,19 @@ header{text-align:center;padding-top:4mm}
 .rule{display:flex;align-items:center;gap:4mm;margin:6mm auto 0;width:70%}
 .rule::before,.rule::after{content:"";flex:1;border-top:.8pt solid #5e0f1c}
 .rule b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:11pt;letter-spacing:.3em}
-main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;gap:6mm;padding:5mm 0}
+main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:safe center;gap:5mm;padding:4mm 0}
 .cols{width:78%;margin:0 auto}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12mm;width:100%}
 .two + .cols{margin-top:2mm}
-section{break-inside:avoid;margin-bottom:7mm}
-h2{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:24pt;letter-spacing:.12em;border-bottom:1.4pt solid #5e0f1c;padding-bottom:1mm;margin-bottom:3mm}
-ul{list-style:none;display:grid;gap:2.6mm}
+.sheet{--k:1}
+section{break-inside:avoid;margin-bottom:calc(6mm*var(--k))}
+h2{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:calc(22pt*var(--k));letter-spacing:.12em;border-bottom:1.4pt solid #5e0f1c;padding-bottom:1mm;margin-bottom:calc(2.6mm*var(--k))}
+ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .ln{display:flex;align-items:baseline;gap:2mm}
-.nm{font-weight:600;font-size:14pt;text-transform:uppercase;letter-spacing:.03em}
+.nm{font-weight:600;font-size:calc(14pt*var(--k));text-transform:uppercase;letter-spacing:.03em}
 .dots{flex:1;border-bottom:1.2pt dotted #8a4a52;transform:translateY(-1mm)}
-.pr{font-family:"Bebas Neue",sans-serif;font-size:17pt;letter-spacing:.04em}
-.ds{font-style:italic;font-size:11pt;color:#8a4a52;margin-top:.5mm}
+.pr{font-family:"Bebas Neue",sans-serif;font-size:calc(17pt*var(--k));letter-spacing:.04em}
+.ds{font-style:italic;font-size:calc(11pt*var(--k));color:#8a4a52;margin-top:.5mm}
 .esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
 .esp .lim{text-align:center;font-style:italic;font-size:11pt;color:#8a4a52;margin-bottom:3mm}
@@ -932,6 +933,9 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
 <script>
 const sheet = document.getElementById("sheet"), fit = document.getElementById("fit");
 const W = sheet.offsetWidth, H = sheet.offsetHeight;
+// Si la carta no cabe en el A4, se encoge la letra poco a poco hasta que quepa
+function fitText(){ const main = sheet.querySelector("main"); let k = 1; sheet.style.setProperty("--k", k); while (main.scrollHeight > main.clientHeight + 1 && k > 0.6){ k -= 0.04; sheet.style.setProperty("--k", k.toFixed(2)); } }
+fitText(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText);
 function layout(){ const vw = document.documentElement.clientWidth || window.innerWidth; const k = Math.min(1, (vw - 24) / W); sheet.style.transform = "scale(" + k + ")"; fit.style.width = W*k + "px"; fit.style.height = H*k + "px"; }
 layout(); addEventListener("resize", layout); addEventListener("load", layout); setTimeout(layout, 300);
 document.getElementById("pdfBtn").addEventListener("click", async () => {
