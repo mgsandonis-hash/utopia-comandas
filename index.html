@@ -567,14 +567,14 @@ table.t tr:last-child td{border-bottom:0}
   <!-- OFICINA · GASTOS -->
   <div id="v-carta" hidden>
     <section><div class="sec-h"><h2>Carta</h2></div>
-      <p class="hint" style="margin:14px 0 4px"><b>Disponible</b> apagado = agotado, no sale en el mostrador ni en el QR. <b>De temporada</b> = edición limitada hasta fin de existencias: sale arriba del todo, destacado, y en su propio apartado de la carta A4. Toca <b>Editar</b> para cambiar nombre, precio o receta.</p>
+      <p class="hint" style="margin:14px 0 4px"><b>Disponible</b> apagado = agotado, no sale en el mostrador ni en el QR. <b>Edición limitada</b> = hasta fin de existencias: sale arriba del todo, destacado, y en su propio apartado de la carta A4. Toca <b>Editar</b> para cambiar nombre, precio o receta.</p>
       <div id="menuEdit"></div>
       <section><details class="fold" id="f-addprod"><summary class="sec-h"><h2>Añadir producto</h2></summary><div class="foldbody">      <form class="addform" id="addForm">
         <div class="field"><label for="nName">Nombre</label><input type="text" id="nName" required placeholder="Ej. Matcha fresa"></div>
         <div class="field"><label for="nPrice">Precio (€)</label><input type="text" id="nPrice" inputmode="decimal" required placeholder="3,80"></div>
         <div class="field"><label for="nGroup">Grupo</label><input type="text" id="nGroup" list="groupsList" placeholder="Matcha"></div>
         <div class="field"><label for="nStation">Sale en</label><select id="nStation"><option value="barra">Cafetera (Laura)</option><option value="cocina">Mostrador (tú)</option></select></div>
-        <label class="check"><input type="checkbox" id="nSpecial"> De temporada (edición limitada)</label>
+        <label class="check"><input type="checkbox" id="nSpecial"> Edición limitada</label>
         <button class="btn primary" type="submit">Añadir</button>
       </form>
       <datalist id="groupsList"></datalist></div></details></section>
@@ -1033,7 +1033,7 @@ function sortMenu(list){
 }
 function groupsOf(list){
   const m = new Map();
-  list.forEach(it => { const g = it.especial ? "De temporada" : (it.group || "Otros"); if (!m.has(g)) m.set(g, []); m.get(g).push(it); });
+  list.forEach(it => { const g = it.especial ? "Edición limitada" : (it.group || "Otros"); if (!m.has(g)) m.set(g, []); m.get(g).push(it); });
   return m;
 }
 const today = () => orders.filter(o => o.day === dayKey());
@@ -1259,7 +1259,7 @@ function renderMenuGrid(){
   if (top.length) groups.set("Más pedidos", top);
   const order = top.length ? ["Más pedidos", ...[...groups.keys()].filter(g => g !== "Más pedidos")] : [...groups.keys()];
   order.map(g => [groups.get(g), g]).forEach(([items, g]) => {
-    const sp = g === "De temporada";
+    const sp = g === "Edición limitada";
     html += `<div class="group-h ${sp?"sp":""}">${esc(g)}</div><div class="grid">` + items.map(it => {
       const q = cart.get(it.id)?.qty || 0;
       return `<button type="button" class="prod ${it.station==="cocina"?"cocina":""} ${it.especial?"sp":""}" data-add="${it.id}" aria-label="Añadir ${esc(it.name)}">
@@ -1476,7 +1476,7 @@ $("#sendBtn").addEventListener("click", async () => {
   if (!name){ showErr("Escribe el nombre del cliente o pulsa «Usar nº»."); $("#cust").focus(); return; }
   const items = [...cart].flatMap(([id,c]) => {
     const m = menu.find(x => x.id === id); if (!m) return [];
-    const base = {id, name:m.name, group:m.especial ? "De temporada" : (m.group||""), station:m.station||"barra", note:(c.note||"").trim()}, price = Number(m.price)||0;
+    const base = {id, name:m.name, group:m.especial ? "Edición limitada" : (m.group||""), station:m.station||"barra", note:(c.note||"").trim()}, price = Number(m.price)||0;
     if (invMode) return [{...base, qty:c.qty, price:0, precioCarta:price, gratis:invMode}];
     if (freeItemId === id){
       const arr = []; if (c.qty > 1) arr.push({...base, qty:c.qty-1, price});
@@ -2213,7 +2213,7 @@ function renderDatos(){
   // Top productos
   const prods = Object.values(m.productos).sort((a,b) => b.qty-a.qty || b.c-a.c);
   const maxQ = Math.max(1, ...prods.map(p => p.qty));
-  $("#topBars").innerHTML = prods.length ? prods.slice(0, 12).map(p => `<div class="hbar"><span>${esc(p.name)}</span><b>${p.qty} · ${eurC(p.c)}</b><div class="track"><div class="fill ${p.station === "cocina" ? "cocina" : ""} ${p.group === "Fuera de carta" || p.group === "De temporada" ? "sp" : ""}" style="width:${p.qty/maxQ*100}%"></div></div></div>`).join("")
+  $("#topBars").innerHTML = prods.length ? prods.slice(0, 12).map(p => `<div class="hbar"><span>${esc(p.name)}</span><b>${p.qty} · ${eurC(p.c)}</b><div class="track"><div class="fill ${p.station === "cocina" ? "cocina" : ""} ${["Fuera de carta","De temporada","Edición limitada"].includes(p.group) ? "sp" : ""}" style="width:${p.qty/maxQ*100}%"></div></div></div>`).join("")
     : `<div class="empty">Sin ventas todavía.</div>`;
   // Horas
   const hrs = Object.keys(m.horas).map(Number);
@@ -2226,7 +2226,7 @@ function renderDatos(){
   // Por tipo
   const byG = {}; prods.forEach(p => { const g = p.group || "Otros"; const x = byG[g] || (byG[g] = {qty:0, c:0, st:p.station}); x.qty += p.qty; x.c += p.c; });
   const gl = Object.entries(byG).sort((a,b) => b[1].c-a[1].c);
-  $("#groupBars").innerHTML = gl.length ? gl.map(([g,x]) => `<div class="hbar"><span>${esc(g)}</span><b>${m.ventas ? Math.round(x.c/m.ventas*100) : 0}% · ${eurC(x.c)}</b><div class="track"><div class="fill ${x.st === "cocina" ? "cocina" : ""} ${g === "Fuera de carta" || g === "De temporada" ? "sp" : ""}" style="width:${m.ventas ? x.c/m.ventas*100 : 0}%"></div></div></div>`).join("")
+  $("#groupBars").innerHTML = gl.length ? gl.map(([g,x]) => `<div class="hbar"><span>${esc(g)}</span><b>${m.ventas ? Math.round(x.c/m.ventas*100) : 0}% · ${eurC(x.c)}</b><div class="track"><div class="fill ${x.st === "cocina" ? "cocina" : ""} ${["Fuera de carta","De temporada","Edición limitada"].includes(g) ? "sp" : ""}" style="width:${m.ventas ? x.c/m.ventas*100 : 0}%"></div></div></div>`).join("")
     : `<div class="empty">Sin ventas todavía.</div>`;
   renderSupply();
 }
@@ -2335,7 +2335,7 @@ function renderAjustes(){
       return `<div class="pcard ${m.station==="cocina"?"cocina":""} ${sp?"sp":""} ${on?"":"off"}">
         <div class="phead"><span class="pn"><b>${esc(m.name)}</b> <span class="mins">${eur(m.price)} · ${m.station === "cocina" ? "Mostrador" : "Cafetera"}${rcount ? "" : " · sin receta"}</span></span>
           <button type="button" class="sw" data-toggle="disponible" data-id="${m.id}" aria-pressed="${on}">Disponible</button>
-          <button type="button" class="sw spsw" data-toggle="especial" data-id="${m.id}" aria-pressed="${sp}">De temporada</button>
+          <button type="button" class="sw spsw" data-toggle="especial" data-id="${m.id}" aria-pressed="${sp}">Edición limitada</button>
           <button type="button" class="sw" data-toggle="enCarta" data-id="${m.id}" aria-pressed="${m.enCarta !== false}">En carta A4</button>
           <button type="button" class="btn small" data-recipe="${m.id}" aria-expanded="${ed}">${ed ? "Cerrar ▴" : "Editar ▾"}</button></div>
         ${ed ? `<div class="pgrid">
@@ -2549,7 +2549,7 @@ $("#menuEdit").addEventListener("click", async e => {
     const m = menu.find(x => x.id === t.dataset.id); if (!m) return;
     if (t.dataset.toggle === "disponible") setAvail(m.id, !isOn(m));
     else if (t.dataset.toggle === "enCarta"){ const v = m.enCarta === false; try { await db.collection("menu").doc(m.id).update({enCarta: v}); toast(v ? "Sale en la carta impresa" : "Quitado de la carta impresa"); } catch(err){ toast("No se pudo cambiar."); } }
-    else { try { await db.collection("menu").doc(m.id).update({especial: !m.especial}); toast(!m.especial ? "Ahora es de temporada" : "Vuelve a la carta normal"); } catch(err){ toast("No se pudo cambiar."); } }
+    else { try { await db.collection("menu").doc(m.id).update({especial: !m.especial}); toast(!m.especial ? "Ahora es edición limitada" : "Vuelve a la carta normal"); } catch(err){ toast("No se pudo cambiar."); } }
   }
   if (d) confirmTap(d, "m"+d.dataset.del, "¿Seguro?", async () => { try { await db.collection("menu").doc(d.dataset.del).delete(); toast("Producto borrado"); } catch(err){ toast("No se pudo borrar."); } });
 });
@@ -2561,7 +2561,7 @@ $("#addForm").addEventListener("submit", async e => {
   const group = $("#nGroup").value.trim() || (station === "cocina" ? "Repostería" : "Cafés");
   try {
     const ref = await db.collection("menu").add({name, price, group, station, especial, disponible:true, order: menu.length + 1, receta:{}});
-    e.target.reset(); openRecipes.add(ref.id); toast(especial ? "Bebida de temporada añadida. Ponle receta." : "Producto añadido. Ponle receta.");
+    e.target.reset(); openRecipes.add(ref.id); toast(especial ? "Edición limitada añadida. Ponle receta." : "Producto añadido. Ponle receta.");
   } catch(err){ toast("No se pudo añadir."); }
 });
 $("#insEdit").addEventListener("change", async e => {
@@ -2693,11 +2693,11 @@ function renderSlow(){
   $("#slowSugs").innerHTML = slow.length ? slow.map(({x, q}) => {
     const k = prepKind(x, x.name), cold = isCold(x, x.name);
     let tip;
-    if (x.especial) tip = q === 0 ? "Como bebida de temporada no ha funcionado: retírala y prueba otra." : "Déjala unos días más o cámbiala por otra de temporada.";
+    if (x.especial) tip = q === 0 ? "Como edición limitada no ha funcionado: retírala y prueba otra." : "Déjala unos días más o cámbiala por otra edición limitada.";
     else if (x.station === "cocina" && k === "otro") tip = "Pide menos unidades para no tirar, u ofrécelo con un café a precio cerrado (combo).";
     else if (cold && winter) tip = "Es bebida fría en invierno: es normal que baje. Mantenla pero sin preparar nada por adelantado.";
     else if (!cold && summer) tip = "Es bebida caliente en verano: es normal que baje.";
-    else if (q === 0) tip = "Ninguna venta: quítalo de la carta o sácalo como bebida de temporada unos días con otro nombre o presentación.";
+    else if (q === 0) tip = "Ninguna venta: quítalo de la carta o sácalo como edición limitada unos días con otro nombre o presentación.";
     else tip = "Ponlo más visible en la pizarra, recomiéndalo al cobrar o prueba un precio de lanzamiento una semana.";
     return sug(q === 0 ? "warn" : "", `${esc(x.name)}: ${q} en ${days} días`, tip);
   }).join("") : sug("", "Todo se vende", `En los últimos ${days} días abiertos ningún producto se queda muy por debajo de la media.`);
@@ -2950,10 +2950,10 @@ function renderSetup(){
     const list = sortMenu(menu);
     body = `<div class="card"><h2>Carta y precios</h2>
       <p class="hint">Revisa los precios y desmarca lo que hoy no tengáis.</p>
-      <div>${list.map(m => `<div class="srow"><span><b>${esc(m.name)}</b>${m.especial ? ' <span class="tag sp">De temporada</span>' : ""}</span>
+      <div>${list.map(m => `<div class="srow"><span><b>${esc(m.name)}</b>${m.especial ? ' <span class="tag sp">Edición limitada</span>' : ""}</span>
         <input type="text" inputmode="decimal" id="sp-${m.id}" value="${fmtIn(m.price)}" aria-label="Precio de ${esc(m.name)}">
         <label class="check"><input type="checkbox" id="sa-${m.id}" ${isOn(m) ? "checked" : ""}> Hay</label></div>`).join("")}</div>
-      <div class="lbl" style="margin-top:6px">¿Tenéis alguna bebida de temporada ahora?</div>
+      <div class="lbl" style="margin-top:6px">¿Tenéis alguna edición limitada ahora?</div>
       <div class="qgrid">
         <div class="field"><label for="spN">Nombre</label><input type="text" id="spN" placeholder="Ej. Matcha fresa"></div>
         <div class="field"><label for="spP">Precio (€)</label><input type="text" id="spP" inputmode="decimal" placeholder="4,00"></div>
@@ -3039,7 +3039,7 @@ async function saveStep(cur){
     }
     const n = $("#spN").value.trim(), p = parsePrice($("#spP").value);
     if (n){
-      if (isNaN(p)){ setupErr("Pon el precio de la bebida de temporada."); return false; }
+      if (isNaN(p)){ setupErr("Pon el precio de la edición limitada."); return false; }
       const st = $("#spS").value;
       await db.collection("menu").add({name:n, price:p, group: st === "cocina" ? "Repostería" : "Cafés", station:st, especial:true, disponible:true, order:menu.length+1, receta: st === "cocina" ? {} : {"vaso-frio":1, pegatina:1, hielo: cfg("hielosFrio", 2)}, ...(st === "cocina" ? {} : {conHielo:true})});
     }
