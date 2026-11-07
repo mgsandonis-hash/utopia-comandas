@@ -587,6 +587,9 @@ table.t tr:last-child td{border-bottom:0}
         </div>
       </div></div></details></section>
     </section>
+    <section><details class="fold" id="f-origen"><summary class="sec-h"><h2>Origen del café y marcas</h2></summary><div class="foldbody"><div class="card" style="display:grid;gap:6px">
+      <p class="hint">Lo que pongas aquí sale arriba en la carta A4. Cuando cambiéis el café de la tolva, cambia el origen y el proceso. Si dejas una fila vacía, no sale.</p>
+      <div id="origenEdit"></div></div></div></details></section>
     <section><div class="sec-h"><h2>Para imprimir y compartir</h2></div>
       <div class="card row" style="justify-content:space-between;gap:10px">
         <p class="hint" style="flex:1;min-width:220px"><b>Carta A4 para imprimir.</b> Sale con los nombres, precios y descripciones de arriba, así que siempre está al día. Quita un producto de la carta impresa con «En carta A4» sin borrarlo.</p>
@@ -870,6 +873,30 @@ $(".tabs [data-office]").addEventListener("click", () => { const last = lsGet("o
 // Ajustes: subpestañas
 let ajTab = ["suministros","compra","qr","equipo"].includes(lsGet("ajTab")) ? lsGet("ajTab") : "suministros";
 /* ---------- carta A4 ---------- */
+/* Origen del café y marcas de la carta (Oficina → Carta) */
+const ORIGEN_DEF = {marcas:{cafe:"Puchero", matcha:"Tesuko", chai:"Chy", limitada:"Oatly"}, filas:[
+  {k:"cafe", n:"Espresso", origen:"", proceso:""}, {k:"cafe", n:"Cold brew", origen:"", proceso:""}, {k:"cafe", n:"Batch brew", origen:"", proceso:""}, {k:"matcha", n:"Matcha", origen:"", proceso:""}, {k:"chai", n:"Chai", origen:"", proceso:""}]};
+const cartaCfg = () => { const c = (config && config.cartaOrigen) || {}; const filas = Array.isArray(c.filas) && c.filas.length ? c.filas.slice() : ORIGEN_DEF.filas.slice();
+  ORIGEN_DEF.filas.forEach(d => { if (!filas.some(x => x.k === d.k)) filas.push({...d}); });
+  return {marcas:{...ORIGEN_DEF.marcas, ...(c.marcas||{})}, filas}; };
+const marca = k => cartaCfg().marcas[k] || "";
+function origenHTML(){
+  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
+    return `<section class="origen"><h2>${titulo}${c.marcas[k] ? ` <span class="by">— ${esc(c.marcas[k])}</span>` : ""}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
+  return blk("cafe", "Nuestros cafés") + blk("matcha", "Nuestro matcha") + blk("chai", "Nuestro chai");
+}
+function renderOrigen(){
+  const c = cartaCfg(), el = $("#origenEdit"); if (!el || el.contains(document.activeElement)) return;
+  el.innerHTML = `<div class="qgrid">
+      <div class="field"><label for="mk-cafe">Marca del café</label><input type="text" id="mk-cafe" data-mk="cafe" value="${esc(c.marcas.cafe)}" maxlength="30"></div>
+      <div class="field"><label for="mk-matcha">Marca del matcha</label><input type="text" id="mk-matcha" data-mk="matcha" value="${esc(c.marcas.matcha)}" maxlength="30"></div>
+      <div class="field"><label for="mk-chai">Marca del chai</label><input type="text" id="mk-chai" data-mk="chai" value="${esc(c.marcas.chai)}" maxlength="30"></div>
+      <div class="field"><label for="mk-lim">Marca edición limitada</label><input type="text" id="mk-lim" data-mk="limitada" value="${esc(c.marcas.limitada)}" maxlength="30"></div>
+    </div>
+    ${c.filas.map((x, i) => `<div class="lbl" style="margin-top:8px">${esc(x.n)}</div><div class="qgrid">
+      <div class="field"><label for="og-${i}">Origen (país · finca o variedad)</label><input type="text" id="og-${i}" data-og="${i}" data-f="origen" value="${esc(x.origen||"")}" maxlength="50" placeholder="Brasil · Boa Vista"></div>
+      <div class="field"><label for="op-${i}">Proceso</label><input type="text" id="op-${i}" data-og="${i}" data-f="proceso" value="${esc(x.proceso||"")}" maxlength="30" placeholder="Natural"></div></div>`).join("")}`;
+}
 function cartaHTML(){
   const list = sortMenu(menu.filter(m => m.enCarta !== false));
   const normal = list.filter(m => !m.especial), esp = list.filter(m => m.especial);
@@ -905,9 +932,9 @@ body{font-family:"Barlow Condensed","Arial Narrow",Arial,sans-serif;color:#5e0f1
 .sheet::before{content:"";position:absolute;inset:7mm;border:1.2pt solid #5e0f1c;pointer-events:none}
 .sheet::after{content:"";position:absolute;inset:8.4mm;border:.4pt solid #5e0f1c;pointer-events:none}
 header{text-align:center;padding-top:4mm}
-.brand{font-family:"Bebas Neue",Impact,sans-serif;font-size:58pt;line-height:.9;letter-spacing:.04em}
+.brand{font-family:"Bebas Neue",Impact,sans-serif;font-size:48pt;line-height:.9;letter-spacing:.04em}
 .sub{font-family:"Bebas Neue",Impact,sans-serif;font-size:17pt;letter-spacing:.5em;margin-top:2mm;padding-left:.5em}
-.rule{display:flex;align-items:center;gap:4mm;margin:6mm auto 0;width:70%}
+.rule{display:flex;align-items:center;gap:4mm;margin:4mm auto 0;width:70%}
 .rule::before,.rule::after{content:"";flex:1;border-top:.8pt solid #5e0f1c}
 .rule b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:11pt;letter-spacing:.3em}
 main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:safe center;gap:5mm;padding:4mm 0}
@@ -925,6 +952,14 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .ds{font-style:italic;font-size:calc(11pt*var(--k));color:#8a4a52;margin-top:.5mm}
 .esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
+.by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
+.origen{width:78%;margin:0 auto;display:grid;gap:calc(2.4mm*var(--k))}
+.origen h2{margin-bottom:calc(1.6mm*var(--k))}
+.org{display:grid;grid-template-columns:30mm 1fr auto;gap:3mm;align-items:baseline;border-bottom:.5pt solid #dcc6bd;padding-bottom:calc(1.4mm*var(--k))}
+.org:last-child{border-bottom:0}
+.org .k{font-family:"Bebas Neue",sans-serif;font-size:calc(15pt*var(--k));letter-spacing:.08em}
+.org .o{font-weight:600;font-size:calc(13pt*var(--k));letter-spacing:.03em}
+.org .p{font-size:calc(9.5pt*var(--k));letter-spacing:.22em;text-transform:uppercase;color:#8a4a52;text-align:right}
 .esp .lim{text-align:center;font-style:italic;font-size:11pt;color:#8a4a52;margin-bottom:3mm}
 footer{display:flex;align-items:center;justify-content:space-between;gap:6mm;border-top:.8pt solid #5e0f1c;padding-top:4mm}
 footer .t{font-family:"Bebas Neue",sans-serif;font-size:15pt;letter-spacing:.2em}
@@ -937,8 +972,9 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
 <div class="fit" id="fit"><div class="sheet" id="sheet">
   <header><div class="brand">UTOPÍA</div><div class="sub">COFFEE CLUB</div><div class="rule"><b>CARTA</b></div></header>
   <main>
+    ${origenHTML()}
     ${many ? `<div class="two">${drinkSecs.map(sec).join("")}</div>${otherSecs.length ? `<div class="cols">${otherSecs.map(sec).join("")}</div>` : ""}` : `<div class="cols">${groups.map(sec).join("")}</div>`}
-    ${esp.length ? `<div class="esp"><h2>De temporada</h2><p class="lim">Edición limitada · hasta fin de existencias</p><ul>${esp.map(item).join("")}</ul></div>` : ""}
+    ${esp.length ? `<div class="esp"><h2>De temporada${marca("limitada") ? ` <span class="by">— ${esc(marca("limitada"))}</span>` : ""}</h2><p class="lim">Edición limitada · hasta fin de existencias</p><ul>${esp.map(item).join("")}</ul></div>` : ""}
   </main>
   <footer><div><div class="t">TAKE AWAY</div><div class="s">Precios en euros · IVA incluido</div></div>
     <div class="qr"><div><div class="t">PIDE DESDE EL MÓVIL</div><div class="s">Escanea y paga en caja</div></div><img src="${qr}" alt="QR para pedir"></div></footer>
@@ -980,6 +1016,13 @@ function openCarta(){
   setTimeout(() => URL.revokeObjectURL(url), 120000);
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-printmenu]")) openCarta(); });
+$("#origenEdit").addEventListener("change", e => {
+  const el = e.target, c = cartaCfg(), next = {marcas:{...c.marcas}, filas:c.filas.map(x => ({...x}))};
+  if (el.dataset.mk) next.marcas[el.dataset.mk] = el.value.trim();
+  else if (el.dataset.og !== undefined) next.filas[Number(el.dataset.og)][el.dataset.f] = el.value.trim();
+  else return;
+  setCfg({cartaOrigen: next}, "Guardado: sale así en la carta A4");
+});
 document.addEventListener("click", e => { if (!e.target.closest("[data-goins]")) return; lsSet("oficina", "ajustes"); setAjTab("suministros"); setSupTab("esc"); goView("ajustes"); setTimeout(() => { const d = $("#f-adde"); if (d){ d.open = true; d.scrollIntoView({behavior:"smooth", block:"start"}); $("#eName").focus(); } }, 150); });
 $("#goCarta").addEventListener("click", () => { lsSet("oficina", "carta"); goView("carta"); });
 function setAjTab(t){
@@ -2339,6 +2382,7 @@ function renderSupply(){
 const parsePrice = v => { const n = parseMoney(v); return isNaN(n) ? NaN : Math.round(n*100)/100; };
 const cupOf = m => Number(m.receta?.["vaso-frio"]) > 0 ? "frio" : Number(m.receta?.["vaso-caliente"]) > 0 ? "caliente" : "";
 function renderAjustes(){
+  renderOrigen();
   const box = $("#menuEdit");
   const sorted = sortMenu(menu);
   const groups = [...new Set([...GROUP_ORDER, ...menu.map(m => m.group).filter(Boolean)])];
