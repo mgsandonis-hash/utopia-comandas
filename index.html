@@ -304,6 +304,10 @@ body.in-setup .top .tabs,body.in-setup .cartbar{display:none!important}
 .notechips button{border:1px solid var(--line);background:var(--bg);border-radius:999px;padding:4px 10px;font-size:.88rem;font-weight:600;color:var(--muted)}
 .kpi b,.change b,.sug b,.role b{font-weight:400}
 /* Bizum */
+.mkrow{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--line)}
+.mkrow .field{flex:1;min-width:160px}
+.mklogo{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.mklogo img{height:40px;max-width:140px;object-fit:contain;background:#fff;border-radius:6px;padding:4px}
 .debebox{background:var(--gold-soft);border-color:var(--gold)}
 .debewarn{background:var(--gold-soft);border-left:4px solid var(--gold);border-radius:8px;padding:8px 12px;font-weight:600}
 .deudor{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
@@ -874,28 +878,42 @@ $(".tabs [data-office]").addEventListener("click", () => { const last = lsGet("o
 let ajTab = ["suministros","compra","qr","equipo"].includes(lsGet("ajTab")) ? lsGet("ajTab") : "suministros";
 /* ---------- carta A4 ---------- */
 /* Origen del café y marcas de la carta (Oficina → Carta) */
-const ORIGEN_DEF = {marcas:{cafe:"Puchero", matcha:"Tesuko", chai:"Chy", limitada:"Oatly"}, filas:[
-  {k:"cafe", n:"Espresso", origen:"", proceso:""}, {k:"cafe", n:"Cold brew", origen:"", proceso:""}, {k:"cafe", n:"Batch brew", origen:"", proceso:""}, {k:"matcha", n:"Matcha", origen:"", proceso:""}, {k:"chai", n:"Chai", origen:"", proceso:""}]};
+const ORIGEN_DEF = {marcas:{cafe:"Puchero", matcha:"Tesuko", chai:"Chy", veg:"Oatly", limitada:"Oatly"}, filas:[
+  {k:"cafe", n:"Espresso", origen:"", proceso:""}, {k:"cafe", n:"Cold brew", origen:"", proceso:""}, {k:"cafe", n:"Batch brew", origen:"", proceso:""}, {k:"matcha", n:"Matcha", origen:"", proceso:""}, {k:"chai", n:"Chai", origen:"", proceso:""}, {k:"veg", n:"Avena", origen:"", proceso:""}]};
+const MARCA_KEYS = [["cafe","Café","Nuestros cafés"], ["matcha","Matcha","Nuestro matcha"], ["chai","Chai","Nuestro chai"], ["veg","Bebidas vegetales","Nuestras bebidas vegetales"], ["limitada","Edición limitada",""]];
 const cartaCfg = () => { const c = (config && config.cartaOrigen) || {}; const filas = Array.isArray(c.filas) && c.filas.length ? c.filas.slice() : ORIGEN_DEF.filas.slice();
   ORIGEN_DEF.filas.forEach(d => { if (!filas.some(x => x.k === d.k)) filas.push({...d}); });
-  return {marcas:{...ORIGEN_DEF.marcas, ...(c.marcas||{})}, filas}; };
+  return {marcas:{...ORIGEN_DEF.marcas, ...(c.marcas||{})}, logos:{...(c.logos||{})}, filas}; };
 const marca = k => cartaCfg().marcas[k] || "";
+// Logo de la marca si lo habéis subido; si no, el nombre
+const marcaTag = k => { const c = cartaCfg(); return c.logos[k] ? `<img class="logo" src="${c.logos[k]}" alt="${esc(c.marcas[k] || "")}">` : c.marcas[k] ? `<span class="by">— ${esc(c.marcas[k])}</span>` : ""; };
 function origenHTML(){
-  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
-    return `<section class="origen"><h2>${titulo}${c.marcas[k] ? ` <span class="by">— ${esc(c.marcas[k])}</span>` : ""}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
-  return blk("cafe", "Nuestros cafés") + blk("matcha", "Nuestro matcha") + blk("chai", "Nuestro chai");
+  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length && !(k === "veg" && (c.marcas.veg || c.logos.veg))) return "";
+    return `<section class="origen"><h2 class="mh"><span>${titulo}</span>${marcaTag(k)}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
+  return MARCA_KEYS.filter(([,, t]) => t).map(([k,, t]) => blk(k, t)).join("");
 }
 function renderOrigen(){
   const c = cartaCfg(), el = $("#origenEdit"); if (!el || el.contains(document.activeElement)) return;
-  el.innerHTML = `<div class="qgrid">
-      <div class="field"><label for="mk-cafe">Marca del café</label><input type="text" id="mk-cafe" data-mk="cafe" value="${esc(c.marcas.cafe)}" maxlength="30"></div>
-      <div class="field"><label for="mk-matcha">Marca del matcha</label><input type="text" id="mk-matcha" data-mk="matcha" value="${esc(c.marcas.matcha)}" maxlength="30"></div>
-      <div class="field"><label for="mk-chai">Marca del chai</label><input type="text" id="mk-chai" data-mk="chai" value="${esc(c.marcas.chai)}" maxlength="30"></div>
-      <div class="field"><label for="mk-lim">Marca edición limitada</label><input type="text" id="mk-lim" data-mk="limitada" value="${esc(c.marcas.limitada)}" maxlength="30"></div>
-    </div>
+  el.innerHTML = `<div class="lbl">Marcas y logos</div>
+    ${MARCA_KEYS.map(([k, n]) => `<div class="mkrow">
+      <div class="field"><label for="mk-${k}">${n}</label><input type="text" id="mk-${k}" data-mk="${k}" value="${esc(c.marcas[k]||"")}" maxlength="30"></div>
+      <div class="mklogo">${c.logos[k] ? `<img src="${c.logos[k]}" alt="Logo de ${esc(c.marcas[k]||n)}"><button type="button" class="btn ghost small" data-logodel="${k}">Quitar logo</button>` : ""}
+        <label class="btn small">${c.logos[k] ? "Cambiar logo" : "Subir logo"}<input type="file" accept="image/*" data-logo="${k}" hidden></label></div></div>`).join("")}
     ${c.filas.map((x, i) => `<div class="lbl" style="margin-top:8px">${esc(x.n)}</div><div class="qgrid">
       <div class="field"><label for="og-${i}">Origen (país · finca o variedad)</label><input type="text" id="og-${i}" data-og="${i}" data-f="origen" value="${esc(x.origen||"")}" maxlength="50" placeholder="Brasil · Boa Vista"></div>
       <div class="field"><label for="op-${i}">Proceso</label><input type="text" id="op-${i}" data-og="${i}" data-f="proceso" value="${esc(x.proceso||"")}" maxlength="30" placeholder="Natural"></div></div>`).join("")}`;
+}
+// Reduce el logo a un tamaño pequeño (cabe en la configuración) y lo guarda
+function logoToData(file){
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onerror = () => rej(new Error("leer"));
+    r.onload = () => { const img = new Image(); img.onerror = () => rej(new Error("imagen")); img.onload = () => {
+      const k = Math.min(1, 160/img.height, 560/img.width), cv = document.createElement("canvas");
+      cv.width = Math.max(1, Math.round(img.width*k)); cv.height = Math.max(1, Math.round(img.height*k));
+      cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); res(cv.toDataURL("image/png")); }; img.src = r.result; };
+    r.readAsDataURL(file);
+  });
 }
 function cartaHTML(){
   const list = sortMenu(menu.filter(m => m.enCarta !== false));
@@ -937,7 +955,7 @@ header{text-align:center;padding-top:4mm}
 .rule{display:flex;align-items:center;gap:4mm;margin:4mm auto 0;width:70%}
 .rule::before,.rule::after{content:"";flex:1;border-top:.8pt solid #5e0f1c}
 .rule b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:11pt;letter-spacing:.3em}
-main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:safe center;gap:5mm;padding:4mm 0}
+main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:safe center;gap:calc(4mm*var(--k));padding:3mm 0}
 .cols{width:78%;margin:0 auto}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12mm;width:100%}
 .two + .cols{margin-top:2mm}
@@ -953,6 +971,8 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
+h2.mh{display:flex;align-items:center;gap:3mm}
+h2.mh .logo{height:calc(9mm*var(--k));max-width:45mm;object-fit:contain;mix-blend-mode:multiply}
 .origen{width:78%;margin:0 auto;display:grid;gap:calc(2.4mm*var(--k))}
 .origen h2{margin-bottom:calc(1.6mm*var(--k))}
 .org{display:grid;grid-template-columns:30mm 1fr auto;gap:3mm;align-items:baseline;border-bottom:.5pt solid #dcc6bd;padding-bottom:calc(1.4mm*var(--k))}
@@ -974,7 +994,7 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
   <main>
     ${origenHTML()}
     ${many ? `<div class="two">${drinkSecs.map(sec).join("")}</div>${otherSecs.length ? `<div class="cols">${otherSecs.map(sec).join("")}</div>` : ""}` : `<div class="cols">${groups.map(sec).join("")}</div>`}
-    ${esp.length ? `<div class="esp"><h2>De temporada${marca("limitada") ? ` <span class="by">— ${esc(marca("limitada"))}</span>` : ""}</h2><p class="lim">Edición limitada · hasta fin de existencias</p><ul>${esp.map(item).join("")}</ul></div>` : ""}
+    ${esp.length ? `<div class="esp"><h2 class="mh" style="justify-content:center"><span>De temporada</span>${marcaTag("limitada")}</h2><p class="lim">Edición limitada · hasta fin de existencias</p><ul>${esp.map(item).join("")}</ul></div>` : ""}
   </main>
   <footer><div><div class="t">TAKE AWAY</div><div class="s">Precios en euros · IVA incluido</div></div>
     <div class="qr"><div><div class="t">PIDE DESDE EL MÓVIL</div><div class="s">Escanea y paga en caja</div></div><img src="${qr}" alt="QR para pedir"></div></footer>
@@ -985,8 +1005,8 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
 const sheet = document.getElementById("sheet"), fit = document.getElementById("fit");
 const W = sheet.offsetWidth, H = sheet.offsetHeight;
 // Si la carta no cabe en el A4, se encoge la letra poco a poco hasta que quepa
-function fitText(){ const main = sheet.querySelector("main"); let k = 1; sheet.style.setProperty("--k", k); while (main.scrollHeight > main.clientHeight + 1 && k > 0.6){ k -= 0.04; sheet.style.setProperty("--k", k.toFixed(2)); } }
-fitText(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText);
+function fitText(){ const main = sheet.querySelector("main"); let k = 1; sheet.style.setProperty("--k", k); while (main.scrollHeight > main.clientHeight + 1 && k > 0.45){ k -= 0.03; sheet.style.setProperty("--k", k.toFixed(2)); } }
+fitText(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText); addEventListener("load", fitText);
 function layout(){ const vw = document.documentElement.clientWidth || window.innerWidth; const k = Math.min(1, (vw - 24) / W); sheet.style.transform = "scale(" + k + ")"; fit.style.width = W*k + "px"; fit.style.height = H*k + "px"; }
 layout(); addEventListener("resize", layout); addEventListener("load", layout); setTimeout(layout, 300);
 document.getElementById("pdfBtn").addEventListener("click", async () => {
@@ -1017,11 +1037,21 @@ function openCarta(){
 }
 document.addEventListener("click", e => { if (e.target.closest("[data-printmenu]")) openCarta(); });
 $("#origenEdit").addEventListener("change", e => {
-  const el = e.target, c = cartaCfg(), next = {marcas:{...c.marcas}, filas:c.filas.map(x => ({...x}))};
+  const el = e.target, c = cartaCfg(), next = {marcas:{...c.marcas}, logos:{...c.logos}, filas:c.filas.map(x => ({...x}))};
+  if (el.dataset.logo){
+    const f = el.files && el.files[0]; if (!f) return;
+    logoToData(f).then(d => { if (d.length > 200000){ toast("Ese logo es demasiado grande, prueba con otra imagen"); return; } next.logos[el.dataset.logo] = d; return setCfg({cartaOrigen: next}, "Logo guardado: sale en la carta A4").then(() => { document.activeElement?.blur?.(); renderOrigen(); }); }).catch(() => toast("No se pudo leer la imagen"));
+    return;
+  }
   if (el.dataset.mk) next.marcas[el.dataset.mk] = el.value.trim();
   else if (el.dataset.og !== undefined) next.filas[Number(el.dataset.og)][el.dataset.f] = el.value.trim();
   else return;
   setCfg({cartaOrigen: next}, "Guardado: sale así en la carta A4");
+});
+$("#origenEdit").addEventListener("click", e => {
+  const d = e.target.closest("[data-logodel]"); if (!d) return;
+  const c = cartaCfg(), logos = {...c.logos}; delete logos[d.dataset.logodel];
+  setCfg({cartaOrigen: {marcas:c.marcas, logos, filas:c.filas}}, "Logo quitado").then(() => { document.activeElement?.blur?.(); renderOrigen(); });
 });
 document.addEventListener("click", e => { if (!e.target.closest("[data-goins]")) return; lsSet("oficina", "ajustes"); setAjTab("suministros"); setSupTab("esc"); goView("ajustes"); setTimeout(() => { const d = $("#f-adde"); if (d){ d.open = true; d.scrollIntoView({behavior:"smooth", block:"start"}); $("#eName").focus(); } }, 150); });
 $("#goCarta").addEventListener("click", () => { lsSet("oficina", "carta"); goView("carta"); });
