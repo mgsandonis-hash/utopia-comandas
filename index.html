@@ -886,7 +886,8 @@ const cartaCfg = () => { const c = (config && config.cartaOrigen) || {}; const f
   return {marcas:{...ORIGEN_DEF.marcas, ...(c.marcas||{})}, logos:{...(c.logos||{})}, filas}; };
 const marca = k => cartaCfg().marcas[k] || "";
 // Logo de la marca si lo habéis subido; si no, el nombre
-const marcaTag = k => { const c = cartaCfg(); return c.logos[k] ? `<img class="logo" src="${c.logos[k]}" alt="${esc(c.marcas[k] || "")}">` : c.marcas[k] ? `<span class="by">— ${esc(c.marcas[k])}</span>` : ""; };
+const logoSrc = v => /^data:/.test(v) ? v : new URL(v, location.href).href;
+const marcaTag = k => { const c = cartaCfg(); return c.logos[k] ? `<img class="logo" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : c.marcas[k] ? `<span class="by">— ${esc(c.marcas[k])}</span>` : ""; };
 function origenHTML(){
   const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length && !(k === "veg" && (c.marcas.veg || c.logos.veg))) return "";
     return `<section class="origen"><h2 class="mh"><span>${titulo}</span>${marcaTag(k)}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
@@ -972,7 +973,7 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .esp h2{border:0;text-align:center;margin-bottom:0}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
 h2.mh{display:flex;align-items:center;gap:3mm}
-h2.mh .logo{height:calc(9mm*var(--k));max-width:45mm;object-fit:contain;mix-blend-mode:multiply}
+h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
 .origen{width:78%;margin:0 auto;display:grid;gap:calc(2.4mm*var(--k))}
 .origen h2{margin-bottom:calc(1.6mm*var(--k))}
 .org{display:grid;grid-template-columns:30mm 1fr auto;gap:3mm;align-items:baseline;border-bottom:.5pt solid #dcc6bd;padding-bottom:calc(1.4mm*var(--k))}
