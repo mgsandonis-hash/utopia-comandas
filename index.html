@@ -769,7 +769,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 44</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 45</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -893,7 +893,7 @@ function origenHTML(){
   const c = cartaCfg();
   const items = MARCA_KEYS.filter(([,, t]) => t).map(([k]) => {
     const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
-    const logo = c.logos[k] ? `<img class="plogo" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : `<span class="pmarca">${esc(c.marcas[k] || "")}</span>`;
+    const logo = c.logos[k] ? `<img class="plogo pl-${k}" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : `<span class="pmarca">${esc(c.marcas[k] || "")}</span>`;
     return `<div class="pitem">${logo}${f.map(x => `<div class="pline"><b>${esc(x.n)}</b> ${esc(x.origen)}${x.proceso ? ` <span>· ${esc(x.proceso)}</span>` : ""}</div>`).join("")}</div>`;
   }).filter(Boolean);
   return items.length ? `<div class="procedencia">${items.join("")}</div>` : "";
@@ -979,13 +979,13 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
 h2.mh{display:flex;align-items:center;gap:3mm}
 h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
-.procedencia{width:86%;margin:0 auto;display:flex;justify-content:center;align-items:flex-start;gap:0;border-top:.6pt solid #5e0f1c;border-bottom:.6pt solid #5e0f1c;padding:calc(2.6mm*var(--k)) 0}
-.pitem{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1mm;padding:0 3mm}
-.pitem + .pitem{border-left:.5pt solid #dcc6bd}
-.plogo{height:calc(6.5mm*var(--k));max-width:28mm;object-fit:contain;mix-blend-mode:multiply}
+.procedencia{width:78%;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:6mm;padding:calc(1mm*var(--k)) 0}
+.pitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;gap:1.4mm;min-height:11mm}
+.plogo{height:6mm;max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
+.plogo.pl-cafe{height:4.2mm}.plogo.pl-matcha{height:7mm}.plogo.pl-chai{height:6mm}
 .pmarca{font-family:"Bebas Neue",sans-serif;font-size:calc(14pt*var(--k));letter-spacing:.1em}
-.pline{font-size:calc(9.5pt*var(--k));line-height:1.25;color:#5e0f1c}
-.pline b{font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.pline{font-size:9pt;line-height:1.2;color:#8a4a52;white-space:nowrap}
+.pline b{font-weight:600;color:#5e0f1c}
 .pline span{color:#8a4a52}
 .origen{width:78%;margin:0 auto;display:grid;gap:calc(2.4mm*var(--k))}
 .origen h2{margin-bottom:calc(1.6mm*var(--k))}
