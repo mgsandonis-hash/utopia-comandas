@@ -3334,7 +3334,21 @@ boot();
 </script>
 
 <script>
-if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+// Actualizaciones: al volver a la app busca versión nueva; si la hay, recarga sola cuando no estáis a mitad de algo
+if ("serviceWorker" in navigator) addEventListener("load", () => {
+  const hadCtrl = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js").then(reg => {
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") reg.update().catch(() => {}); });
+    setInterval(() => reg.update().catch(() => {}), 30*60000);
+  }).catch(() => {});
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadCtrl || reloading) return;
+    const busy = () => (cartTotal().n > 0) || (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName));
+    const go = () => { if (reloading) return; if (busy()){ setTimeout(go, 20000); return; } reloading = true; location.reload(); };
+    toast("Hay una versión nueva de la app: se actualiza en un momento"); setTimeout(go, 2500);
+  });
+});
 </script>
 </body>
 </html>
