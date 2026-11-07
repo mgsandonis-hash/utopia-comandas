@@ -527,6 +527,10 @@ table.t tr:last-child td{border-bottom:0}
 
   <!-- OFICINA · CAJA -->
   <div id="v-caja" hidden>
+    <section id="claudeSec" hidden><details class="fold" id="f-claude" open><summary class="sec-h"><h2>Sugerencias de la semana</h2><span class="count" id="claudeWhen"></span></summary><div class="foldbody">
+      <div class="sugs" id="claudeSugs"></div>
+      <p class="hint" style="margin-top:6px">Las prepara Claude una vez por semana con vuestras ventas, el stock, los costes y la previsión del tiempo. Toca «Visto» para quitarlas.</p>
+    </div></details></section>
     <section id="openSec" hidden>
       <div class="sec-h"><h2>Abrir caja</h2></div>
       <div class="ticket">
@@ -787,7 +791,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 49</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 50</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -2013,6 +2017,25 @@ function renderCaja(){
       <span class="meta">${c.pedidos} pedidos · fondo ${eur(c.fondo)} · contado ${eur(c.contado)} · <span class="${d === 0 ? "ok" : "bad"}">${d === 0 ? "cuadró" : (d > 0 ? "sobraron " : "faltaron ") + eurC(Math.abs(d))}</span></span></div>`;
   }).join("") : `<div class="empty">Aquí aparecerá cada cierre de caja con sus ventas y si cuadró.</div>`;
 }
+/* ---------- sugerencias semanales de Claude (doc claude/semana) ---------- */
+let claudeDoc = null;
+const CL_ICON = {tiempo:"☁️", carta:"🍪", precio:"€", compras:"🛒", caja:"💶", otro:"💡"};
+function renderClaude(){
+  const sec = $("#claudeSec"); if (!sec) return;
+  const d = claudeDoc, vistos = new Set((d && d.vistos) || []);
+  const items = d && Array.isArray(d.items) ? d.items.filter(x => x && x.titulo && !vistos.has(x.id)) : [];
+  sec.hidden = !items.length;
+  if (!items.length) return;
+  $("#claudeWhen").textContent = d.generado ? `${new Date(d.generado).toLocaleDateString("es-ES", {weekday:"short", day:"numeric", month:"short"})}` : "";
+  $("#claudeSugs").innerHTML = items.map(x => `<div class="sug ${x.prioridad === "alta" ? "warn" : ""}"><b>${CL_ICON[x.tipo] || CL_ICON.otro} ${esc(x.titulo)}</b><p>${esc(x.texto || "")}</p>
+    <div class="row" style="margin-top:6px"><button type="button" class="btn small ghost" data-clseen="${esc(x.id)}">Visto</button></div></div>`).join("");
+}
+document.addEventListener("click", async e => {
+  const b = e.target.closest("[data-clseen]"); if (!b || !db || !claudeDoc) return;
+  const vistos = [...new Set([...(claudeDoc.vistos || []), b.dataset.clseen])];
+  claudeDoc = {...claudeDoc, vistos}; renderClaude();
+  try { await db.collection("claude").doc("semana").update({vistos}); } catch(err){ toast("No se pudo guardar."); }
+});
 function sug(level, title, text){ return `<div class="sug ${level}"><b>${title}</b><p>${text}</p></div>`; }
 function renderCajaSugs(){
   const out = [];
@@ -2908,7 +2931,7 @@ const WEEKDAYS_FULL = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes
 // Hoja interna: sugerencias de toda la app + lo que conviene vigilar + datos de trabajo
 function informeInterno(){
   const r2 = v => Math.round(v*100)/100, fmtD = t => new Date(t).toLocaleDateString("es-ES");
-  const fuentes = [["Caja", renderCajaSugs, "#cajaSugs"], ["Beneficio", renderGastos, "#profitSugs"], ["Precios", renderPrices, "#priceSugs"], ["Coste por bebida", renderEscandallos, "#costSugs"],
+  const fuentes = [["Claude (semana)", renderClaude, "#claudeSugs"], ["Caja", renderCajaSugs, "#cajaSugs"], ["Beneficio", renderGastos, "#profitSugs"], ["Precios", renderPrices, "#priceSugs"], ["Coste por bebida", renderEscandallos, "#costSugs"],
     ["Compras", renderSupply, "#supplySugs"], ["Productos que no salen", renderSlow, "#slowSugs"], ["Combos", renderCombos, "#comboSugs"], ["Gente del box", renderBox, "#boxSugs"]];
   const sugerencias = [];
   fuentes.forEach(([area, fn, sel]) => {
@@ -3009,7 +3032,7 @@ $("#seasonSeg").addEventListener("click", async e => {
 function renderAll(){
   if (view === "pedidos"){ renderWeb(); renderWebCharging(); renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
   else if (view === "barra") renderBarra();
-  else if (view === "caja"){ renderCaja(); renderDebts(); }
+  else if (view === "caja"){ renderClaude(); renderCaja(); renderDebts(); }
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
   else if (view === "datos"){ renderDatos(); renderBox(); renderDur(); renderSlow(); renderCombos(); }
   else renderAjustes();
@@ -3377,6 +3400,7 @@ async function boot(){
   db.collection("insumos").onSnapshot(snap => { insumos = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
   setTimeout(flushOutbox, 3000);
   db.collection("asistencia").onSnapshot(snap => { asistencia = snap.docs.map(d => ({id:d.id, ...d.data()})); if (boxDraftDay && !document.activeElement?.dataset?.bx) loadBoxDraft(boxDraftDay); if (view === "datos") renderBox(); }, err => {});
+  db.collection("claude").onSnapshot(snap => { const d = snap.docs.find(x => x.id === "semana"); claudeDoc = d ? d.data() : null; renderClaude(); }, err => {});
   db.collection("deudas").onSnapshot(snap => { deudas = snap.docs.map(d => ({id:d.id, ...d.data()})); renderDebts(); if (view === "pedidos") renderCart(); }, err => {});
   db.collection("clientes").orderBy("t", "desc").limit(300).onSnapshot(snap => { clientes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRegular(); }, err => {});
 }
