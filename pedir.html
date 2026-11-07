@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
 <style>
+/* Que no se seleccione el texto al tocar (como una app); los campos sí */
+html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+
 /* Página del cliente: estilo de las cartas de Utopía (papel crema, granate, Bebas + Barlow Condensed) */
 :root{
   --bg:#f1e9db; --surface:#faf5ec; --ink:#5e0f1c; --text:#3b0a12; --muted:#8a4a52; --line:#dcc6bd;
