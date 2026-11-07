@@ -1,7 +1,7 @@
 /* Utopía Comandas · funcionamiento sin conexión
    Guarda la app en el dispositivo para que abra aunque no haya cobertura.
    Los datos van aparte: la app los guarda en el móvil y los envía al volver la conexión. */
-const VERSION = "utopia-v42";
+const VERSION = "utopia-v43";
 const SHELL = [
   "./", "./index.html", "./store.js", "./config.js", "./informe.js", "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/apple-touch-icon.png",
@@ -25,7 +25,7 @@ self.addEventListener("fetch", e => {
   // La página y los archivos de la app: primero internet (para tener la última versión), si no, lo guardado
   if (req.mode === "navigate" || (url.origin === location.origin && /\.(html|js|webmanifest)$|\/$/.test(url.pathname))) {
     e.respondWith(
-      fetch(req).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
+      fetch(req, {cache: "no-cache"}).then(res => { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); return res; })
         .catch(() => caches.match(req).then(r => r || caches.match("./index.html")))
     );
     return;
