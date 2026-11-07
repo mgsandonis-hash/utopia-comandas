@@ -769,7 +769,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 43</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 44</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -888,10 +888,15 @@ const marca = k => cartaCfg().marcas[k] || "";
 // Logo de la marca si lo habéis subido; si no, el nombre
 const logoSrc = v => /^data:/.test(v) ? v : new URL(v, location.href).href;
 const marcaTag = k => { const c = cartaCfg(); return c.logos[k] ? `<img class="logo" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : c.marcas[k] ? `<span class="by">— ${esc(c.marcas[k])}</span>` : ""; };
+// Procedencia: una franja discreta arriba (logo + origen), para que el protagonismo lo tengan las bebidas
 function origenHTML(){
-  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
-    return `<section class="origen"><h2 class="mh"><span>${titulo}</span>${marcaTag(k)}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
-  return MARCA_KEYS.filter(([,, t]) => t).map(([k,, t]) => blk(k, t)).join("");
+  const c = cartaCfg();
+  const items = MARCA_KEYS.filter(([,, t]) => t).map(([k]) => {
+    const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
+    const logo = c.logos[k] ? `<img class="plogo" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : `<span class="pmarca">${esc(c.marcas[k] || "")}</span>`;
+    return `<div class="pitem">${logo}${f.map(x => `<div class="pline"><b>${esc(x.n)}</b> ${esc(x.origen)}${x.proceso ? ` <span>· ${esc(x.proceso)}</span>` : ""}</div>`).join("")}</div>`;
+  }).filter(Boolean);
+  return items.length ? `<div class="procedencia">${items.join("")}</div>` : "";
 }
 function renderOrigen(){
   const c = cartaCfg(), el = $("#origenEdit"); if (!el || el.contains(document.activeElement)) return;
@@ -974,6 +979,14 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
 h2.mh{display:flex;align-items:center;gap:3mm}
 h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
+.procedencia{width:86%;margin:0 auto;display:flex;justify-content:center;align-items:flex-start;gap:0;border-top:.6pt solid #5e0f1c;border-bottom:.6pt solid #5e0f1c;padding:calc(2.6mm*var(--k)) 0}
+.pitem{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:1mm;padding:0 3mm}
+.pitem + .pitem{border-left:.5pt solid #dcc6bd}
+.plogo{height:calc(6.5mm*var(--k));max-width:28mm;object-fit:contain;mix-blend-mode:multiply}
+.pmarca{font-family:"Bebas Neue",sans-serif;font-size:calc(14pt*var(--k));letter-spacing:.1em}
+.pline{font-size:calc(9.5pt*var(--k));line-height:1.25;color:#5e0f1c}
+.pline b{font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.pline span{color:#8a4a52}
 .origen{width:78%;margin:0 auto;display:grid;gap:calc(2.4mm*var(--k))}
 .origen h2{margin-bottom:calc(1.6mm*var(--k))}
 .org{display:grid;grid-template-columns:30mm 1fr auto;gap:3mm;align-items:baseline;border-bottom:.5pt solid #dcc6bd;padding-bottom:calc(1.4mm*var(--k))}
