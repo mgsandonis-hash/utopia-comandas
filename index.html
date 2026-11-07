@@ -210,6 +210,17 @@ input[type=text],input[type=number],input[type=date],select{width:100%;box-sizin
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
 .kpi b{display:block;font-family:var(--display);font-weight:400;font-size:2rem;line-height:1.05;letter-spacing:.03em;color:var(--ink)}
 .kpi span{color:var(--muted);font-size:.82rem}
+.kpi{min-width:0;overflow-wrap:anywhere}
+.kpi span .mins,.kpi .mins{white-space:normal}
+/* Ordenador de casa: solo Oficina, más ancho y cómodo con ratón */
+body.pc-office .tabs button.big{display:none}
+body.pc-office .tabs{grid-template-columns:auto;min-width:0}
+body.pc-office #officeNav{display:flex!important}
+@media (min-width:1100px){
+  main{max-width:1320px}
+  body.pc-office .subnav button{font-size:1.05rem;padding:10px 18px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+}
 .kpi.key{border:2px solid var(--accent)}
 .kpi.neg b{color:var(--danger)}
 .kpi.pos b{color:var(--accent)}
@@ -776,7 +787,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 48</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 49</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -860,8 +871,12 @@ function pickView(){
   const h = location.hash.replace("#","");
   if (VIEWS.includes(h)) return h;
   const s = lsGet("vista2"); if (VIEWS.includes(s)) return s;
+  if (role === "oficina" || (!role && isDesktop())) return OFFICE.includes(lsGet("oficina")) ? lsGet("oficina") : "caja";
   return role === "barra" ? "barra" : "pedidos";
 }
+// Ordenador: pantalla grande y ratón (no tablet)
+function isDesktop(){ try { return window.innerWidth >= 1100 && matchMedia("(hover:hover) and (pointer:fine)").matches; } catch(e){ return false; } }
+if (role === "oficina") document.body.classList.add("pc-office");
 function setView(v){
   if (inSetup) return;
   view = v;
@@ -1107,6 +1122,7 @@ let actx = null;
 function unlockAudio(){ try { actx = actx || new (window.AudioContext||window.webkitAudioContext)(); if (actx.state !== "running") actx.resume(); } catch(e){} }
 document.addEventListener("pointerdown", unlockAudio);
 function beep(kind){
+  if (role === "oficina") return;
   try {
     if (!actx || actx.state !== "running") return;
     (kind === "ready" ? [880, 1175] : [660, 660]).forEach((f,i) => {
@@ -1119,6 +1135,7 @@ function beep(kind){
   } catch(e){}
 }
 function alertUser(kind){
+  if (role === "oficina") return; // en casa, sin sonidos ni parpadeos
   beep(kind);
   try { navigator.vibrate && navigator.vibrate(kind === "ready" ? [200,100,200] : 150); } catch(e){}
   document.body.classList.remove("flash"); void document.body.offsetWidth; document.body.classList.add("flash");
@@ -3007,7 +3024,7 @@ function updateBanner(){
   else if (open && dayKey(shift.openedAt) !== dayKey()){ txt = `La caja sigue abierta desde el ${dmy(shift.openedAt)}. Ciérrala para que cada día salga bien en los números.`; btn = "Ir a Caja"; }
   $("#shiftBanner").hidden = !txt;
   $("#bannerTxt").textContent = txt; $("#bannerBtn").textContent = btn;
-  const ROLES = {caja:"el Mostrador (pedidos, cobro y entrega)", barra:"la Cafetera (preparar bebidas)", ambos:"todo: Mostrador y Cafetera"};
+  const ROLES = {caja:"el Mostrador (pedidos, cobro y entrega)", barra:"la Cafetera (preparar bebidas)", ambos:"todo: Mostrador y Cafetera", oficina:"la Oficina desde casa (sin avisos sonoros)"};
   $("#cupsToggle").setAttribute("aria-pressed", String(vasosCaja()));
   $("#autoToggle").setAttribute("aria-pressed", String(autoReady()));
   if (document.activeElement !== $("#jugG")) $("#jugG").value = jugCap().g;
@@ -3069,6 +3086,7 @@ function renderSetup(){
         <button type="button" data-role="caja" aria-pressed="${tmpRole === "caja"}"><b>Mostrador</b><span>El móvil: tomar pedidos, cobrar y entregar</span></button>
         <button type="button" data-role="barra" aria-pressed="${tmpRole === "barra"}"><b>Cafetera</b><span>El iPad: ver y preparar cafés y matcha</span></button>
         <button type="button" data-role="ambos" aria-pressed="${tmpRole === "ambos"}"><b>Las dos</b><span>Un solo dispositivo para todo</span></button>
+        <button type="button" data-role="oficina" aria-pressed="${tmpRole === "oficina"}"><b>Oficina</b><span>El ordenador de casa: caja, carta, gastos y números, sin avisos sonoros</span></button>
       </div></div>`;
   } else if (cur === 1){
     const list = sortMenu(menu);
@@ -3149,7 +3167,8 @@ function setupErr(msg){ const e = $("#setupErr"); e.textContent = msg; e.hidden 
 async function saveStep(cur){
   if (cur === 0){
     if (!tmpRole){ setupErr("Elige para qué es este dispositivo."); return false; }
-    role = tmpRole; lsSet("rol", role); lsSet("vista2", role === "barra" ? "barra" : "pedidos");
+    role = tmpRole; lsSet("rol", role); lsSet("vista2", role === "barra" ? "barra" : role === "oficina" ? (OFFICE.includes(lsGet("oficina")) ? lsGet("oficina") : "caja") : "pedidos");
+    document.body.classList.toggle("pc-office", role === "oficina");
     if (setupMode === "auto" && role === "barra" && !(config && config.setupDone)) barraOnly = true;
     return true;
   }
@@ -3311,7 +3330,7 @@ async function boot(){
     if (u && (await u.can("data.write")) === false){ readOnly = true; setNotice(NO_PERM, true); }
   } catch(e){}
   const slow = setTimeout(() => setNotice("No se puede conectar con la base de datos todavía. Revisa la conexión a internet.", true), 10000);
-  const settle = () => { if (gotMenu && gotOrders){ clearTimeout(slow); if (!readOnly) setNotice(actx && actx.state === "running" ? "" : "Toca la pantalla una vez para activar los avisos sonoros."); } };
+  const settle = () => { if (gotMenu && gotOrders){ clearTimeout(slow); if (!readOnly) setNotice(role === "oficina" || (actx && actx.state === "running") ? "" : "Toca la pantalla una vez para activar los avisos sonoros."); } };
   document.addEventListener("pointerdown", () => { if (gotMenu && gotOrders && !readOnly) setTimeout(() => setNotice(""), 300); }, {once:true});
 
   db.collection("menu").onSnapshot(snap => {
