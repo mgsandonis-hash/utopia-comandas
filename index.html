@@ -139,6 +139,8 @@ section{margin-top:22px}
 .prod{position:relative;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:12px;min-height:68px;display:grid;align-content:space-between;gap:4px;border-left:5px solid var(--accent)}
 .prod.cocina{border-left-color:var(--cocina)}
 .prod.sp{border-left-color:var(--gold);background:var(--gold-soft)}
+a.btn{text-decoration:none;color:var(--ink);display:inline-flex;align-items:center}
+.qrbox a{color:var(--accent)}
 .prod.mt{background:var(--matcha-soft)}
 .prod.mt:not(.cocina){border-left-color:var(--matcha)}
 .group-h.mt{color:var(--matcha)}
@@ -268,7 +270,7 @@ body.pc-office #officeNav{display:flex!important}
 .vbar .v{font-size:.68rem;color:var(--muted);white-space:nowrap}
 .vbar .x{font-size:.7rem;color:var(--muted);white-space:nowrap}
 .monthnav{display:flex;align-items:center;gap:8px}
-.monthnav b{min-width:9ch;text-align:center;text-transform:capitalize}
+.monthnav b{min-width:9ch;text-align:center}
 
 /* Ajustes */
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px;display:grid;gap:10px;margin-bottom:10px;border-left:5px solid var(--accent)}
@@ -545,7 +547,7 @@ table.t tr:last-child td{border-bottom:0}
         <div class="sec-h"><h2>Turno abierto</h2><span class="count" id="shiftSince"></span></div>
         <div class="kpis" id="cashStats"></div>
       </section>
-      <section><details class="fold" id="f-deudas" open><summary class="sec-h"><h2>Nos deben</h2><span class="count" id="debtTotal"></span></summary><div class="foldbody"><div class="ticket">
+      <section><details class="fold" id="f-deudas"><summary class="sec-h"><h2>Nos deben</h2><span class="count" id="debtTotal"></span></summary><div class="foldbody"><div class="ticket">
           <p class="hint">Quien se lleva algo sin pagar: apúntalo aquí al hacer la caja. Cuando pague, toca cómo lo ha pagado: si es en efectivo entra en la caja de hoy.</p>
           <div id="debtList"></div>
           <form class="addform" id="debtForm" style="margin-top:6px">
@@ -721,7 +723,7 @@ table.t tr:last-child td{border-bottom:0}
     <nav class="subnav ajnav" id="ajNav" aria-label="Ajustes">
       <button type="button" data-aj="suministros">Suministros</button>
       <button type="button" data-aj="compra">Lista de la compra</button>
-      <button type="button" data-aj="qr">Pedidos QR y pagos</button>
+      <button type="button" data-aj="qr">QR y pagos</button>
       <button type="button" data-aj="equipo">Equipo</button>
     </nav>
     <div data-ajp="suministros" hidden>
@@ -791,7 +793,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 50</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 51</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -1219,7 +1221,7 @@ function merge(recs){
     m.bizum += r.bizum||0;
     Object.entries(r.pares||{}).forEach(([k,v]) => m.pares[k] = (m.pares[k]||0) + v);
     const e = r.espera || {}; m.espera.n += e.n||0; m.espera.s += e.s||0; m.espera.over += e.over||0; m.espera.max = Math.max(m.espera.max, e.max||0);
-    const d = m.days[r.day] || (m.days[r.day] = {ventas:0, n:0, t:r.t}); d.ventas += r.ventas; d.n += r.n;
+    if ((r.n || 0) > 0 || (r.ventas || 0) > 0){ const d = m.days[r.day] || (m.days[r.day] = {ventas:0, n:0, t:r.t}); d.ventas += r.ventas; d.n += r.n; }
     Object.entries(r.productos).forEach(([k,p]) => { const x = m.productos[k] || (m.productos[k] = {name:p.name, group:p.group, station:p.station, qty:0, c:0}); x.qty += p.qty; x.c += p.c; });
     Object.entries(r.horas).forEach(([h,v]) => { const x = m.horas[h] || (m.horas[h] = {n:0, c:0, wn:0, ws:0}); x.n += v.n; x.c += v.c; x.wn += v.wn||0; x.ws += v.ws||0; });
   });
@@ -2136,7 +2138,7 @@ $("#closeBtn").addEventListener("click", e => {
 function monthRange(off){
   const d = new Date(); d.setDate(1); d.setHours(0,0,0,0); d.setMonth(d.getMonth() + off);
   const from = d.getTime(); const e = new Date(d); e.setMonth(e.getMonth()+1);
-  return {from, to:e.getTime(), key:dayKey(from).slice(0,7), label:d.toLocaleDateString("es-ES", {month:"long", year:"numeric"}), days:Math.round((e-d)/86400000)};
+  return {from, to:e.getTime(), key:dayKey(from).slice(0,7), label:(t => t.charAt(0).toUpperCase() + t.slice(1))(d.toLocaleDateString("es-ES", {month:"long", year:"numeric"})), days:Math.round((e-d)/86400000)};
 }
 // Coste de lo vendido (y regalado): recetas × escandallos, con vaso, pegatina, hielo, agua…
 function costeVendido(productos){
@@ -2453,9 +2455,9 @@ function renderSupply(){
     if (!st.usedBy) return null;
     const u = ins.unidad, min = Number(ins.minimo)||0;
     if (!st.perDay){
-      return {order:3, html:sug("", esc(ins.nombre), st.left !== null ? `Te quedan unos ${fmtUnits(Math.max(0,st.left), u)}. Tras el primer cierre de caja calcularé cuánto gastáis al día.` : "Tras el primer cierre de caja calcularé cuánto gastáis al día.")};
+      return {order:3, nodata:ins.nombre, html:sug("", esc(ins.nombre), st.left !== null ? `Te quedan unos ${fmtUnits(Math.max(0,st.left), u)}. Tras el primer cierre de caja calcularé cuánto gastáis al día.` : "Tras el primer cierre de caja calcularé cuánto gastáis al día.")};
     }
-    const week = st.perDay*7;
+    const week = st.perDay*cfg("diasSemana", 6); // una semana de apertura
     if (st.left === null){
       return {order:2, html:sug("", `${esc(ins.nombre)}: ${fmtUnits(st.perDay, u)} al día`, `Para una semana de apertura necesitas unos ${fmtUnits(week, u)}. Cuenta el stock en Ajustes y te diré cuántos días te quedan.`)};
     }
@@ -2463,11 +2465,13 @@ function renderSupply(){
     const buy = Math.max(0, week + min - st.left);
     const level = (st.left <= min || daysLeft < 3) ? "alert" : daysLeft < 6 ? "warn" : "";
     const head = level === "alert" ? `Compra ya ${esc(ins.nombre)}` : level === "warn" ? `${esc(ins.nombre)} se acaba pronto` : `${esc(ins.nombre)}: bien`;
-    const daysTxt = isFinite(daysLeft) ? `unos ${Math.max(0, Math.floor(daysLeft))} días` : "muchos días";
+    const daysTxt = isFinite(daysLeft) ? `unos ${Math.max(0, Math.floor(daysLeft))} días de apertura` : "muchos días";
     const du = insDur(ins, st);
     return {order: level === "alert" ? 0 : level === "warn" ? 1 : 4, html:sug(level, head, `Quedan ${fmtUnits(Math.max(0,st.left), u)}, para ${daysTxt} (gastáis ${fmtUnits(st.perDay, u)} al día${du.perPack ? `; un paquete os dura ${num1(du.perPack)} días` : ""}).${buy > 0 && level ? ` Compra unos ${fmtUnits(buy, u)} para cubrir una semana.` : ""}`)};
   }).filter(Boolean).sort((a,b) => a.order-b.order);
-  rows.forEach(r => out.push(r.html));
+  const nod = rows.filter(r => r.nodata);
+  rows.filter(r => !r.nodata).forEach(r => out.push(r.html));
+  if (nod.length) out.push(sug("", `Sin datos de consumo todavía (${nod.length})`, `${nod.map(r => esc(r.nodata)).join(", ")}. Tras cerrar la caja de un día con ventas calcularé cuánto gastáis de cada uno.`));
   const noRecipe = menu.filter(m => isOn(m) && !Object.values(m.receta||{}).some(v => Number(v) > 0));
   if (noRecipe.length) out.push(sug("warn", "Productos sin receta", `${noRecipe.map(m => esc(m.name)).join(", ")}. Añade su receta en Ajustes para que cuenten en las compras.`));
   const nBuy = out.filter(h => /class="sug (warn|alert)"/.test(h)).length;
