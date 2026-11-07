@@ -879,8 +879,8 @@ let ajTab = ["suministros","compra","qr","equipo"].includes(lsGet("ajTab")) ? ls
 /* ---------- carta A4 ---------- */
 /* Origen del café y marcas de la carta (Oficina → Carta) */
 const ORIGEN_DEF = {marcas:{cafe:"Puchero", matcha:"Tesuko", chai:"Chy", veg:"Oatly", limitada:"Oatly"}, filas:[
-  {k:"cafe", n:"Espresso", origen:"", proceso:""}, {k:"cafe", n:"Cold brew", origen:"", proceso:""}, {k:"cafe", n:"Batch brew", origen:"", proceso:""}, {k:"matcha", n:"Matcha", origen:"", proceso:""}, {k:"chai", n:"Chai", origen:"", proceso:""}, {k:"veg", n:"Avena", origen:"", proceso:""}]};
-const MARCA_KEYS = [["cafe","Café","Nuestros cafés"], ["matcha","Matcha","Nuestro matcha"], ["chai","Chai","Nuestro chai"], ["veg","Bebidas vegetales","Nuestras bebidas vegetales"], ["limitada","Edición limitada",""]];
+  {k:"cafe", n:"Espresso", origen:"", proceso:""}, {k:"cafe", n:"Cold brew", origen:"", proceso:""}, {k:"cafe", n:"Batch brew", origen:"", proceso:""}, {k:"matcha", n:"Matcha", origen:"", proceso:""}, {k:"chai", n:"Chai", origen:"", proceso:""}]};
+const MARCA_KEYS = [["cafe","Café","Nuestros cafés"], ["matcha","Matcha","Nuestro matcha"], ["chai","Chai","Nuestro chai"], ["limitada","Edición limitada",""]];
 const cartaCfg = () => { const c = (config && config.cartaOrigen) || {}; const filas = Array.isArray(c.filas) && c.filas.length ? c.filas.slice() : ORIGEN_DEF.filas.slice();
   ORIGEN_DEF.filas.forEach(d => { if (!filas.some(x => x.k === d.k)) filas.push({...d}); });
   return {marcas:{...ORIGEN_DEF.marcas, ...(c.marcas||{})}, logos:{...(c.logos||{})}, filas}; };
@@ -889,7 +889,7 @@ const marca = k => cartaCfg().marcas[k] || "";
 const logoSrc = v => /^data:/.test(v) ? v : new URL(v, location.href).href;
 const marcaTag = k => { const c = cartaCfg(); return c.logos[k] ? `<img class="logo" src="${logoSrc(c.logos[k])}" alt="${esc(c.marcas[k] || "")}">` : c.marcas[k] ? `<span class="by">— ${esc(c.marcas[k])}</span>` : ""; };
 function origenHTML(){
-  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length && !(k === "veg" && (c.marcas.veg || c.logos.veg))) return "";
+  const c = cartaCfg(), blk = (k, titulo) => { const f = c.filas.filter(x => x.k === k && (x.origen || x.proceso)); if (!f.length) return "";
     return `<section class="origen"><h2 class="mh"><span>${titulo}</span>${marcaTag(k)}</h2>${f.map(x => `<div class="org"><span class="k">${esc(x.n)}</span><span class="o">${esc(x.origen)}</span><span class="p">${esc(x.proceso)}</span></div>`).join("")}</section>`; };
   return MARCA_KEYS.filter(([,, t]) => t).map(([k,, t]) => blk(k, t)).join("");
 }
