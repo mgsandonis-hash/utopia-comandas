@@ -32,7 +32,7 @@ input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:tex
   --accent:#5e0f1c; --accent-ink:#f8f1e6; --accent-soft:#ecdcd6;
   --cocina:#8a4a52; --cocina-soft:#efe1db;
   --ready:#066d77; --ready-ink:#f8f1e6; --ready-soft:#d9ebe9; --danger:#c2360f; --danger-soft:#f7ddd2;
-  --gold:#a8680f; --gold-soft:#f4e4c6; --matcha:#5b7a2e; --matcha-soft:#e6eccf;
+  --gold:#a8680f; --gold-soft:#f4e4c6; --matcha:#5b7a2e; --matcha-soft:#e6eccf; --frio:#2f6f8f; --frio-soft:#e1edf2; --cafe:#7a4a2a; --cafe-soft:#efe1d2;
   --display:"Bebas Neue","Oswald","Arial Narrow",Impact,sans-serif;
   --body:"Barlow Condensed","Arial Narrow","Helvetica Neue",Arial,sans-serif;
   --r:10px;
@@ -42,13 +42,13 @@ input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:tex
   --accent:#e8b4bb; --accent-ink:#1b0d10; --accent-soft:#3a1d23;
   --cocina:#d6a1a8; --cocina-soft:#35201f;
   --ready:#4fb6bf; --ready-ink:#0e1d1f; --ready-soft:#123236; --danger:#ff8a6b; --danger-soft:#3d1c14;
-  --gold:#e3ad55; --gold-soft:#3a2a12; --matcha:#a9c46a; --matcha-soft:#26301a; color-scheme:dark }}
+  --gold:#e3ad55; --gold-soft:#3a2a12; --matcha:#a9c46a; --matcha-soft:#26301a; --frio:#8cc3dc; --frio-soft:#1b2a33; --cafe:#d6a77f; --cafe-soft:#33241a; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#1b0d10; --surface:#271519; --ink:#f1e9db; --text:#efe5d6; --muted:#c79ca3; --line:#43262c; --rule:#6b3d45;
   --accent:#e8b4bb; --accent-ink:#1b0d10; --accent-soft:#3a1d23;
   --cocina:#d6a1a8; --cocina-soft:#35201f;
   --ready:#4fb6bf; --ready-ink:#0e1d1f; --ready-soft:#123236; --danger:#ff8a6b; --danger-soft:#3d1c14;
-  --gold:#e3ad55; --gold-soft:#3a2a12; --matcha:#a9c46a; --matcha-soft:#26301a; color-scheme:dark }
+  --gold:#e3ad55; --gold-soft:#3a2a12; --matcha:#a9c46a; --matcha-soft:#26301a; --frio:#8cc3dc; --frio-soft:#1b2a33; --cafe:#d6a77f; --cafe-soft:#33241a; color-scheme:dark }
 
 body{background:var(--bg);color:var(--text);font-family:var(--body);font-size:17px;font-weight:500;line-height:1.35;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
@@ -144,6 +144,10 @@ a.btn{text-decoration:none;color:var(--ink);display:inline-flex;align-items:cent
 .prod.mt{background:var(--matcha-soft)}
 .prod.mt:not(.cocina){border-left-color:var(--matcha)}
 .group-h.mt{color:var(--matcha)}
+.prod.fr{background:var(--frio-soft)}
+.prod.hc{background:var(--cafe-soft)}
+.group-h.fr{color:var(--frio)}
+.group-h.hc{color:var(--cafe)}
 .prod .pn{font-weight:700;line-height:1.2}
 .prod .pp{color:var(--muted);font-size:.9rem}
 .prod .badge{position:absolute;top:-8px;right:-6px;background:var(--ink);color:var(--bg);border-radius:999px;min-width:26px;height:26px;display:grid;place-items:center;font-weight:700;font-size:.85rem;padding:0 6px}
@@ -793,7 +797,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 52</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 53</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -1417,10 +1421,10 @@ function renderMenuGrid(){
   const order = top.length ? ["Más pedidos", ...[...groups.keys()].filter(g => g !== "Más pedidos")] : [...groups.keys()];
   order.map(g => [groups.get(g), g]).forEach(([items, g]) => {
     const sp = g === "Edición limitada";
-    const mt = !sp && /matcha/i.test(g);
-    html += `<div class="group-h ${sp?"sp":""} ${mt?"mt":""}">${esc(g)}</div><div class="grid">` + items.map(it => {
+    const mt = !sp && /matcha/i.test(g), fr = g === "Bebidas frías", hc = g === "Bebidas calientes";
+    html += `<div class="group-h ${sp?"sp":""} ${mt?"mt":""} ${fr?"fr":""} ${hc?"hc":""}">${esc(g)}</div><div class="grid">` + items.map(it => {
       const q = cart.get(it.id)?.qty || 0;
-      return `<button type="button" class="prod ${it.station==="cocina"?"cocina":""} ${it.especial?"sp":(/matcha/i.test(it.group||"") || /matcha/i.test(it.name) ? "mt" : "")}" data-add="${it.id}" aria-label="Añadir ${esc(it.name)}">
+      return `<button type="button" class="prod ${it.station==="cocina"?"cocina":""} ${it.especial?"sp":(/matcha/i.test(it.group||"") || /matcha/i.test(it.name) ? "mt" : fr ? "fr" : hc ? "hc" : "")}" data-add="${it.id}" aria-label="Añadir ${esc(it.name)}">
         <span class="pn">${esc(it.name)}</span><span class="pp">${eur(it.price)}</span>${q?`<span class="badge">${q}</span>`:""}</button>`;
     }).join("") + `</div>`;
   });
