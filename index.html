@@ -793,7 +793,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 51</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 52</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -1380,6 +1380,25 @@ function renderReady(){
   }).join("");
 }
 // Los 4 más vendidos de las últimas dos semanas, para no buscarlos en la carta
+/* Mostrador: edición limitada, matcha, bebidas calientes, bebidas frías (las que llevan hielo) y comida,
+   y dentro de cada grupo lo más vendido primero (últimos 60 días) */
+const FOOD_RE = /reposter|boller|dulce|comida|tarta|cookie|galleta|salad/i;
+function mostradorGroups(avail){
+  const sold = merge(records(Date.now() - 60*86400000)).productos;
+  const pop = m => (sold[m.id] && sold[m.id].qty) || 0;
+  const g = new Map([["Edición limitada", []], ["Matcha", []], ["Bebidas calientes", []], ["Bebidas frías", []]]);
+  avail.forEach(m => {
+    let k;
+    if (m.especial) k = "Edición limitada";
+    else if (/matcha/i.test(m.group || "") || /matcha/i.test(m.name)) k = "Matcha";
+    else if (FOOD_RE.test(m.group || "")) k = m.group;
+    else k = hasIce(m, m.name) ? "Bebidas frías" : "Bebidas calientes";
+    if (!g.has(k)) g.set(k, []);
+    g.get(k).push(m);
+  });
+  for (const [k, l] of g){ if (!l.length){ g.delete(k); continue; } l.sort((a,b) => pop(b) - pop(a) || (a.order??0) - (b.order??0) || String(a.name).localeCompare(String(b.name))); }
+  return g;
+}
 function topProducts(avail){
   const m = merge(records(Date.now() - 14*86400000));
   const total = Object.values(m.productos).reduce((a,p) => a + p.qty, 0);
@@ -1392,7 +1411,7 @@ function renderMenuGrid(){
   const avail = menu.filter(isOn), off = menu.filter(m => !isOn(m));
   if (!avail.length){ box.innerHTML = `<div class="empty">${gotMenu ? (menu.length ? 'Todo está marcado como agotado. Actívalo en <b>Ajustes</b>.' : 'La carta está vacía. Añade tus productos en <b>Ajustes</b>.') : 'Cargando la carta…'}</div>`; return; }
   let html = "";
-  const groups = groupsOf(sortMenu(avail));
+  const groups = mostradorGroups(avail);
   const top = []; // sección «Más pedidos» quitada: despistaba en el mostrador
   if (top.length) groups.set("Más pedidos", top);
   const order = top.length ? ["Más pedidos", ...[...groups.keys()].filter(g => g !== "Más pedidos")] : [...groups.keys()];
