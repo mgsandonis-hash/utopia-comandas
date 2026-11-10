@@ -6,7 +6,7 @@
   "use strict";
   var me = document.currentScript && document.currentScript.src || "";
   var APP = me ? me.replace(/wb\.js.*$/, "") : "https://mgsandonis-hash.github.io/utopia-comandas/";
-  var DIAS = 8;                                   // hoy y los 7 días anteriores
+  var DIAS = 15;                                  // se mira hasta 15 días atrás, pero solo sábados y domingos (los días que abre la cafetería)
   var old = document.getElementById("utopia-wb"); if (old) old.remove();
   var box = document.createElement("div"); box.id = "utopia-wb";
   box.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#f8f2e8;color:#3b0a12;font:16px/1.4 system-ui,sans-serif;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));border-top:3px solid #5e0f1c;box-shadow:0 -8px 30px rgba(0,0,0,.35);max-height:80vh;overflow:auto";
@@ -54,9 +54,11 @@
 
   (async function(){
     var now = new Date(), idu = await findIdu(), days = [], lastDet = "", noJson = 0;
-    for (var i = DIAS - 1; i >= 0; i--){
-      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-      var p = document.getElementById("utopia-wb-p"); if (p) p.textContent = "Leyendo las clases… " + (DIAS - i) + " de " + DIAS;
+    var fechas = [];
+    for (var i = DIAS - 1; i >= 0; i--){ var f = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i); if (f.getDay() === 6 || f.getDay() === 0) fechas.push(f); }
+    for (var q = 0; q < fechas.length; q++){
+      var d = fechas[q];
+      var p = document.getElementById("utopia-wb-p"); if (p) p.textContent = "Leyendo sábados y domingos… " + (q + 1) + " de " + fechas.length;
       var res; try { res = await loadDay(d, idu); } catch(e){ lastDet = "red: " + e.message; continue; }
       var r = parse(res, d, now);
       if (r.err){ noJson++; lastDet = r.det + (idu ? "" : " (sin idu)"); }
@@ -65,7 +67,7 @@
     }
     if (!days.length){
       if (noJson) return fail("WodBuster no ha devuelto las clases. Lo más probable es que no hayas iniciado sesión en esta pestaña: entra con tu usuario y vuelve a pulsar el marcador.", lastDet);
-      return fail("No hay clases con gente apuntada en los últimos " + DIAS + " días.", lastDet);
+      return fail("No hay clases con gente apuntada en los sábados y domingos de las dos últimas semanas.", lastDet);
     }
     var json = JSON.stringify({v:1, d:days});
     var b64 = btoa(unescape(encodeURIComponent(json))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
