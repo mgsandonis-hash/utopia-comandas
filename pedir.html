@@ -157,7 +157,7 @@ const pad = n => String(n).padStart(3, "0");
 const ls = {get:k => { try { return localStorage.getItem(k); } catch(e){ return null; } }, set:(k,v) => { try { localStorage.setItem(k, v); } catch(e){} }, del:k => { try { localStorage.removeItem(k); } catch(e){} }};
 // Quien tiene "reducir movimiento" activado ve a Bimbo quieto
 const QUIETO = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-function calm(){ if (QUIETO) document.querySelectorAll("img.bimbo").forEach(i => { const f = i.getAttribute("src").replace("bimbo-cafe.webp", "gafas.png").replace("bimbo-estira.webp", "estira.png"); if (f !== i.getAttribute("src")) i.src = f; }); }
+function calm(){ if (QUIETO) document.querySelectorAll("img.bimbo").forEach(i => { const f = i.getAttribute("src").replace(/bimbo-(cafe|espera|listo)\.webp/, "gafas.png").replace("bimbo-estira.webp", "estira.png"); if (f !== i.getAttribute("src")) i.src = f; }); }
 calm();
 const CFG = window.UTOPIA_CONFIG || {};
 const sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {auth:{persistSession:false, autoRefreshToken:false}}) : null;
@@ -269,9 +269,9 @@ function showStatus(s){
       En cuanto nos llegue, empezamos a prepararlo. ¿Prefieres efectivo? Dilo en caja.</div>`;
   }
   else if (st === "porcobrar") box = `<div class="big pay"><b>Pasa por caja a pagar</b>${eur(s.total)} en efectivo. Di tu nombre al llegar.</div>`;
-  else if (st === "nuevo") box = `<div class="big prep"><img class="bimbo" src="stickers/bimbo-estira.webp" width="230" height="160" alt="Bimbo estirándose"><b>Lo estamos preparando</b>Te avisamos aquí cuando esté listo. Puedes dejar esta pantalla abierta.</div>`;
+  else if (st === "nuevo") box = `<div class="big prep"><img class="bimbo" src="stickers/bimbo-espera.webp" width="180" height="209" alt="Bimbo esperando su comida"><b>Lo estamos preparando</b>Te avisamos aquí cuando esté listo. Puedes dejar esta pantalla abierta.</div>`;
   else if (st === "listo") box = `<div class="big ready"><img class="bimbo" src="stickers/bimbo-cafe.webp" width="150" height="169" alt="Bimbo con su café"><b>¡Tu pedido está listo!</b>Recógelo en el mostrador.</div>`;
-  else if (st === "entregado") box = `<div class="big prep"><img class="bimbo" src="stickers/bimbo-cafe.webp" width="150" height="169" alt="Bimbo con su café"><b>¡Que lo disfrutes!</b>Gracias por venir a Utopía.</div>`;
+  else if (st === "entregado") box = `<div class="big prep"><img class="bimbo" src="stickers/bimbo-listo.webp" width="180" height="209" alt="Bimbo con su comida, con el pulgar arriba"><b>¡Que lo disfrutes!</b>Gracias por venir a Utopía.</div>`;
   else box = `<div class="big prep"><b>Pedido cancelado</b>Si quieres, puedes hacer otro.</div>`;
   if ($("#sBox")._k !== box){ $("#sBox").innerHTML = box; $("#sBox")._k = box; calm(); }   // sin repintar en cada consulta: la animación de Bimbo no se reinicia
   $("#cancel").hidden = st !== "porcobrar";
