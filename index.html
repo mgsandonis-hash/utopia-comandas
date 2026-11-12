@@ -816,7 +816,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 58</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 59</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -983,7 +983,7 @@ function cartaHTML(){
   const groups = [["Bebidas frías", drinks.filter(m => hasIce(m, m.name))], ["Bebidas calientes", drinks.filter(m => !hasIce(m, m.name))],
     ...[...new Set(food.map(m => m.group || "Otros"))].map(g => [g, food.filter(m => (m.group || "Otros") === g)])].filter(([, l]) => l.length);
   const price = v => (Number(v)||0).toLocaleString("es-ES", {minimumFractionDigits:2, maximumFractionDigits:2});
-  const item = m => `<li><div class="ln"><span class="nm">${esc(m.name)}</span><span class="dots"></span><span class="pr">${price(m.price)}</span></div>${m.desc ? `<p class="ds">${esc(m.desc)}</p>` : ""}</li>`;
+  const item = m => `<li><div class="ln"><span class="nm">${esc(String(m.name || "").toLocaleUpperCase("es-ES"))}</span><span class="dots"></span><span class="pr">${price(m.price)}</span></div>${m.desc ? `<p class="ds">${esc(m.desc)}</p>` : ""}</li>`;
   // Con frías y calientes, van una al lado de la otra si no caben a una columna
   const drinkSecs = groups.filter(([g]) => g.startsWith("Bebidas")), otherSecs = groups.filter(([g]) => !g.startsWith("Bebidas"));
   const many = false; // una sección debajo de otra
@@ -991,8 +991,8 @@ function cartaHTML(){
   const qr = new URL("qr.png", location.href).href;
   return `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Carta Utopía Coffee Club</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;1,400&display=swap">
 <style>
+${[["Bebas Neue","bebas",400,"normal"],["Barlow Condensed","barlow-400",400,"normal"],["Barlow Condensed","barlow-500",500,"normal"],["Barlow Condensed","barlow-600",600,"normal"],["Barlow Condensed","barlow-400i",400,"italic"]].map(([f,n,w,st]) => `@font-face{font-family:"${f}";src:url("${new URL("fonts/" + n + ".woff2", location.href).href}") format("woff2");font-weight:${w};font-style:${st};font-display:block}`).join("\n")}
 @page{size:A4;margin:0}
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:#d8ccb8}
@@ -1022,10 +1022,10 @@ main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;just
 section{break-inside:avoid;margin-bottom:calc(6mm*var(--k))}
 h2{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:calc(22pt*var(--k));letter-spacing:.12em;border-bottom:1.4pt solid #5e0f1c;padding-bottom:1mm;margin-bottom:calc(2.6mm*var(--k))}
 ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
-.ln{display:flex;align-items:baseline;gap:2mm}
-.nm{font-weight:600;font-size:calc(14pt*var(--k));text-transform:uppercase;letter-spacing:.03em}
-.dots{flex:1;border-bottom:1.2pt dotted #8a4a52;transform:translateY(-1mm)}
-.pr{font-family:"Bebas Neue",sans-serif;font-size:calc(17pt*var(--k));letter-spacing:.04em}
+.ln{display:grid;grid-template-columns:auto minmax(4mm,1fr) auto;align-items:end;column-gap:2mm}
+.nm{font-weight:600;font-size:calc(14pt*var(--k));line-height:1.15;letter-spacing:.03em}
+.dots{border-bottom:1.2pt dotted #8a4a52;margin-bottom:calc(1.6mm*var(--k));height:0}
+.pr{font-family:"Bebas Neue",sans-serif;font-size:calc(17pt*var(--k));line-height:1;letter-spacing:.04em}
 .ds{font-style:italic;font-size:calc(11pt*var(--k));color:#8a4a52;margin-top:.5mm}
 .esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
@@ -1085,9 +1085,11 @@ document.getElementById("pdfBtn").addEventListener("click", async () => {
   const b = document.getElementById("pdfBtn"), msg = document.getElementById("barMsg");
   b.disabled = true; msg.textContent = "Preparando el PDF…";
   try {
-    if (document.fonts && document.fonts.ready) await document.fonts.ready;
+    if (document.fonts){ await Promise.all(["400 20px 'Bebas Neue'", "400 20px 'Barlow Condensed'", "500 20px 'Barlow Condensed'", "600 20px 'Barlow Condensed'", "italic 400 20px 'Barlow Condensed'"].map(f => document.fonts.load(f).catch(() => {}))); await document.fonts.ready; }
+    fitText();
     const t = sheet.style.transform; sheet.style.transform = "none";
-    const canvas = await html2canvas(sheet, {scale: 2.6, backgroundColor: "#f1e9db", useCORS: true});
+    const canvas = await html2canvas(sheet, {scale: 2.6, backgroundColor: "#f1e9db", useCORS: true,
+      onclone: async d => { try { if (d.fonts){ await d.fonts.ready; } } catch(e){} await new Promise(r => setTimeout(r, 250)); }});
     sheet.style.transform = t;
     const pdf = new jspdf.jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
     pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297);
