@@ -67,7 +67,10 @@ button{cursor:pointer}
 .brand small{display:block;font-size:.8rem;color:var(--muted);letter-spacing:.04em;margin-top:2px}
 .brand svg{width:22px;height:22px;flex:none}
 /* Pestañas: dos puestos grandes + Oficina pequeña */
-.tabs{display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:stretch;min-width:min(100%,420px)}
+.tabs{display:grid;grid-template-columns:1fr 1fr auto auto;gap:6px;align-items:stretch;min-width:min(100%,420px)}
+.shopbtn{position:relative}
+@media (max-width:385px){.tabs button.big{font-size:1.1rem!important;padding:6px 4px!important;letter-spacing:.02em!important}.tabs button.office{padding:6px 5px!important;font-size:.7rem!important;letter-spacing:0!important}}
+.shopbtn b{position:absolute;top:-7px;right:-6px;min-width:22px;height:22px;border-radius:11px;background:var(--danger);color:#fff;font-size:.8rem;line-height:22px;text-align:center;padding:0 5px;font-weight:700}
 .tabs button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;color:var(--muted);white-space:nowrap}
 .tabs button.big{font-family:var(--display);font-size:1.5rem;letter-spacing:.07em;padding:6px 14px;line-height:1.1}
 .tabs button.office{font-weight:700;font-size:.85rem;letter-spacing:.04em;padding:6px 12px;text-transform:uppercase}
@@ -88,6 +91,23 @@ button{cursor:pointer}
 .wbday small{display:block;color:var(--muted)}
 .wbhow summary{cursor:pointer;font-weight:600;color:var(--ink)}
 .wbsteps{margin:8px 0;padding-left:20px;display:grid;gap:8px}
+.tp{display:grid;gap:8px}
+.tp.new{border:2px solid var(--accent)}
+.tp.rdy{border:2px solid var(--ready)}
+.tp .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.tp .h b{font-family:var(--display);font-weight:400;font-size:1.6rem;letter-spacing:.04em;color:var(--ink);overflow-wrap:anywhere}
+.tp .h span{color:var(--muted);font-size:.9rem}
+.tp ul{margin:0;padding:0;list-style:none;display:grid;gap:3px}
+.tp li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline}
+.tp li small{color:var(--muted)}
+.tp .h .tot{font-family:var(--display);font-size:1.6rem;color:var(--ink);letter-spacing:.04em}
+.tp .nota{border-left:3px solid var(--accent);padding:4px 10px;font-style:italic}
+.tp a.btn{text-decoration:none;display:inline-block}
+.tcat{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.tcat img{width:44px;height:56px;object-fit:cover;border-radius:6px;background:var(--surface)}
+.tcat.off{opacity:.5}
+.tcat small{display:block;color:var(--muted)}
+.tlist{display:grid;gap:10px}
 .boxrow{display:grid;grid-template-columns:110px minmax(0,1fr) 90px auto;gap:6px;align-items:center}
 @media (max-width:480px){ .boxrow{grid-template-columns:96px minmax(0,1fr) 72px auto} }
 /* Desplegables */
@@ -227,7 +247,7 @@ input[type=text],input[type=number],input[type=date],select{width:100%;box-sizin
 .kpi span .mins,.kpi .mins{white-space:normal}
 /* Ordenador de casa: solo Oficina, más ancho y cómodo con ratón */
 body.pc-office .tabs button.big{display:none}
-body.pc-office .tabs{grid-template-columns:auto;min-width:0}
+body.pc-office .tabs{grid-template-columns:auto auto;min-width:0}
 body.pc-office #officeNav{display:flex!important}
 @media (min-width:1100px){
   main{max-width:1320px}
@@ -394,6 +414,8 @@ table.t tr:last-child td{border-bottom:0}
   .tabs{width:100%;order:3;min-width:0}
   .tabs button.big{font-size:1.35rem;padding:6px 8px}
   .tabs button.office{padding:6px 8px;font-size:.78rem}
+  .tabs{gap:4px}
+  .tabs button.big{font-size:1.28rem;padding:6px 6px;letter-spacing:.04em}
   .subnav{order:4}
   section{margin-top:16px}
 }
@@ -435,6 +457,7 @@ table.t tr:last-child td{border-bottom:0}
   <nav class="tabs" aria-label="Puestos">
     <button type="button" class="big" data-view="pedidos">Mostrador</button>
     <button type="button" class="big" data-view="barra">Cafetera</button>
+    <button type="button" class="office shopbtn" data-view="tienda" aria-label="Tienda: pedidos de café en grano y chocolate">Tienda<b id="shopBadge" hidden></b></button>
     <button type="button" class="office" data-office="1" aria-label="Oficina">Oficina</button>
   </nav>
   <nav class="subnav" id="officeNav" aria-label="Oficina" hidden>
@@ -539,6 +562,39 @@ table.t tr:last-child td{border-bottom:0}
   </div>
 
   <!-- OFICINA · CAJA -->
+  <div id="v-tienda" hidden>
+    <section>
+      <div class="sec-h"><h2>Pedidos de tienda</h2></div>
+      <p class="hint">Café en grano y chocolate de Puchero que los clientes piden desde el móvil. Se recogen y se pagan aquí.</p>
+      <div class="kpis" id="tKpis" style="margin-top:10px"></div>
+      <div id="tNew" class="tlist" style="margin-top:12px"></div>
+      <div id="tReady" class="tlist" style="margin-top:12px"></div>
+    </section>
+    <section>
+      <details class="fold" id="f-tprep" open><summary class="sec-h"><h2>Qué hay que preparar</h2></summary><div class="foldbody">
+        <p class="hint">Todo lo que suman los pedidos nuevos, para pedirlo o apartarlo de una vez.</p>
+        <div id="tPrep" style="margin-top:8px"></div>
+      </div></details>
+    </section>
+    <section>
+      <details class="fold" id="f-tdone"><summary class="sec-h"><h2>Entregados y cancelados</h2></summary><div class="foldbody"><div id="tDone" class="tlist"></div></div></details>
+    </section>
+    <section>
+      <details class="fold" id="f-tcat"><summary class="sec-h"><h2>Catálogo y ajustes</h2></summary><div class="foldbody">
+        <div class="card" style="display:grid;gap:10px">
+          <p id="tSync" class="hint"></p>
+          <div class="row"><button type="button" class="btn" id="tSyncBtn">Actualizar ahora desde la web de Puchero</button>
+            <button type="button" class="btn" id="tLink">Copiar enlace de la tienda</button></div>
+          <div class="row"><button type="button" class="btn" id="tOpen" aria-pressed="true"></button></div>
+          <label class="lbl" for="tPick">Texto de recogida que ve el cliente</label>
+          <div class="row"><input type="text" id="tPick" maxlength="140" style="flex:1;min-width:200px" placeholder="Recogida y pago en Utopía Coffee Club, los fines de semana que abrimos."><button type="button" class="btn" id="tPickSave">Guardar</button></div>
+        </div>
+        <p class="hint" style="margin-top:12px">Los productos, precios y fotos se copian solos de somospuchero.com. Aquí solo puedes esconder alguno que no queráis vender en Utopía.</p>
+        <div id="tCat"></div>
+      </div></details>
+    </section>
+  </div>
+
   <div id="v-caja" hidden>
     <section id="claudeSec" hidden><details class="fold" id="f-claude" open><summary class="sec-h"><h2>Sugerencias de la semana</h2><span class="count" id="claudeWhen"></span></summary><div class="foldbody">
       <div class="sugs" id="claudeSugs"></div>
@@ -816,7 +872,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 60</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 61</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -865,8 +921,8 @@ const num1 = n => (Math.round(n*10)/10).toLocaleString("es-ES");
 function parseMoney(v){ const s = String(v ?? "").trim(); if (!s) return NaN; const n = parseFloat(s.replace(",", ".").replace(/[^\d.\-]/g, "")); return isFinite(n) ? n : NaN; }
 
 const GROUP_ORDER = ["Matcha","Cafés","Repostería"];
-const VIEWS = ["pedidos","barra","caja","carta","gastos","datos","ajustes"];
-const SUBS = {pedidos:"Mostrador · cobrar, servir y entregar", barra:"Cafetera · cafés y matcha", caja:"Oficina · caja del turno", gastos:"Oficina · gastos y beneficio", datos:"Oficina · ventas y compras", ajustes:"Oficina · ajustes"};
+const VIEWS = ["pedidos","barra","tienda","caja","carta","gastos","datos","ajustes"];
+const SUBS = {tienda:"Tienda · café en grano y chocolate de Puchero", pedidos:"Mostrador · cobrar, servir y entregar", barra:"Cafetera · cafés y matcha", caja:"Oficina · caja del turno", gastos:"Oficina · gastos y beneficio", datos:"Oficina · ventas y compras", ajustes:"Oficina · ajustes"};
 const OFFICE = ["caja","carta","gastos","datos","ajustes"];
 const DENOMS = [50,20,10,5,2,1,0.5,0.2,0.1,0.05,0.02,0.01];
 const DENOMS_C = DENOMS.map(d => Math.round(d*100));
@@ -2371,6 +2427,91 @@ $("#wbCopy").addEventListener("click", async () => {
   catch(e){ window.prompt("Copia este código:", WB_CODE); }
 });
 $("#wbDrag").addEventListener("click", e => { e.preventDefault(); toast("Arrástralo a la barra de marcadores; se usa con WodBuster abierto"); });
+/* ---------- TIENDA: pedidos de café en grano y chocolate de Puchero ---------- */
+let tPedidos = [], tCatalogo = null, tEstado = null, tAjustes = {}, tSeen = null;
+const tItemTxt = i => [i.nombre, i.f, i.m].filter(Boolean).join(" · ");
+const tNum = o => "nº " + String(o.num || 0).padStart(3, "0");
+function tWa(o, listo){
+  let d = String(o.tel || "").replace(/\D/g, ""); if (d.length === 9) d = "34" + d;
+  const txt = listo ? `Hola ${o.cliente}, tu pedido de Puchero (${tNum(o)}) ya está listo para recoger en Utopía Coffee Club. Son ${eur(o.total)}, que pagas al recogerlo. ¡Gracias!`
+                    : `Hola ${o.cliente}, hemos recibido tu pedido de Puchero (${tNum(o)}). Te avisamos en cuanto esté listo para recoger en Utopía Coffee Club.`;
+  return `https://wa.me/${d}?text=${encodeURIComponent(txt)}`;
+}
+function tCard(o){
+  const nuevo = o.status === "nuevo", listo = o.status === "preparado";
+  return `<div class="card tp ${nuevo ? "new" : listo ? "rdy" : ""}">
+    <div class="h"><b>${esc(o.cliente || "Sin nombre")}</b><span>${tNum(o)} · ${dmy(o.createdAt)} ${hhmm(o.createdAt)}</span></div>
+    <ul>${(o.items || []).map(i => `<li><b>${i.qty}×</b><span>${esc(i.nombre)}<small> ${esc([i.f, i.m].filter(Boolean).join(" · "))}</small></span><span>${eur(i.qty * i.price)}</span></li>`).join("")}</ul>
+    ${o.nota ? `<div class="nota">${esc(o.nota)}</div>` : ""}
+    <div class="h"><span class="tot">${eur(o.total)}</span><span>${o.status === "entregado" ? `Entregado ${dmy(o.deliveredAt || o.createdAt)} · ${o.pago === "bizum" ? "Bizum" : "efectivo"}` : o.status === "cancelado" ? "Cancelado" : `<a href="tel:${esc(o.tel)}">${esc(o.tel)}</a>`}</span></div>
+    ${nuevo ? `<div class="row"><button type="button" class="btn primary" data-tready="${o.id}" style="flex:1">Ya está preparado</button><a class="btn" target="_blank" rel="noopener" href="${tWa(o, false)}">WhatsApp</a><button type="button" class="btn ghost danger" data-tcancel="${o.id}">Cancelar</button></div>` : ""}
+    ${listo ? `<div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${tWa(o, true)}" style="flex:1;text-align:center">Avisar por WhatsApp de que está listo</a></div>
+      <div class="row"><button type="button" class="btn deliver" data-tpay="${o.id}" data-m="efectivo">Entregado · efectivo</button><button type="button" class="btn deliver" data-tpay="${o.id}" data-m="bizum">Entregado · Bizum</button></div>
+      <div class="row"><button type="button" class="btn ghost" data-tback="${o.id}">Aún no está preparado</button><button type="button" class="btn ghost danger" data-tcancel="${o.id}">Cancelar</button></div>` : ""}
+  </div>`;
+}
+function renderShopBadge(){
+  const n = tPedidos.filter(o => o.status === "nuevo").length, b = $("#shopBadge");
+  b.hidden = !n; b.textContent = n;
+}
+function renderTienda(){
+  renderShopBadge();
+  const by = st => tPedidos.filter(o => o.status === st).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+  const nuevos = by("nuevo"), listos = by("preparado"), mes = new Date().toISOString().slice(0, 7);
+  const ent = tPedidos.filter(o => o.status === "entregado"), entMes = ent.filter(o => new Date(o.deliveredAt || o.createdAt).toISOString().slice(0, 7) === mes);
+  $("#tKpis").innerHTML = `<div class="kpi ${nuevos.length ? "key" : ""}"><b>${nuevos.length}</b><span>pedidos nuevos</span></div>
+    <div class="kpi"><b>${listos.length}</b><span>listos, esperando recogida · ${eur(listos.reduce((a, o) => a + (o.total || 0), 0))}</span></div>
+    <div class="kpi"><b>${eur(entMes.reduce((a, o) => a + (o.total || 0), 0))}</b><span>vendido este mes · ${entMes.length} ${entMes.length === 1 ? "pedido" : "pedidos"}</span></div>`;
+  $("#tNew").innerHTML = nuevos.length ? nuevos.map(tCard).join("") : `<p class="hint">No hay pedidos nuevos.</p>`;
+  $("#tReady").innerHTML = listos.length ? `<h3 style="margin:6px 0 0">Listos para recoger</h3>` + listos.map(tCard).join("") : "";
+  // lo que suman los pedidos nuevos
+  const sum = new Map(); nuevos.forEach(o => (o.items || []).forEach(i => { const k = tItemTxt(i); sum.set(k, (sum.get(k) || 0) + i.qty); }));
+  const lines = [...sum].sort((a, b) => a[0].localeCompare(b[0]));
+  $("#tPrep").innerHTML = lines.length ? `<div class="card"><ul style="margin:0;padding-left:18px">${lines.map(([k, q]) => `<li><b>${q}×</b> ${esc(k)}</li>`).join("")}</ul><div class="row" style="margin-top:10px"><button type="button" class="btn" id="tPrepCopy">Copiar lista</button></div></div>` : `<p class="hint">Nada pendiente.</p>`;
+  $("#tPrep").dataset.txt = lines.map(([k, q]) => `${q}× ${k}`).join("\n");
+  const done = tPedidos.filter(o => o.status === "entregado" || o.status === "cancelado").sort((a, b) => (b.deliveredAt || b.createdAt || 0) - (a.deliveredAt || a.createdAt || 0)).slice(0, 30);
+  $("#tDone").innerHTML = done.length ? done.map(tCard).join("") : `<p class="hint">Todavía no hay ninguno.</p>`;
+  // catálogo
+  const e = tEstado || {}, ocultos = Array.isArray(tAjustes.ocultos) ? tAjustes.ocultos : [], prods = (tCatalogo && tCatalogo.productos) || [];
+  $("#tSync").innerHTML = (tCatalogo ? `<b>${prods.length} productos</b> copiados de somospuchero.com el ${dmy(tCatalogo.t)} a las ${hhmm(tCatalogo.t)}. Se actualiza solo cada 6 horas: lo que se agota o cambia de precio en su web, cambia aquí.` : "Todavía no se ha copiado el catálogo.")
+    + (e.pedir ? " <b>Actualizando… tarda un minuto o dos.</b>" : "") + (e.error ? ` <span style="color:var(--danger)">El último intento falló: ${esc(e.error)}. Se mantiene el catálogo anterior.</span>` : "");
+  $("#tSyncBtn").disabled = !!e.pedir;
+  const abierta = tAjustes.abierta !== false;
+  $("#tOpen").setAttribute("aria-pressed", String(abierta)); $("#tOpen").textContent = abierta ? "Tienda abierta · tocar para cerrarla" : "Tienda cerrada · tocar para abrirla";
+  if (document.activeElement !== $("#tPick")) $("#tPick").value = tAjustes.recogida || "";
+  $("#tCat").innerHTML = prods.map(p => { const off = ocultos.includes(p.id), min = Math.min(...p.v.map(v => v.p));
+    return `<div class="tcat ${off ? "off" : ""}"><img src="${esc(p.img)}" alt="" loading="lazy" referrerpolicy="no-referrer"><span><b>${esc(p.nombre)}</b><small>${esc(p.sub || "")} · ${p.v.length} ${p.v.length === 1 ? "formato" : "formatos"} · ${p.v.length > 1 ? "desde " : ""}${eurC(min)}</small></span>
+      <button type="button" class="btn small" data-thide="${p.id}">${off ? "Mostrar" : "Esconder"}</button></div>`; }).join("");
+}
+async function tSaveAj(patch){ tAjustes = {...tAjustes, ...patch}; await db.doc("tienda/ajustes").set(tAjustes); }
+$("#v-tienda").addEventListener("click", async e => {
+  if (!db) return;
+  const b = e.target.closest("button"); if (!b) return;
+  const find = id => tPedidos.find(o => o.id === id), upd = (id, d) => db.collection("tienda_pedidos").doc(id).update(d);
+  try {
+    if (b.dataset.tready){ await upd(b.dataset.tready, {status:"preparado", readyAt:Date.now()}); toast("Marcado como preparado: avisa al cliente"); }
+    else if (b.dataset.tback){ await upd(b.dataset.tback, {status:"nuevo"}); }
+    else if (b.dataset.tcancel){ confirmTap(b, "tc" + b.dataset.tcancel, "¿Cancelar pedido?", async () => { try { await upd(b.dataset.tcancel, {status:"cancelado", cancelledAt:Date.now()}); toast("Pedido cancelado"); } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); } }); }
+    else if (b.dataset.tpay){
+      const o = find(b.dataset.tpay), m = b.dataset.m; if (!o) return;
+      if (m === "efectivo" && !(shift && shift.open)){ toast("Abre la caja primero: el dinero tiene que entrar en el cuadre de hoy."); return; }
+      confirmTap(b, "tp" + o.id + m, `¿Cobrado ${eur(o.total)}?`, async () => {
+        try {
+          const now = Date.now();
+          await upd(o.id, {status:"entregado", pago:m, deliveredAt:now});
+          if (m === "efectivo") await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"entrada", importe:o.total, concepto:`Tienda Puchero ${tNum(o)}: ${o.cliente}`, tienda:true}]});
+          toast(`Entregado a ${o.cliente} · ${eur(o.total)}${m === "efectivo" ? " · entra en la caja" : " por Bizum"}`);
+        } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+      });
+    }
+    else if (b.id === "tPrepCopy"){ try { await navigator.clipboard.writeText($("#tPrep").dataset.txt || ""); toast("Lista copiada"); } catch(err){ toast("No se pudo copiar"); } }
+    else if (b.id === "tSyncBtn"){ const {error} = await window.utopiaSupabase.rpc("tienda_pedir_sync"); if (error) throw error; toast("Pedido: el catálogo se actualiza en un minuto o dos"); }
+    else if (b.id === "tLink"){ const u = new URL("pedir.html#tienda", location.href).href; try { await navigator.clipboard.writeText(u); toast("Enlace copiado"); } catch(err){ window.prompt("Enlace de la tienda:", u); } }
+    else if (b.id === "tOpen"){ await tSaveAj({abierta: tAjustes.abierta === false}); toast(tAjustes.abierta === false ? "Tienda cerrada" : "Tienda abierta"); }
+    else if (b.id === "tPickSave"){ await tSaveAj({recogida:$("#tPick").value.trim()}); $("#tPick").blur(); toast("Guardado"); }
+    else if (b.dataset.thide){ const id = Number(b.dataset.thide), oc = new Set(Array.isArray(tAjustes.ocultos) ? tAjustes.ocultos : []); oc.has(id) ? oc.delete(id) : oc.add(id); await tSaveAj({ocultos:[...oc]}); }
+  } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+});
 function renderBox(){
   renderWb();
   const from = periodFrom();
@@ -3126,6 +3267,7 @@ $("#seasonSeg").addEventListener("click", async e => {
 function renderAll(){
   if (view === "pedidos"){ renderWeb(); renderWebCharging(); renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
   else if (view === "barra") renderBarra();
+  else if (view === "tienda") renderTienda();
   else if (view === "caja"){ renderClaude(); renderCaja(); renderDebts(); }
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
   else if (view === "datos"){ renderDatos(); renderBox(); renderDur(); renderSlow(); renderCombos(); }
@@ -3495,6 +3637,18 @@ async function boot(){
   setTimeout(flushOutbox, 3000);
   db.collection("asistencia").onSnapshot(snap => { asistencia = snap.docs.map(d => ({id:d.id, ...d.data()})); if (boxDraftDay && !document.activeElement?.dataset?.bx) loadBoxDraft(boxDraftDay); if (view === "datos") renderBox(); }, err => {});
   db.collection("claude").onSnapshot(snap => { const d = snap.docs.find(x => x.id === "semana"); claudeDoc = d ? d.data() : null; renderClaude(); }, err => {});
+  db.collection("tienda_pedidos").onSnapshot(snap => {
+    tPedidos = snap.docs.map(d => ({id:d.id, ...d.data()}));
+    const ids = new Set(tPedidos.filter(o => o.status === "nuevo").map(o => o.id));
+    if (tSeen && !snap.metadata.fromCache && [...ids].some(id => !tSeen.has(id))){ alertUser("new"); toast("Nuevo pedido de tienda"); }
+    if (!snap.metadata.fromCache) tSeen = ids;
+    renderShopBadge(); if (view === "tienda") renderTienda();
+  }, err => {});
+  db.collection("tienda").onSnapshot(snap => {
+    const g = id => { const d = snap.docs.find(x => x.id === id); return d ? d.data() : null; };
+    tCatalogo = g("catalogo"); tEstado = g("estado"); tAjustes = g("ajustes") || {};
+    if (view === "tienda" && document.activeElement !== $("#tPick")) renderTienda();
+  }, err => {});
   db.collection("deudas").onSnapshot(snap => { deudas = snap.docs.map(d => ({id:d.id, ...d.data()})); renderDebts(); if (view === "pedidos") renderCart(); }, err => {});
   db.collection("clientes").orderBy("t", "desc").limit(300).onSnapshot(snap => { clientes = snap.docs.map(d => ({id:d.id, ...d.data()})); renderRegular(); }, err => {});
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Pide en Utopía</title>
-<meta name="description" content="Pide desde tu móvil en Utopía Coffee Club y paga en caja.">
+<meta name="description" content="Pide desde tu móvil en Utopía Coffee Club: cafetería y tienda de café en grano y chocolate de Puchero.">
 <meta name="theme-color" content="#f1e9db">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -99,6 +99,55 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
 .big .bimbo{margin-bottom:10px}
 .intro .bimbo{margin-bottom:6px}
 .loading{text-align:center;color:var(--muted);margin-top:30px}
+
+/* ---------- Cafetería / Tienda ---------- */
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border:1.5px solid var(--ink);border-radius:999px;padding:4px;margin:6px auto 4px;max-width:360px}
+.tabs button{border:0;background:none;border-radius:999px;padding:9px 10px;font-family:var(--display);font-size:1.25rem;letter-spacing:.08em;color:var(--ink)}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+body.shop #secCafe, body.shop #bar{display:none!important}
+body:not(.shop) #secShop, body:not(.shop) #shopBar{display:none!important}
+.shophead{text-align:center;display:grid;justify-items:center;gap:6px;margin-top:10px}
+.shophead img{height:26px;width:auto;mix-blend-mode:multiply}
+.shophead p{margin:0;color:var(--muted)}
+.cats{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0 8px;margin-top:8px}
+.cats button{border:1.5px solid var(--ink);background:none;color:var(--ink);border-radius:999px;padding:6px 16px;font-weight:700;letter-spacing:.04em}
+.cats button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.prod{display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 0}
+.prod:last-child{border-bottom:0}
+.prod img{width:92px;height:118px;object-fit:cover;border-radius:10px;background:var(--surface)}
+.prod .n{display:block;font-weight:700;font-size:1.2rem;letter-spacing:.02em;color:var(--text);overflow-wrap:anywhere}
+.prod .s{display:block;color:var(--muted);font-size:.98rem}
+.prod .d{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:var(--muted);font-size:.92rem;font-style:italic;margin-top:2px}
+.prod .pr{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-family:var(--display);font-size:1.35rem;color:var(--ink);letter-spacing:.04em}
+.prod .pr i{font-style:normal;font-family:var(--body);font-weight:700;font-size:.9rem;letter-spacing:.04em;border:1.5px solid var(--ink);border-radius:999px;padding:3px 12px}
+.prod .pr i.has{background:var(--ink);color:var(--bg)}
+/* ficha de producto */
+.sheetbg{position:fixed;inset:0;z-index:30;background:rgba(59,10,18,.55);display:flex;align-items:flex-end;justify-content:center}
+.psheet{background:var(--bg);width:100%;max-width:560px;max-height:92dvh;overflow:auto;border-radius:20px 20px 0 0;padding:14px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px}
+.psheet .top{display:grid;grid-template-columns:120px minmax(0,1fr);gap:14px;align-items:start}
+.psheet .top img{width:120px;height:155px;object-fit:cover;border-radius:12px;background:var(--surface)}
+.psheet h3{margin:0;font-family:var(--display);font-weight:400;font-size:1.9rem;line-height:1;letter-spacing:.04em;color:var(--ink);overflow-wrap:anywhere}
+.psheet .s{color:var(--muted);margin:4px 0 0}
+.psheet .d{color:var(--text);font-size:.98rem;margin:6px 0 0;font-style:italic}
+.opt{display:grid;gap:6px}
+.opt .chips{display:flex;gap:8px;flex-wrap:wrap}
+.opt .chips button{border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font-weight:700;color:var(--text);display:grid;justify-items:center;line-height:1.15}
+.opt .chips button small{font-weight:500;color:var(--muted)}
+.opt .chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.opt .chips button[aria-pressed="true"] small{color:var(--bg)}
+.addrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px;align-items:center}
+.x{border:0;background:none;color:var(--muted);text-decoration:underline;padding:8px;justify-self:center}
+/* cesta de la tienda */
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.line .n{font-weight:700;overflow-wrap:anywhere}
+.line .p{color:var(--muted);font-size:.95rem}
+input[type=tel],textarea{width:100%;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:1.2rem;min-width:0;font-family:inherit;color:inherit}
+textarea{font-size:1.05rem;resize:vertical;min-height:64px}
+.mine{background:var(--ok-soft);border:1.5px solid var(--ok);border-radius:14px;padding:12px 14px;margin-top:12px;display:grid;gap:4px}
+.mine.wait{background:var(--surface);border-color:var(--line)}
+.mine b{font-family:var(--display);font-weight:400;font-size:1.4rem;letter-spacing:.05em;color:var(--ink)}
+.mine.ready b{color:var(--ok)}
+.mine ul{margin:2px 0 0;padding-left:18px;color:var(--muted);font-size:.95rem}
 </style>
 </head>
 <body>
@@ -108,6 +157,12 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
     <div class="rule" aria-hidden="true"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="7.5" ry="10.5" transform="rotate(35 12 12)" fill="#5e0f1c"/><path d="M12 2.5c-3 3.5 3 6.5 0 10s3 6 0 9" transform="rotate(35 12 12)" stroke="#f1e9db" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg></div>
   </header>
 
+  <div class="tabs" role="tablist" aria-label="Qué quieres pedir">
+    <button type="button" role="tab" id="tabCafe" aria-selected="true" data-tab="cafe">Cafetería</button>
+    <button type="button" role="tab" id="tabShop" aria-selected="false" data-tab="tienda">Tienda</button>
+  </div>
+
+  <div id="secCafe">
   <p class="loading" id="loading">Cargando la carta…</p>
 
   <!-- Carta -->
@@ -142,7 +197,47 @@ input[type=text]{width:100%;border:1.5px solid var(--line);background:#fff;borde
     <button type="button" class="btn ghost" id="cancel" hidden>Cancelar pedido</button>
     <button type="button" class="btn" id="again" hidden>Hacer otro pedido</button>
   </div>
+  </div><!-- /secCafe -->
+
+  <!-- Tienda: café en grano y chocolate de Puchero -->
+  <div id="secShop">
+    <div class="shophead">
+      <img src="logos/puchero.png" alt="Puchero">
+      <p>Café en grano y chocolate de Puchero, al mismo precio que en su web.</p>
+      <span class="pill" id="shopPick">Recogida y pago en Utopía</span>
+    </div>
+    <div id="shopMine"></div>
+    <p class="loading" id="shopLoading">Cargando la tienda…</p>
+    <div id="shopBody" hidden>
+      <div class="cats" id="shopCats"></div>
+      <div id="shopList"></div>
+      <div class="card" id="shopCheckout" hidden>
+        <div class="total" style="font-size:1.6rem"><span>Tu pedido</span></div>
+        <div id="shopLines"></div>
+        <div><label for="sName">Tu nombre</label></div>
+        <input type="text" id="sName" maxlength="40" autocomplete="name" placeholder="Nombre y apellido">
+        <div><label for="sTel">Tu teléfono</label></div>
+        <input type="tel" id="sTel" maxlength="16" autocomplete="tel" inputmode="tel" placeholder="Te avisamos cuando esté listo">
+        <div><label for="sNote">¿Algo que debamos saber? (opcional)</label></div>
+        <textarea id="sNote" maxlength="200" placeholder="Por ejemplo: molido para cafetera italiana"></textarea>
+        <div class="total"><span>Total</span><span id="shopTotal">0,00 €</span></div>
+        <p class="note" id="shopNote"></p>
+        <p class="err" id="shopErr" hidden></p>
+        <button type="button" class="btn" id="shopOrder">Hacer pedido</button>
+      </div>
+    </div>
+    <div id="shopClosed" class="closed" hidden><b>La tienda está cerrada por ahora</b><p class="note">Vuelve a mirar en unos días.</p></div>
+    <div id="shopDone" class="status" hidden>
+      <div class="num" id="dNum"></div>
+      <div class="who">¡Pedido recibido!</div>
+      <div class="big prep"><b>Te avisamos para recogerlo</b><span id="dTxt"></span></div>
+      <div class="card" style="margin-top:6px"><ul class="summary" id="dItems"></ul><div class="total" style="font-size:1.6rem"><span>Total</span><span id="dTotal"></span></div></div>
+      <button type="button" class="btn" id="dMore">Seguir mirando la tienda</button>
+    </div>
+  </div>
 </main>
+<div id="psheet" class="sheetbg" hidden></div>
+<div class="bar" id="shopBar" hidden><span id="shopBarTxt"></span><button type="button" id="shopToCheckout">Ver pedido</button></div>
 
 <div class="bar" id="bar" hidden><span id="barTxt"></span><button type="button" id="toCheckout">Pedir</button></div>
 
@@ -161,6 +256,7 @@ function calm(){ if (QUIETO) document.querySelectorAll("img.bimbo").forEach(i =>
 calm();
 const CFG = window.UTOPIA_CONFIG || {};
 const sb = window.supabase && CFG.supabaseUrl ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseKey, {auth:{persistSession:false, autoRefreshToken:false}}) : null;
+window.utopiaSb = sb;
 const ORDER = ["Fuera de carta", "Matcha", "Cafés", "Repostería"];
 let products = [], cart = new Map(), current = null, pollT = null, lastStatus = null, bizum = null, metodo = "efectivo";
 const fmtTel = t => String(t||"").replace(/(\d{3})(\d{2})(\d{2})(\d{2})/, "$1 $2 $3 $4");
@@ -320,6 +416,185 @@ document.addEventListener("pointerdown", unlock, {once:true});
   loadMenu();
 })();
 async function loadMenuQuiet(){ try { const {data} = await sb.rpc("carta_publica"); if (data) products = data.productos || []; } catch(e){} }
+})();
+</script>
+<script>
+/* ============ TIENDA: café en grano y chocolate de Puchero ============ */
+(() => {
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const eurC = c => ((Number(c)||0)/100).toLocaleString("es-ES", {style:"currency", currency:"EUR"});
+const eur = n => (Number(n)||0).toLocaleString("es-ES", {style:"currency", currency:"EUR"});
+const ls = {get:k => { try { return localStorage.getItem(k); } catch(e){ return null; } }, set:(k,v) => { try { localStorage.setItem(k, v); } catch(e){} }};
+const sb = window.utopiaSb;
+const CATS = [["cafe","Café"],["chocolate","Chocolate"],["cremas","Cremas"]];
+const GORDER = ["EVERYDAY ESPRESSO","SPECIAL ESPRESSO","EVERYDAY FILTER","SPECIAL FILTER","COMPETICIÓN","DECAF","CAFÉ","TABLETAS","CHOCOLATE A LA TAZA","GOTAS","BATONS","BLOQUE","NIBS","CHOCOLATE","CREMAS"];
+const GNAME = {"CAFÉ":"Otros cafés", "CHOCOLATE":"Otros chocolates"};
+let cat = [], byVar = new Map(), cur = "cafe", loaded = false, recogida = "";
+let cart = new Map();   // id de variación → cantidad
+try { (JSON.parse(ls.get("utopia_tienda_cesta") || "[]") || []).forEach(([v, q]) => cart.set(Number(v), Number(q))); } catch(e){}
+const saveCart = () => ls.set("utopia_tienda_cesta", JSON.stringify([...cart]));
+const vLabel = v => [v.f, v.m].filter(Boolean).join(" · ");
+const minP = p => Math.min(...p.v.map(v => v.p));
+const inCart = p => p.v.reduce((a, v) => a + (cart.get(v.id) || 0), 0);
+
+/* ---------- pestañas ---------- */
+function setTab(t, push){
+  const shop = t === "tienda";
+  document.body.classList.toggle("shop", shop);
+  $("#tabCafe").setAttribute("aria-selected", String(!shop)); $("#tabShop").setAttribute("aria-selected", String(shop));
+  document.title = shop ? "Tienda · Utopía" : "Pide en Utopía";
+  if (push) try { history.replaceState(null, "", shop ? "#tienda" : location.pathname + location.search); } catch(e){}
+  if (shop && !loaded) load();
+  if (shop) checkMine();
+}
+document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[data-tab]"); if (b){ setTab(b.dataset.tab, true); window.scrollTo(0, 0); } });
+addEventListener("hashchange", () => setTab(location.hash === "#tienda" ? "tienda" : "cafe", false));
+
+/* ---------- catálogo ---------- */
+async function load(){
+  if (!sb){ $("#shopLoading").textContent = "No se pudo cargar la tienda."; return; }
+  try {
+    const {data, error} = await sb.rpc("tienda_publica");
+    if (error) throw error;
+    loaded = true; $("#shopLoading").hidden = true;
+    recogida = data.recogida || "";
+    $("#shopNote").textContent = recogida + " Pagas al recogerlo, en efectivo o por Bizum.";
+    cat = (data.productos || []).filter(p => p && Array.isArray(p.v) && p.v.length);
+    byVar = new Map(); cat.forEach(p => p.v.forEach(v => byVar.set(v.id, {p, v})));
+    let lost = 0; [...cart.keys()].forEach(id => { if (!byVar.has(id)){ cart.delete(id); lost++; } }); if (lost) saveCart();
+    if (!data.abierta || !cat.length){ $("#shopClosed").hidden = false; $("#shopBody").hidden = true; renderBar(); return; }
+    if (!cat.some(p => p.cat === cur)) cur = (CATS.find(([k]) => cat.some(p => p.cat === k)) || ["cafe"])[0];
+    $("#shopBody").hidden = false; render();
+    if (lost){ const e = $("#shopErr"); e.textContent = "Algo de tu cesta ya no está disponible y lo hemos quitado."; e.hidden = false; }
+  } catch(e){ $("#shopLoading").hidden = false; $("#shopLoading").textContent = "No se pudo cargar la tienda. Revisa tu conexión y recarga."; }
+}
+function render(){
+  $("#shopCats").innerHTML = CATS.filter(([k]) => cat.some(p => p.cat === k)).map(([k, n]) => `<button type="button" data-cat="${k}" aria-pressed="${k === cur}">${n}</button>`).join("");
+  const groups = new Map();
+  cat.filter(p => p.cat === cur).forEach(p => { const g = p.grupo || ""; if (!groups.has(g)) groups.set(g, []); groups.get(g).push(p); });
+  const ord = g => { const i = GORDER.indexOf(g); return i < 0 ? 99 : i; };
+  $("#shopList").innerHTML = [...groups].sort((a, b) => ord(a[0]) - ord(b[0]) || a[0].localeCompare(b[0])).map(([g, list]) =>
+    `<h2>${esc(GNAME[g] || g)}</h2>` + list.map(p => { const q = inCart(p), many = p.v.length > 1;
+      return `<button type="button" class="prod" data-prod="${p.id}">
+        <img src="${esc(p.img)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" width="92" height="118">
+        <span><span class="n">${esc(p.nombre)}</span>${p.sub ? `<span class="s">${esc(p.sub)}</span>` : ""}${p.desc ? `<span class="d">${esc(p.desc)}</span>` : ""}
+        <span class="pr"><span>${many && new Set(p.v.map(v => v.p)).size > 1 ? "desde " : ""}${eurC(minP(p))}</span><i class="${q ? "has" : ""}">${q ? q + " en tu pedido" : "Ver"}</i></span></span>
+      </button>`; }).join("")).join("");
+  renderCart();
+}
+$("#shopCats").addEventListener("click", e => { const b = e.target.closest("[data-cat]"); if (!b) return; cur = b.dataset.cat; render(); $("#shopCats").scrollIntoView({block:"start"}); });
+
+/* ---------- ficha de producto ---------- */
+let sel = null;   // {p, f, m, q}
+function openProd(id){
+  const p = cat.find(x => String(x.id) === String(id)); if (!p) return;
+  const first = p.v.find(v => v.m === "En grano") || p.v[0];
+  sel = {p, f:first.f, m:first.m, q:1}; drawSheet(); $("#psheet").hidden = false; document.body.style.overflow = "hidden";
+}
+function closeProd(){ $("#psheet").hidden = true; $("#psheet").innerHTML = ""; document.body.style.overflow = ""; sel = null; }
+const pick = () => sel.p.v.find(v => v.f === sel.f && v.m === sel.m) || sel.p.v.find(v => v.f === sel.f) || sel.p.v[0];
+function drawSheet(){
+  const p = sel.p, fs = [...new Set(p.v.map(v => v.f))], ms = [...new Set(p.v.filter(v => v.f === sel.f).map(v => v.m))].filter(Boolean);
+  if (ms.length && !ms.includes(sel.m)) sel.m = ms.includes("En grano") ? "En grano" : ms[0];
+  if (!ms.length) sel.m = "";
+  const v = pick(), have = cart.get(v.id) || 0;
+  $("#psheet").innerHTML = `<div class="psheet" role="dialog" aria-modal="true" aria-label="${esc(p.nombre)}">
+    <div class="top"><img src="${esc(v.img || p.img)}" alt="${esc(p.nombre)}" referrerpolicy="no-referrer" width="120" height="155">
+      <div><h3>${esc(p.nombre)}</h3>${p.sub ? `<p class="s">${esc(p.sub)}</p>` : ""}${p.desc ? `<p class="d">${esc(p.desc)}</p>` : ""}</div></div>
+    ${fs.length > 1 || fs[0] ? `<div class="opt"><label>Formato</label><div class="chips">${fs.map(f => { const pv = p.v.find(x => x.f === f); return `<button type="button" data-f="${esc(f)}" aria-pressed="${f === sel.f}">${esc(f || "Único")}<small>${eurC(pv.p)}</small></button>`; }).join("")}</div></div>` : ""}
+    ${ms.length ? `<div class="opt"><label>Molienda</label><div class="chips">${ms.map(m => `<button type="button" data-m="${esc(m)}" aria-pressed="${m === sel.m}">${esc(m)}</button>`).join("")}</div></div>` : ""}
+    <div class="addrow"><span class="step"><button type="button" data-q="-1" aria-label="Menos">−</button><span>${sel.q}</span><button type="button" data-q="1" aria-label="Más">+</button></span>
+      <button type="button" class="btn" id="pAdd">Añadir · ${eurC(v.p * sel.q)}</button></div>
+    ${have ? `<p class="note" style="text-align:center">Ya llevas ${have} de este formato en tu pedido.</p>` : ""}
+    <button type="button" class="x" id="pClose">Cerrar</button></div>`;
+}
+$("#shopList").addEventListener("click", e => { const b = e.target.closest("[data-prod]"); if (b) openProd(b.dataset.prod); });
+$("#psheet").addEventListener("click", e => {
+  if (e.target === $("#psheet") || e.target.closest("#pClose")){ closeProd(); return; }
+  const f = e.target.closest("[data-f]"), m = e.target.closest("[data-m]"), q = e.target.closest("[data-q]");
+  if (f){ sel.f = f.dataset.f; drawSheet(); }
+  else if (m){ sel.m = m.dataset.m; drawSheet(); }
+  else if (q){ sel.q = Math.max(1, Math.min(20, sel.q + Number(q.dataset.q))); drawSheet(); }
+  else if (e.target.closest("#pAdd")){ const v = pick(); cart.set(v.id, Math.min(20, (cart.get(v.id) || 0) + sel.q)); saveCart(); closeProd(); render(); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sel) closeProd(); });
+
+/* ---------- cesta ---------- */
+function totals(){ let n = 0, t = 0; cart.forEach((q, id) => { const x = byVar.get(id); if (x){ n += q; t += q * x.v.p; } }); return {n, t}; }
+function renderBar(){
+  const {n, t} = totals(), on = !$("#shopBody").hidden && $("#shopDone").hidden;
+  $("#shopBar").hidden = !(on && n > 0);
+  $("#shopBarTxt").textContent = `${n} ${n === 1 ? "producto" : "productos"} · ${eurC(t)}`;
+}
+function renderCart(){
+  const {n, t} = totals();
+  $("#shopCheckout").hidden = !n;
+  $("#shopLines").innerHTML = [...cart].map(([id, q]) => { const x = byVar.get(id); if (!x) return "";
+    return `<div class="line"><span><span class="n">${esc(x.p.nombre)}</span><br><span class="p">${esc([vLabel(x.v), eurC(x.v.p)].filter(Boolean).join(" · "))}</span></span>
+      <span class="step"><button type="button" data-ldec="${id}" aria-label="Quitar uno">−</button><span>${q}</span><button type="button" class="add" data-linc="${id}" aria-label="Añadir uno">+</button></span></div>`; }).join("");
+  $("#shopTotal").textContent = eurC(t);
+  renderBar();
+}
+$("#shopLines").addEventListener("click", e => {
+  const i = e.target.closest("[data-linc]"), d = e.target.closest("[data-ldec]"); if (!i && !d) return;
+  const id = Number((i || d).dataset.linc || (i || d).dataset.ldec), q = (cart.get(id) || 0) + (i ? 1 : -1);
+  if (q <= 0) cart.delete(id); else cart.set(id, Math.min(20, q));
+  saveCart(); render();
+});
+$("#shopToCheckout").addEventListener("click", () => $("#shopCheckout").scrollIntoView({behavior:"smooth", block:"start"}));
+$("#sName").value = ls.get("utopia_tienda_nombre") || ""; $("#sTel").value = ls.get("utopia_tienda_tel") || "";
+
+/* ---------- pedir ---------- */
+const ERR = {cerrado:"La tienda está cerrada ahora mismo.", nombre:"Escribe tu nombre.", telefono:"Escribe un teléfono válido para poder avisarte.", agotado:"Algo de tu pedido se acaba de agotar. Hemos actualizado la tienda: revísalo.", lleno:"Estamos recibiendo muchos pedidos. Prueba dentro de un rato, por favor.", productos:"Revisa tu pedido: hay demasiados productos."};
+$("#shopOrder").addEventListener("click", async () => {
+  const err = $("#shopErr"); err.hidden = true;
+  const name = $("#sName").value.trim(), tel = $("#sTel").value.trim(), nota = $("#sNote").value.trim();
+  const fail = (m, el) => { err.textContent = m; err.hidden = false; if (el) el.focus(); };
+  if (name.length < 2) return fail(ERR.nombre, $("#sName"));
+  if (tel.replace(/\D/g, "").length < 9) return fail(ERR.telefono, $("#sTel"));
+  const items = [...cart].map(([v, q]) => ({v, q})); if (!items.length) return;
+  const btn = $("#shopOrder"); btn.disabled = true; btn.textContent = "Enviando…";
+  try {
+    const {data, error} = await sb.rpc("pedido_tienda", {p_nombre:name, p_tel:tel, p_items:items, p_nota:nota});
+    if (error){ const code = Object.keys(ERR).find(k => String(error.message).includes(k)); fail(code ? ERR[code] : "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."); if (code === "agotado" || code === "cerrado"){ loaded = false; load(); } return; }
+    ls.set("utopia_tienda_nombre", name); ls.set("utopia_tienda_tel", tel);
+    const lines = [...cart].map(([id, q]) => { const x = byVar.get(id); return {q, n:x.p.nombre, l:vLabel(x.v)}; });
+    let mine = []; try { mine = JSON.parse(ls.get("utopia_tienda_pedidos") || "[]") || []; } catch(e){}
+    mine.unshift({id:data.id, token:data.token, t:Date.now()}); ls.set("utopia_tienda_pedidos", JSON.stringify(mine.slice(0, 6)));
+    cart.clear(); saveCart(); $("#sNote").value = "";
+    $("#dNum").textContent = "Pedido de tienda nº " + String(data.num).padStart(3, "0");
+    $("#dTxt").textContent = `Te escribiremos al ${tel} cuando esté listo. ${recogida} Pagas al recogerlo.`;
+    $("#dItems").innerHTML = lines.map(l => `<li><b>${l.q}×</b> ${esc(l.n)}${l.l ? ` · <span class="p">${esc(l.l)}</span>` : ""}</li>`).join("");
+    $("#dTotal").textContent = eur(data.total);
+    $("#shopBody").hidden = true; $("#shopDone").hidden = false; renderBar(); window.scrollTo(0, 0);
+  } catch(e){ fail("No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."); }
+  finally { btn.disabled = false; btn.textContent = "Hacer pedido"; }
+});
+$("#dMore").addEventListener("click", () => { $("#shopDone").hidden = true; $("#shopBody").hidden = false; render(); mineT = 0; checkMine(); window.scrollTo(0, 0); });
+
+/* ---------- mis pedidos de tienda (se guardan en este móvil) ---------- */
+let mineT = 0;
+async function checkMine(){
+  if (!sb || Date.now() - mineT < 15000) return; mineT = Date.now();
+  let mine = []; try { mine = JSON.parse(ls.get("utopia_tienda_pedidos") || "[]") || []; } catch(e){}
+  mine = mine.filter(m => m && m.id && Date.now() - (m.t || 0) < 45 * 86400000);
+  const out = [], keep = [];
+  for (const m of mine){
+    try { const {data, error} = await sb.rpc("estado_tienda", {p_id:m.id, p_token:m.token}); if (error){ keep.push(m); continue; }
+      if (!data) continue;
+      if (data.status === "entregado" && Date.now() - (m.t || 0) > 2 * 86400000) continue;
+      keep.push(m); out.push(data);
+    } catch(e){ keep.push(m); }
+  }
+  ls.set("utopia_tienda_pedidos", JSON.stringify(keep));
+  const TXT = {nuevo:["wait","Pedido recibido","Te avisamos cuando esté listo para recoger."], preparado:["ready","¡Listo para recoger!","Pásate por Utopía cuando abramos. Pagas al recogerlo."], entregado:["wait","Entregado","¡Gracias!"], cancelado:["wait","Pedido cancelado",""]};
+  $("#shopMine").innerHTML = out.map(d => { const [c, t, s] = TXT[d.status] || TXT.nuevo;
+    return `<div class="mine ${c}"><b>${t} · nº ${String(d.num).padStart(3, "0")}</b><span>${s} Total ${eur(d.total)}.</span><ul>${(d.items || []).map(i => `<li>${i.qty}× ${esc(i.nombre)}${[i.f, i.m].filter(Boolean).length ? " · " + esc([i.f, i.m].filter(Boolean).join(" · ")) : ""}</li>`).join("")}</ul></div>`; }).join("");
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && document.body.classList.contains("shop")) checkMine(); });
+
+setTab(location.hash === "#tienda" ? "tienda" : "cafe", false);
 })();
 </script>
 </body>
