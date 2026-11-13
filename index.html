@@ -816,7 +816,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 59</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 60</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -1015,7 +1015,7 @@ header{text-align:center;padding-top:4mm}
 .rule::before,.rule::after{content:"";flex:1;border-top:.8pt solid #5e0f1c}
 .rule b{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:11pt;letter-spacing:.3em}
 main{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:safe center;gap:calc(4mm*var(--k));padding:3mm 0}
-.cols{width:78%;margin:0 auto}
+.cols{width:84%;margin:0 auto}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12mm;width:100%}
 .two + .cols{margin-top:2mm}
 .sheet{--k:1}
@@ -1027,7 +1027,7 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .dots{border-bottom:1.2pt dotted #8a4a52;margin-bottom:calc(1.6mm*var(--k));height:0}
 .pr{font-family:"Bebas Neue",sans-serif;font-size:calc(17pt*var(--k));line-height:1;letter-spacing:.04em}
 .ds{font-style:italic;font-size:calc(11pt*var(--k));color:#8a4a52;margin-top:.5mm}
-.esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:78%;margin:0 auto;background:#ecdcd6}
+.esp{border:1.2pt solid #5e0f1c;padding:4mm 6mm;break-inside:avoid;width:84%;margin:0 auto;background:#ecdcd6}
 .esp h2{border:0;text-align:center;margin-bottom:0}
 .by{font-family:"Bebas Neue",sans-serif;font-weight:400;font-size:.8em;letter-spacing:.12em;color:#5e0f1c;margin-left:2mm;text-transform:uppercase}
 .stk{position:absolute;z-index:1;pointer-events:none}
@@ -1035,7 +1035,7 @@ ul{list-style:none;display:grid;gap:calc(2.4mm*var(--k))}
 .stk-r{top:21mm;right:14mm;height:21mm}
 h2.mh{display:flex;align-items:center;gap:3mm}
 h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
-.procedencia{width:78%;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:6mm;padding:calc(1mm*var(--k)) 0}
+.procedencia{width:84%;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:6mm;padding:calc(1mm*var(--k)) 0}
 .pitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;gap:1.4mm;min-height:11mm}
 .plogo{height:6mm;max-width:30mm;object-fit:contain;mix-blend-mode:multiply}
 .plogo.pl-cafe{height:4.2mm}.plogo.pl-matcha{height:7mm}.plogo.pl-chai{height:6mm}
@@ -1050,11 +1050,11 @@ h2.mh .logo{height:calc(9mm*var(--k));max-width:30mm;object-fit:contain;mix-blen
 .org .k{font-family:"Bebas Neue",sans-serif;font-size:calc(15pt*var(--k));letter-spacing:.08em}
 .org .o{font-weight:600;font-size:calc(13pt*var(--k));letter-spacing:.03em}
 .org .p{font-size:calc(9.5pt*var(--k));letter-spacing:.22em;text-transform:uppercase;color:#8a4a52;text-align:right}
-.esp .lim{text-align:center;font-style:italic;font-size:11pt;color:#8a4a52;margin-bottom:3mm}
-footer{display:flex;align-items:center;justify-content:space-between;gap:6mm;border-top:.8pt solid #5e0f1c;padding-top:4mm}
-footer .t{font-family:"Bebas Neue",sans-serif;font-size:15pt;letter-spacing:.2em}
-footer .s{font-size:11pt}
-footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
+.esp .lim{text-align:center;font-style:italic;font-size:calc(11pt*var(--k));color:#8a4a52;margin-bottom:3mm}
+footer{display:flex;align-items:center;justify-content:space-between;gap:5mm;border-top:.6pt solid #5e0f1c;padding-top:2.5mm}
+footer .t{font-family:"Bebas Neue",sans-serif;font-size:11.5pt;letter-spacing:.18em}
+footer .s{font-size:8.5pt}
+footer img{width:17mm;height:17mm;mix-blend-mode:multiply}
 .qr{display:flex;align-items:center;gap:3mm;text-align:right}
 @media print{html,body{background:#f1e9db}.bar{display:none}.fit{margin:0;width:auto!important;height:auto!important}.fit .sheet{position:static;transform:none!important;box-shadow:none}}
 </style></head><body>
@@ -1077,7 +1077,7 @@ footer img{width:24mm;height:24mm;mix-blend-mode:multiply}
 const sheet = document.getElementById("sheet"), fit = document.getElementById("fit");
 const W = sheet.offsetWidth, H = sheet.offsetHeight;
 // Si la carta no cabe en el A4, se encoge la letra poco a poco hasta que quepa
-function fitText(){ const main = sheet.querySelector("main"); let k = 1; sheet.style.setProperty("--k", k); while (main.scrollHeight > main.clientHeight + 1 && k > 0.45){ k -= 0.03; sheet.style.setProperty("--k", k.toFixed(2)); } }
+function fitText(){ const main = sheet.querySelector("main"); let k = 1.45; sheet.style.setProperty("--k", k); while (main.scrollHeight > main.clientHeight + 1 && k > 0.45){ k -= 0.02; sheet.style.setProperty("--k", k.toFixed(2)); } }
 fitText(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitText); addEventListener("load", fitText);
 function layout(){ const vw = document.documentElement.clientWidth || window.innerWidth; const k = Math.min(1, (vw - 24) / W); sheet.style.transform = "scale(" + k + ")"; fit.style.width = W*k + "px"; fit.style.height = H*k + "px"; }
 layout(); addEventListener("resize", layout); addEventListener("load", layout); setTimeout(layout, 300);
@@ -1088,11 +1088,11 @@ document.getElementById("pdfBtn").addEventListener("click", async () => {
     if (document.fonts){ await Promise.all(["400 20px 'Bebas Neue'", "400 20px 'Barlow Condensed'", "500 20px 'Barlow Condensed'", "600 20px 'Barlow Condensed'", "italic 400 20px 'Barlow Condensed'"].map(f => document.fonts.load(f).catch(() => {}))); await document.fonts.ready; }
     fitText();
     const t = sheet.style.transform; sheet.style.transform = "none";
-    const canvas = await html2canvas(sheet, {scale: 2.6, backgroundColor: "#f1e9db", useCORS: true,
+    const canvas = await html2canvas(sheet, {scale: 3.6, backgroundColor: "#f1e9db", useCORS: true,
       onclone: async d => { try { if (d.fonts){ await d.fonts.ready; } } catch(e){} await new Promise(r => setTimeout(r, 250)); }});
     sheet.style.transform = t;
     const pdf = new jspdf.jsPDF({unit: "mm", format: "a4", orientation: "portrait"});
-    pdf.addImage(canvas.toDataURL("image/jpeg", 0.92), "JPEG", 0, 0, 210, 297);
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.96), "JPEG", 0, 0, 210, 297, undefined, "NONE");
     const url = URL.createObjectURL(pdf.output("blob"));
     const a = document.createElement("a"); a.href = url; a.download = "Carta-Utopia.pdf";
     // En iPhone se abre el PDF: desde ahí, Compartir → Guardar en Archivos o Imprimir
