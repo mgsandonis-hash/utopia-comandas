@@ -1,0 +1,36 @@
+{
+  "change": 3.9,
+  "createdAt": 1793466079277,
+  "customer": "getdjd",
+  "day": "2026-10-31",
+  "deliveredAt": 1793466092477,
+  "items": [
+    {
+      "name": "Hot latte tiramisú",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "name": "Cloud cold brew",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    }
+  ],
+  "num": 3,
+  "pay": "efectivo",
+  "readyAt": 1793466090107,
+  "received": 15,
+  "status": "entregado",
+  "total": 11.1
+}

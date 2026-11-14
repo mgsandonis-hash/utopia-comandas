@@ -1,0 +1,15 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Matcha",
+  "name": "Iced matcha coco mango",
+  "order": 3,
+  "price": 3.8,
+  "receta": {
+    "coco": 180,
+    "matcha": 3,
+    "tapa": 1,
+    "vaso-frio": 1
+  },
+  "station": "cocina"
+}

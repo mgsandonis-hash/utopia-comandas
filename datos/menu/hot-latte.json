@@ -1,0 +1,15 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Cafés",
+  "name": "Hot latte",
+  "order": 7,
+  "price": 2.2,
+  "receta": {
+    "cafe": 18,
+    "leche": 200,
+    "tapa": 1,
+    "vaso-caliente": 1
+  },
+  "station": "barra"
+}

@@ -1,0 +1,12 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Repostería",
+  "name": "Carrot cake",
+  "order": 2,
+  "price": 3,
+  "receta": {
+    "carrot": 1
+  },
+  "station": "cocina"
+}

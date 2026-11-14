@@ -1,0 +1,66 @@
+{
+  "change": 0,
+  "createdAt": 1793469314825,
+  "customer": "Nº 12",
+  "day": "2026-10-31",
+  "deliveredAt": 1793469481678,
+  "entregados": [
+    0,
+    1,
+    3
+  ],
+  "items": [
+    {
+      "group": "Repostería",
+      "id": "carrot-cake",
+      "name": "Carrot cake",
+      "note": "",
+      "price": 3,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Repostería",
+      "id": "cookie-bucle",
+      "name": "Cookie avena, pecanas y caramelo",
+      "note": "",
+      "price": 3,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Cafés",
+      "id": "hot-latte",
+      "name": "Hot latte",
+      "note": "",
+      "price": 2.2,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "iced-matcha-coco-mango",
+      "name": "Iced matcha coco mango",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Matcha",
+      "id": "hot-matcha-coco",
+      "name": "Hot matcha coco",
+      "note": "",
+      "price": 3.2,
+      "qty": 1,
+      "station": "barra"
+    }
+  ],
+  "num": 12,
+  "pay": "efectivo",
+  "readyAt": 1793469469057,
+  "received": 15.2,
+  "status": "entregado",
+  "total": 15.2,
+  "vasos": true
+}

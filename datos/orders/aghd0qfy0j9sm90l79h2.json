@@ -1,0 +1,42 @@
+{
+  "change": 8.9,
+  "createdAt": 1793468146590,
+  "customer": "ñkugpigubjñ",
+  "day": "2026-10-31",
+  "deliveredAt": 1793468233994,
+  "items": [
+    {
+      "group": "Cafés",
+      "id": "hot-latte-tiramisu",
+      "name": "Hot latte tiramisú",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Cafés",
+      "id": "cold-brew",
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "iced-matcha-coco-mango",
+      "name": "Iced matcha coco mango",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    }
+  ],
+  "num": 7,
+  "pay": "efectivo",
+  "readyAt": 1793468215386,
+  "received": 20,
+  "status": "entregado",
+  "total": 11.1
+}

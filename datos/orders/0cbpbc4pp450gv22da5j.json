@@ -1,0 +1,65 @@
+{
+  "change": 2,
+  "createdAt": 1793469282743,
+  "customer": "Bdjdodbd",
+  "day": "2026-10-31",
+  "deliveredAt": 1793469479759,
+  "entregados": [
+    1,
+    2
+  ],
+  "items": [
+    {
+      "group": "Matcha",
+      "id": "hot-matcha-coco",
+      "name": "Hot matcha coco",
+      "note": "",
+      "price": 3.2,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "iced-matcha-coco",
+      "name": "Iced matcha coco",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Cafés",
+      "id": "cold-brew",
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Cafés",
+      "id": "cloud-cold-brew",
+      "name": "Cloud cold brew",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Cafés",
+      "id": "iced-latte-tiramisu",
+      "name": "Iced latte tiramisú",
+      "note": "",
+      "price": 4,
+      "qty": 1,
+      "station": "barra"
+    }
+  ],
+  "num": 11,
+  "pay": "efectivo",
+  "readyAt": 1793469465526,
+  "received": 20,
+  "status": "entregado",
+  "total": 18,
+  "vasos": true
+}

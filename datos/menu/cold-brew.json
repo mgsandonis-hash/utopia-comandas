@@ -1,0 +1,14 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Cafés",
+  "name": "Cold brew",
+  "order": 3,
+  "price": 3.5,
+  "receta": {
+    "cafe": 20,
+    "tapa": 1,
+    "vaso-frio": 1
+  },
+  "station": "cocina"
+}

@@ -1,0 +1,73 @@
+{
+  "change": 0,
+  "createdAt": 1793468540765,
+  "customer": "sthysdtsrt",
+  "day": "2026-10-31",
+  "deliveredAt": 1793469228987,
+  "entregados": [
+    4,
+    5
+  ],
+  "items": [
+    {
+      "group": "Cafés",
+      "id": "cold-brew",
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Cafés",
+      "id": "cloud-cold-brew",
+      "name": "Cloud cold brew",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "iced-matcha-coco-mango",
+      "name": "Iced matcha coco mango",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "hot-matcha-coco",
+      "name": "Hot matcha coco",
+      "note": "",
+      "price": 3.2,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Repostería",
+      "id": "cookie-bucle",
+      "name": "Cookie avena, pecanas y caramelo",
+      "note": "",
+      "price": 3,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Repostería",
+      "id": "carrot-cake",
+      "name": "Carrot cake",
+      "note": "",
+      "price": 3,
+      "qty": 1,
+      "station": "cocina"
+    }
+  ],
+  "num": 9,
+  "pay": "efectivo",
+  "readyAt": 1793469213251,
+  "received": 20.3,
+  "status": "entregado",
+  "total": 20.3
+}

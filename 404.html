@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Utopía Coffee Club se ha mudado</title>
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://utopiacoffeeclub.github.io/">
+<script>
+// La app de Utopía Coffee Club ahora está en https://utopiacoffeeclub.github.io/
+(function(){
+  var p = location.pathname.replace(/^\/utopia-comandas\/?/, "");
+  if (!p || p === "/") p = "";
+  var url = "https://utopiacoffeeclub.github.io/" + p + location.search + location.hash;
+  try { if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(function(r){ r.forEach(function(x){ x.unregister(); }); }); } catch(e){}
+  location.replace(url);
+})();
+</script>
+<style>body{margin:0;background:#f1e9db;color:#3b0a12;font:18px/1.4 "Arial Narrow",Arial,sans-serif;padding:40px 20px;text-align:center}a{color:#5e0f1c;font-weight:700}</style>
+</head>
+<body>
+<p><b>UTOPÍA COFFEE CLUB</b></p>
+<p>Nos hemos mudado. Si no te lleva sola, toca aquí:</p>
+<p><a href="https://utopiacoffeeclub.github.io/">utopiacoffeeclub.github.io/</a></p>
+</body>
+</html>

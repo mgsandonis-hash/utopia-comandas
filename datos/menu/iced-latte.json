@@ -1,0 +1,15 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Cafés",
+  "name": "Iced latte",
+  "order": 6,
+  "price": 2.5,
+  "receta": {
+    "cafe": 18,
+    "leche": 180,
+    "tapa": 1,
+    "vaso-frio": 1
+  },
+  "station": "barra"
+}

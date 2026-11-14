@@ -1,0 +1,15 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Matcha",
+  "name": "Hot matcha coco",
+  "order": 2,
+  "price": 3.2,
+  "receta": {
+    "coco": 200,
+    "matcha": 3,
+    "tapa": 1,
+    "vaso-caliente": 1
+  },
+  "station": "barra"
+}

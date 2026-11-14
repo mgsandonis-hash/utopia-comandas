@@ -1,0 +1,15 @@
+{
+  "disponible": true,
+  "especial": false,
+  "group": "Cafés",
+  "name": "Cloud cold brew",
+  "order": 4,
+  "price": 3.8,
+  "receta": {
+    "cafe": 20,
+    "leche": 60,
+    "tapa": 1,
+    "vaso-frio": 1
+  },
+  "station": "barra"
+}

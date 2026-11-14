@@ -1,0 +1,36 @@
+{
+  "change": 0,
+  "createdAt": 1793466085387,
+  "customer": "eyuyturty",
+  "day": "2026-10-31",
+  "deliveredAt": 1793466093077,
+  "items": [
+    {
+      "name": "Hot latte tiramisú",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "name": "Hot matcha coco",
+      "note": "",
+      "price": 3.2,
+      "qty": 1,
+      "station": "barra"
+    }
+  ],
+  "num": 4,
+  "pay": "efectivo",
+  "readyAt": 1793466090687,
+  "received": 10.5,
+  "status": "entregado",
+  "total": 10.5
+}

@@ -1,0 +1,60 @@
+{
+  "change": 0,
+  "createdAt": 1793468548796,
+  "customer": "srthsrthsrt",
+  "day": "2026-10-31",
+  "deliveredAt": 1793469233186,
+  "items": [
+    {
+      "group": "Cafés",
+      "id": "hot-latte-tiramisu",
+      "name": "Hot latte tiramisú",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Cafés",
+      "id": "cold-brew",
+      "name": "Cold brew",
+      "note": "",
+      "price": 3.5,
+      "qty": 1,
+      "station": "cocina"
+    },
+    {
+      "group": "Matcha",
+      "id": "iced-matcha-coco-mango",
+      "name": "Iced matcha coco mango",
+      "note": "",
+      "price": 3.8,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Matcha",
+      "id": "hot-matcha-coco",
+      "name": "Hot matcha coco",
+      "note": "",
+      "price": 3.2,
+      "qty": 1,
+      "station": "barra"
+    },
+    {
+      "group": "Repostería",
+      "id": "carrot-cake",
+      "name": "Carrot cake",
+      "note": "",
+      "price": 3,
+      "qty": 1,
+      "station": "cocina"
+    }
+  ],
+  "num": 10,
+  "pay": "efectivo",
+  "readyAt": 1793469217315,
+  "received": 17.3,
+  "status": "entregado",
+  "total": 17.3
+}
