@@ -8,8 +8,13 @@
 <meta name="theme-color" content="#f1e9db">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
+<style>
+@font-face{font-family:"Bebas Neue";src:url("fonts/bebas.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-400i.woff2") format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-500.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-600.woff2") format("woff2");font-weight:600 700;font-style:normal;font-display:swap}
+</style>
 <style>
 /* Que no se seleccione el texto al tocar (como una app); los campos sí */
 html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -141,8 +146,14 @@ body:not(.shop) #secShop, body:not(.shop) #shopBar{display:none!important}
 .line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .line .n{font-weight:700;overflow-wrap:anywhere}
 .line .p{color:var(--muted);font-size:.95rem}
-input[type=tel],textarea{width:100%;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:1.2rem;min-width:0;font-family:inherit;color:inherit}
+input[type=tel],input[type=email],textarea{width:100%;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:13px 14px;font-size:1.2rem;min-width:0;font-family:inherit;color:inherit}
 textarea{font-size:1.05rem;resize:vertical;min-height:64px}
+.consent{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:start;text-transform:none;letter-spacing:0;font-weight:500;font-size:1rem;color:var(--text)}
+.consent input{width:24px;height:24px;margin:0;accent-color:var(--ink)}
+.consent a,.legal a,.foot a{color:var(--ink)}
+.legal{color:var(--muted);font-size:.85rem;margin:0;line-height:1.3}
+.foot{text-align:center;color:var(--muted);font-size:.85rem;margin:28px 0 0;display:grid;gap:6px;justify-items:center}
+.foot button{border:0;background:none;color:var(--muted);text-decoration:underline;font:inherit;padding:4px}
 .mine{background:var(--ok-soft);border:1.5px solid var(--ok);border-radius:14px;padding:12px 14px;margin-top:12px;display:grid;gap:4px}
 .mine.wait{background:var(--surface);border-color:var(--line)}
 .mine b{font-family:var(--display);font-weight:400;font-size:1.4rem;letter-spacing:.05em;color:var(--ink)}
@@ -174,6 +185,7 @@ textarea{font-size:1.05rem;resize:vertical;min-height:64px}
       <input type="text" id="name" maxlength="30" autocomplete="given-name" placeholder="Te llamaremos por este nombre" enterkeyhint="send">
       <div class="total"><span>Total</span><span id="total">0,00 €</span></div>
       <p class="note" id="payNote">Pásate por caja a pagar en efectivo. Empezamos a prepararlo en cuanto pagas.</p>
+      <p class="legal">Tu nombre solo se usa para llamarte al recoger el pedido y se borra a los pocos días. <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a></p>
       <p class="err" id="err" hidden></p>
       <button type="button" class="btn" id="order">Hacer pedido</button>
       <div id="payChoice" class="paysel" hidden><button type="button" id="payAlt"></button></div>
@@ -216,12 +228,14 @@ textarea{font-size:1.05rem;resize:vertical;min-height:64px}
         <div id="shopLines"></div>
         <div><label for="sName">Tu nombre</label></div>
         <input type="text" id="sName" maxlength="40" autocomplete="name" placeholder="Nombre y apellido">
-        <div><label for="sTel">Tu teléfono</label></div>
-        <input type="tel" id="sTel" maxlength="16" autocomplete="tel" inputmode="tel" placeholder="Te avisamos cuando esté listo">
+        <div><label for="sMail">Tu correo electrónico</label></div>
+        <input type="email" id="sMail" maxlength="120" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="Te avisamos ahí cuando esté listo">
         <div><label for="sNote">¿Algo que debamos saber? (opcional)</label></div>
         <textarea id="sNote" maxlength="200" placeholder="Por ejemplo: molido para cafetera italiana"></textarea>
         <div class="total"><span>Total</span><span id="shopTotal">0,00 €</span></div>
         <p class="note" id="shopNote"></p>
+        <label class="consent"><input type="checkbox" id="sOk"><span>He leído y acepto la <a href="privacidad.html" target="_blank" rel="noopener">política de privacidad</a>.</span></label>
+        <p class="legal">Usamos tu nombre y tu correo solo para preparar este pedido y avisarte. No los cedemos a nadie ni te enviamos publicidad.</p>
         <p class="err" id="shopErr" hidden></p>
         <button type="button" class="btn" id="shopOrder">Hacer pedido</button>
       </div>
@@ -235,6 +249,8 @@ textarea{font-size:1.05rem;resize:vertical;min-height:64px}
       <button type="button" class="btn" id="dMore">Seguir mirando la tienda</button>
     </div>
   </div>
+  <p class="foot"><a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>
+    <button type="button" id="wipe">Borrar mis datos guardados en este móvil</button></p>
 </main>
 <div id="psheet" class="sheetbg" hidden></div>
 <div class="bar" id="shopBar" hidden><span id="shopBarTxt"></span><button type="button" id="shopToCheckout">Ver pedido</button></div>
@@ -242,7 +258,7 @@ textarea{font-size:1.05rem;resize:vertical;min-height:64px}
 <div class="bar" id="bar" hidden><span id="barTxt"></span><button type="button" id="toCheckout">Pedir</button></div>
 
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.js"></script>
 <script>
 (() => {
 const $ = s => document.querySelector(s);
@@ -543,28 +559,29 @@ $("#shopLines").addEventListener("click", e => {
   saveCart(); render();
 });
 $("#shopToCheckout").addEventListener("click", () => $("#shopCheckout").scrollIntoView({behavior:"smooth", block:"start"}));
-$("#sName").value = ls.get("utopia_tienda_nombre") || ""; $("#sTel").value = ls.get("utopia_tienda_tel") || "";
+$("#sName").value = ls.get("utopia_tienda_nombre") || ""; $("#sMail").value = ls.get("utopia_tienda_correo") || "";
 
 /* ---------- pedir ---------- */
-const ERR = {cerrado:"La tienda está cerrada ahora mismo.", nombre:"Escribe tu nombre.", telefono:"Escribe un teléfono válido para poder avisarte.", agotado:"Algo de tu pedido se acaba de agotar. Hemos actualizado la tienda: revísalo.", lleno:"Estamos recibiendo muchos pedidos. Prueba dentro de un rato, por favor.", productos:"Revisa tu pedido: hay demasiados productos."};
+const ERR = {cerrado:"La tienda está cerrada ahora mismo.", nombre:"Escribe tu nombre.", correo:"Escribe un correo electrónico válido para poder avisarte.", privacidad:"Marca la casilla de la política de privacidad para poder hacer el pedido.", agotado:"Algo de tu pedido se acaba de agotar. Hemos actualizado la tienda: revísalo.", lleno:"Estamos recibiendo muchos pedidos. Prueba dentro de un rato, por favor.", productos:"Revisa tu pedido: hay demasiados productos."};
 $("#shopOrder").addEventListener("click", async () => {
   const err = $("#shopErr"); err.hidden = true;
-  const name = $("#sName").value.trim(), tel = $("#sTel").value.trim(), nota = $("#sNote").value.trim();
+  const name = $("#sName").value.trim(), mail = $("#sMail").value.trim().toLowerCase(), nota = $("#sNote").value.trim();
   const fail = (m, el) => { err.textContent = m; err.hidden = false; if (el) el.focus(); };
   if (name.length < 2) return fail(ERR.nombre, $("#sName"));
-  if (tel.replace(/\D/g, "").length < 9) return fail(ERR.telefono, $("#sTel"));
+  if (!/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(mail)) return fail(ERR.correo, $("#sMail"));
+  if (!$("#sOk").checked) return fail(ERR.privacidad, $("#sOk"));
   const items = [...cart].map(([v, q]) => ({v, q})); if (!items.length) return;
   const btn = $("#shopOrder"); btn.disabled = true; btn.textContent = "Enviando…";
   try {
-    const {data, error} = await sb.rpc("pedido_tienda", {p_nombre:name, p_tel:tel, p_items:items, p_nota:nota});
+    const {data, error} = await sb.rpc("pedido_tienda_correo", {p_nombre:name, p_email:mail, p_items:items, p_nota:nota, p_acepta:true});
     if (error){ const code = Object.keys(ERR).find(k => String(error.message).includes(k)); fail(code ? ERR[code] : "No se pudo enviar. Revisa tu conexión y vuelve a intentarlo."); if (code === "agotado" || code === "cerrado"){ loaded = false; load(); } return; }
-    ls.set("utopia_tienda_nombre", name); ls.set("utopia_tienda_tel", tel);
+    ls.set("utopia_tienda_nombre", name); ls.set("utopia_tienda_correo", mail); try { localStorage.removeItem("utopia_tienda_tel"); } catch(e){}
     const lines = [...cart].map(([id, q]) => { const x = byVar.get(id); return {q, n:x.p.nombre, l:vLabel(x.v)}; });
     let mine = []; try { mine = JSON.parse(ls.get("utopia_tienda_pedidos") || "[]") || []; } catch(e){}
     mine.unshift({id:data.id, token:data.token, t:Date.now()}); ls.set("utopia_tienda_pedidos", JSON.stringify(mine.slice(0, 6)));
-    cart.clear(); saveCart(); $("#sNote").value = "";
+    cart.clear(); saveCart(); $("#sNote").value = ""; $("#sOk").checked = false;
     $("#dNum").textContent = "Pedido de tienda nº " + String(data.num).padStart(3, "0");
-    $("#dTxt").textContent = `Te escribiremos al ${tel} cuando esté listo. ${recogida} Pagas al recogerlo.`;
+    $("#dTxt").textContent = `Te escribiremos a ${mail} cuando esté listo. ${recogida} Pagas al recogerlo.`;
     $("#dItems").innerHTML = lines.map(l => `<li><b>${l.q}×</b> ${esc(l.n)}${l.l ? ` · <span class="p">${esc(l.l)}</span>` : ""}</li>`).join("");
     $("#dTotal").textContent = eur(data.total);
     $("#shopBody").hidden = true; $("#shopDone").hidden = false; renderBar(); window.scrollTo(0, 0);
@@ -590,9 +607,20 @@ async function checkMine(){
   ls.set("utopia_tienda_pedidos", JSON.stringify(keep));
   const TXT = {nuevo:["wait","Pedido recibido","Te avisamos cuando esté listo para recoger."], preparado:["ready","¡Listo para recoger!","Pásate por Utopía cuando abramos. Pagas al recogerlo."], entregado:["wait","Entregado","¡Gracias!"], cancelado:["wait","Pedido cancelado",""]};
   $("#shopMine").innerHTML = out.map(d => { const [c, t, s] = TXT[d.status] || TXT.nuevo;
-    return `<div class="mine ${c}"><b>${t} · nº ${String(d.num).padStart(3, "0")}</b><span>${s} Total ${eur(d.total)}.</span><ul>${(d.items || []).map(i => `<li>${i.qty}× ${esc(i.nombre)}${[i.f, i.m].filter(Boolean).length ? " · " + esc([i.f, i.m].filter(Boolean).join(" · ")) : ""}</li>`).join("")}</ul></div>`; }).join("");
+    const s2 = d.pagado && d.status !== "entregado" && d.status !== "cancelado" ? s.replace(" Pagas al recogerlo.", "") + " Ya está pagado." : s;
+    return `<div class="mine ${c}"><b>${t} · nº ${String(d.num).padStart(3, "0")}</b><span>${s2} Total ${eur(d.total)}.</span><ul>${(d.items || []).map(i => `<li>${i.qty}× ${esc(i.nombre)}${[i.f, i.m].filter(Boolean).length ? " · " + esc([i.f, i.m].filter(Boolean).join(" · ")) : ""}</li>`).join("")}</ul></div>`; }).join("");
 }
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && document.body.classList.contains("shop")) checkMine(); });
+
+// Borra lo que esta página guarda en el móvil: nombre, correo, cesta y la lista de pedidos hechos
+let wipeArmed = false;
+$("#wipe").addEventListener("click", () => {
+  const b = $("#wipe");
+  if (!wipeArmed){ wipeArmed = true; b.textContent = "¿Seguro? Toca otra vez para borrarlos"; setTimeout(() => { if (wipeArmed){ wipeArmed = false; b.textContent = "Borrar mis datos guardados en este móvil"; } }, 4000); return; }
+  wipeArmed = false;
+  try { Object.keys(localStorage).filter(k => k.startsWith("utopia")).forEach(k => localStorage.removeItem(k)); } catch(e){}
+  location.reload();
+});
 
 setTab(location.hash === "#tienda" ? "tienda" : "cafe", false);
 })();

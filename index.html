@@ -19,12 +19,17 @@ html{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webki
 input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 :root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0}img{max-width:100%}[hidden]{display:none!important}</style>
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="vendor/supabase.js"></script>
 <script src="store.js"></script>
 </head>
 <body>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;500;600;700&display=swap">
+<style>
+@font-face{font-family:"Bebas Neue";src:url("fonts/bebas.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-400.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-400i.woff2") format("woff2");font-weight:400;font-style:italic;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-500.woff2") format("woff2");font-weight:500;font-style:normal;font-display:swap}
+@font-face{font-family:"Barlow Condensed";src:url("fonts/barlow-600.woff2") format("woff2");font-weight:600 700;font-style:normal;font-display:swap}
+</style>
 <style>
 /* Layout: estilo de las cartas de Utopía (papel crema, granate, Bebas + Barlow Condensed, filetes). Seis vistas bajo una barra de pestañas fija */
 :root{
@@ -101,6 +106,8 @@ button{cursor:pointer}
 .tp li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:baseline}
 .tp li small{color:var(--muted)}
 .tp .h .tot{font-family:var(--display);font-size:1.6rem;color:var(--ink);letter-spacing:.04em}
+.tpay{font-weight:700;letter-spacing:.04em;font-size:.9rem;color:var(--danger)}
+.tpay.ok{color:var(--ready)}
 .tp .nota{border-left:3px solid var(--accent);padding:4px 10px;font-style:italic}
 .tp a.btn{text-decoration:none;display:inline-block}
 .tcat{display:grid;grid-template-columns:44px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
@@ -435,6 +442,14 @@ table.t tr:last-child td{border-bottom:0}
 #useNum[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 /* Preparación */
 .pend.wrap{flex-wrap:wrap}
+.pend.unpaid{border:2px solid var(--danger)}
+.pend .amt{font-family:var(--display);font-size:1.35rem;color:var(--ink);letter-spacing:.03em}
+.pend .acts{display:flex;gap:8px;flex-wrap:wrap;flex-basis:100%}
+.pend .acts .btn{flex:1}
+.pend.fin{cursor:pointer}
+.pend.fin.off{opacity:.6}
+.pend.fin.off .pname{text-decoration:line-through}
+.unpaidtag{display:inline-block;background:var(--danger);color:#fff;font-weight:700;font-size:.78rem;letter-spacing:.05em;border-radius:6px;padding:2px 7px;margin-left:6px;vertical-align:middle}
 .cups{flex-basis:100%;margin:2px 0 0;padding:8px 10px;list-style:none;display:grid;gap:4px;background:var(--bg);border-radius:8px;font-size:.95rem}
 .cups span{color:var(--muted)}
 .pend [data-cups]{flex-basis:100%}
@@ -483,6 +498,11 @@ table.t tr:last-child td{border-bottom:0}
       <button type="button" role="tab" data-mode="entregar" aria-selected="false">Entregar <span class="mbadge" id="modeBadge" hidden></span></button>
     </div>
 
+    <section id="unpaidSec" hidden>
+      <div class="sec-h"><h2>Sin cobrar</h2><span class="count" id="unpaidCount"></span><span class="mins aside" id="unpaidTot"></span></div>
+      <div class="pending" id="unpaidList"></div>
+    </section>
+
     <section id="readySec" class="m-entregar">
       <div class="sec-h"><h2>Para entregar</h2><span class="count" id="readyCount"></span></div>
       <div class="ready-list" id="readyList"></div>
@@ -525,6 +545,7 @@ table.t tr:last-child td{border-bottom:0}
         </div>
         <div class="err" id="sendErr" hidden></div>
         <button type="button" class="btn primary" id="sendBtn" style="padding:14px;font-size:1.05rem">Cobrado · enviar a cafetera</button>
+        <button type="button" class="btn" id="sendLater" style="padding:12px">Enviar sin cobrar · se cobra luego</button>
       </div>
     </section>
 
@@ -533,9 +554,10 @@ table.t tr:last-child td{border-bottom:0}
       <div class="pending" id="pendList"></div>
     </section>
 
-    <section id="doneSec" class="m-entregar" hidden>
-      <details class="donebox"><summary id="doneSum">Entregados hace poco</summary>
-      <div class="pending" id="doneList" style="margin-top:8px"></div></details>
+    <section id="doneSec" hidden>
+      <details class="donebox" id="doneBox"><summary id="doneSum">Pedidos finalizados</summary>
+      <p class="hint" style="margin:8px 0">Los pedidos ya entregados o anulados de hoy. Toca uno para corregirlo.</p>
+      <div class="pending" id="doneList"></div></details>
     </section>
   </div>
 
@@ -565,7 +587,7 @@ table.t tr:last-child td{border-bottom:0}
   <div id="v-tienda" hidden>
     <section>
       <div class="sec-h"><h2>Pedidos de tienda</h2></div>
-      <p class="hint">Café en grano y chocolate de Puchero que los clientes piden desde el móvil. Se recogen y se pagan aquí.</p>
+      <p class="hint">Café en grano y chocolate de Puchero que los clientes piden desde el móvil. Primero se cobra (el efectivo entra en la caja al momento) y después se marca como entregado.</p>
       <div class="kpis" id="tKpis" style="margin-top:10px"></div>
       <div id="tNew" class="tlist" style="margin-top:12px"></div>
       <div id="tReady" class="tlist" style="margin-top:12px"></div>
@@ -599,6 +621,9 @@ table.t tr:last-child td{border-bottom:0}
     <section id="claudeSec" hidden><details class="fold" id="f-claude" open><summary class="sec-h"><h2>Sugerencias de la semana</h2><span class="count" id="claudeWhen"></span></summary><div class="foldbody">
       <div class="sugs" id="claudeSugs"></div>
       <p class="hint" style="margin-top:6px">Las prepara Claude una vez por semana con vuestras ventas, el stock, los costes y la previsión del tiempo. Toca «Visto» para quitarlas.</p>
+    </div></details></section>
+    <section id="safeSec"><details class="fold" id="f-safe" open><summary class="sec-h"><h2>Caja fuerte</h2><span class="count" id="safeTot"></span></summary><div class="foldbody">
+      <div id="safeBox"></div>
     </div></details></section>
     <section id="openSec" hidden>
       <div class="sec-h"><h2>Abrir caja</h2></div>
@@ -862,7 +887,17 @@ table.t tr:last-child td{border-bottom:0}
         <div class="field" style="max-width:260px"><label for="bizumIn">Número de Bizum (vacío = sin Bizum)</label><input type="text" id="bizumIn" inputmode="tel" autocomplete="off" placeholder="600 00 00 00"></div>
         <div class="toggles"><button type="button" class="sw" id="fidToggle" aria-pressed="true">Fidelidad: una bebida gratis</button>
           <label class="check" for="fidCada">cada <input type="number" id="fidCada" min="2" max="30" step="1" style="width:70px"> visitas</label></div>
-      </div></section></div>
+      </div></section>
+      <section><div class="sec-h"><h2>Protección de datos</h2></div>
+        <p class="hint">Estos datos salen en la política de privacidad que ven los clientes al pedir desde el móvil. La ley obliga a decir quién es el responsable y cómo contactar.</p>
+        <form class="addform" id="legalForm" style="margin-top:8px">
+          <div class="field"><label for="lgTit">Titular (persona o empresa)</label><input type="text" id="lgTit" maxlength="80" autocomplete="off" placeholder="Nombre y apellidos o razón social"></div>
+          <div class="field"><label for="lgNif">NIF / CIF</label><input type="text" id="lgNif" maxlength="12" autocomplete="off"></div>
+          <div class="field"><label for="lgDir">Dirección</label><input type="text" id="lgDir" maxlength="120" autocomplete="off" placeholder="Calle, número, código postal y ciudad"></div>
+          <div class="field"><label for="lgMail">Correo de contacto</label><input type="email" id="lgMail" maxlength="120" autocomplete="off"></div>
+          <button type="submit" class="btn primary">Guardar</button>
+          <a class="btn" href="privacidad.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">Ver la política</a>
+        </form></section></div>
     <div data-ajp="equipo" hidden><section><div class="card" style="display:grid;gap:12px">
         <p class="hint" id="roleTxt"></p>
         <div class="toggles"><button type="button" class="sw" id="cupsToggle" aria-pressed="true">Preparo los vasos en el mostrador mientras cobro</button></div>
@@ -872,7 +907,7 @@ table.t tr:last-child td{border-bottom:0}
           <div class="field"><label for="jugG">Jarra grande: cafés que salen</label><input type="number" id="jugG" min="1" max="6" step="1" inputmode="numeric"></div>
           <div class="field"><label for="jugP">Jarra pequeña: cafés que salen</label><input type="number" id="jugP" min="1" max="6" step="1" inputmode="numeric"></div>
         </div>
-        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 61</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
+        <div class="row"><button type="button" class="btn" id="changeRole">Cambiar uso de este dispositivo</button><button type="button" class="btn" id="redoSetup">Repetir configuración inicial</button><button type="button" class="btn" id="forceUpdate">Actualizar la app</button><span class="hint" id="appVer" style="align-self:center">Versión 62</span><button type="button" class="btn ghost danger" id="logoutBtn">Cerrar sesión</button></div>
         <p class="legal">Esta app organiza pedidos, caja y números internos. No emite tickets ni facturas: seguid usando vuestro sistema de tickets y consultad con la gestoría qué programa de facturación necesitáis por la normativa Veri*factu.</p>
       </div></section></div>
   </div>
@@ -1267,7 +1302,7 @@ function aggregate(list){
     const tc = cents(o.total); a.n++; a.ventas += tc;
     a.propinas += cents(o.propina);
     if (o.pay === "bizum") a.bizum += tc;
-    if (o.pay === "debe") a.debe += tc;
+    if (o.pay === "debe" || o.pay === "pendiente") a.debe += tc;
     if (!o.invitacion){ const d = new Date(o.createdAt); a.mins.push([d.getHours()*60 + d.getMinutes(), tc, slug(o.customer||"")]); }
     (o.items||[]).forEach(i => { if (!i.gratis) return; const v = cents(i.precioCarta)*i.qty; if (i.gratis === "fidelidad"){ a.fidel.n += i.qty; a.fidel.c += v; } else { a.invit.n += i.qty; a.invit.c += v; } });
     // Productos que se piden juntos (para sugerir combos)
@@ -1454,7 +1489,7 @@ function renderReady(){
     const lines = (o.items||[]).map((it,i) => itemLine(o, it, i)).join("");
     const some = deliveredSet(o).size > 0, hasBarItems = (o.items||[]).some(it => !mine(it));
     return `<article class="ready">
-      <div class="who"><span class="num">#${pad(o.num)}</span><span class="name">${esc(o.customer)}</span></div>
+      <div class="who"><span class="num">#${pad(o.num)}</span><span class="name">${esc(o.customer)}${o.pay === "pendiente" ? `<span class="unpaidtag">SIN COBRAR · ${eur(o.total)}</span>` : ""}</span></div>
       <ul class="lines">${lines}</ul>
       <div class="row"><button type="button" class="btn deliver" data-deliver="${o.id}">${some ? "Entregar el resto" : "Entregado"}</button>
       ${hasBarItems ? `<button type="button" class="btn ghost" data-back="${o.id}">Volver a cafetera</button>` : ""}
@@ -1544,7 +1579,7 @@ function renderCart(){
   $("#invBtn").setAttribute("aria-pressed", String(invMode === "invitacion"));
   $("#casaBtn").setAttribute("aria-pressed", String(invMode === "casa"));
   if (payMethod === "bizum" && !bizumNum()) payMethod = "efectivo";
-  $("#paySeg").hidden = !!invMode;
+  $("#paySeg").hidden = !!invMode; $("#sendLater").hidden = !!invMode || !cart.size;
   $('#paySeg [data-pay="bizum"]').hidden = !bizumNum();
   $("#paySeg").querySelectorAll("[data-pay]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pay === payMethod)));
   const biz = payMethod === "bizum" && !invMode;
@@ -1584,6 +1619,56 @@ $("#quickCash").addEventListener("click", e => {
   $("#recv").value = b.dataset.cash === "exact" ? "" : (Number(b.dataset.cash)/100).toFixed(2).replace(".", ",");
   renderCash();
 });
+/* Pedidos enviados a la cafetera sin cobrar: se cobran aquí cuando el cliente paga (aunque sea otro día) */
+const unpaidOrders = () => orders.filter(o => o.pay === "pendiente" && o.status !== "anulado" && o.status !== "porcobrar").sort((a,b) => a.createdAt - b.createdAt);
+const ST_TXT = {nuevo:"en cafetera", listo:"para entregar", entregado:"entregado", anulado:"anulado"};
+function renderUnpaid(){
+  const list = unpaidOrders();
+  $("#unpaidSec").hidden = !list.length;
+  $("#unpaidCount").textContent = list.length || "";
+  $("#unpaidTot").textContent = list.length ? eurC(list.reduce((a,o) => a + cents(o.total), 0)) : "";
+  $("#unpaidList").innerHTML = list.map(o => `<div class="pend wrap unpaid">
+    <span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
+    <span class="mins">${o.day === dayKey() ? hhmm(o.createdAt) : dmy(o.createdAt)} · ${ST_TXT[o.status] || ""}</span><span class="amt">${eur(o.total)}</span>
+    <div class="mins" style="flex-basis:100%">${(o.items||[]).map(i => `${i.qty > 1 ? i.qty + "× " : ""}${esc(i.name)}`).join(", ")}</div>
+    <div class="acts"><button type="button" class="btn deliver" data-charge="${o.id}" data-m="efectivo">Cobrar · efectivo</button>${bizumNum() ? `<button type="button" class="btn deliver" data-charge="${o.id}" data-m="bizum">Cobrar · Bizum</button>` : ""}</div>
+  </div>`).join("");
+}
+async function chargeOrder(o, m, btn){
+  const inShift = !!(shift && shift.open && (o.createdAt||0) >= shift.openedAt), now = Date.now();
+  if (m === "efectivo" && !(shift && shift.open)){ toast("Abre la caja primero: el dinero tiene que entrar en el cuadre de hoy."); return; }
+  confirmTap(btn, "ch" + o.id + m, `¿Cobrado ${eur(o.total)}?`, async () => {
+    try {
+      await writeOrQueue({k:"update", col:"orders", id:o.id, data:{pay:m, metodo:m, received:m === "efectivo" ? o.total : o.total, change:0, paidAt:now}});
+      // Si el pedido es de una caja ya cerrada, el efectivo entra hoy como entrada para que el cajón cuadre
+      if (m === "efectivo" && !inShift) await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"entrada", importe:o.total, concepto:`Cobro pendiente #${pad(o.num)}: ${o.customer}`, cobro:true}]});
+      toast(`Cobrado a ${o.customer} · ${eur(o.total)}${m === "bizum" ? " por Bizum" : ""}`);
+    } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+  });
+}
+/* Pedidos finalizados de hoy (y de la caja abierta): para corregir un cobro, deshacer una entrega o anular */
+let finOpen = null;
+function renderFinished(){
+  const from = shift && shift.open ? Math.min(shift.openedAt, new Date().setHours(0,0,0,0)) : new Date().setHours(0,0,0,0);
+  const list = orders.filter(o => (o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) >= from).sort((a,b) => (b.deliveredAt||b.cancelledAt||b.createdAt) - (a.deliveredAt||a.cancelledAt||a.createdAt)).slice(0, 60);
+  $("#doneSec").hidden = !list.length;
+  $("#doneSum").textContent = `Pedidos finalizados (${list.length})`;
+  const PAY = {efectivo:"efectivo", bizum:"Bizum", debe:"lo debe", pendiente:"SIN COBRAR"};
+  $("#doneList").innerHTML = list.map(o => {
+    const off = o.status === "anulado", open = finOpen === o.id, inShift = !!(shift && shift.open && (o.createdAt||0) >= shift.openedAt), inv = !!o.invitacion;
+    return `<div class="pend wrap fin ${off ? "off" : ""}" data-fin="${o.id}">
+      <span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}${o.pay === "pendiente" && !off ? `<span class="unpaidtag">SIN COBRAR</span>` : ""}</span>
+      <span class="mins">${hhmm(o.deliveredAt||o.cancelledAt||o.createdAt)} · ${off ? "anulado" : inv ? "invitación" : PAY[o.pay] || o.pay || ""}</span><span class="amt">${eur(o.total)}</span>
+      ${open ? `<div class="mins" style="flex-basis:100%">${(o.items||[]).map(i => `${i.qty > 1 ? i.qty + "× " : ""}${esc(i.name)}${i.note ? " (" + esc(i.note) + ")" : ""}`).join(", ")}</div>
+      <div class="acts">${off ? `<button type="button" class="btn" data-restore="${o.id}">Recuperar el pedido</button>` : `
+        <button type="button" class="btn" data-undo="${o.id}">Deshacer la entrega</button>
+        ${!inv && inShift && o.pay === "efectivo" && bizumNum() ? `<button type="button" class="btn" data-setpay="${o.id}" data-m="bizum">Fue por Bizum</button>` : ""}
+        ${!inv && inShift && o.pay === "bizum" ? `<button type="button" class="btn" data-setpay="${o.id}" data-m="efectivo">Fue en efectivo</button>` : ""}
+        ${!inv && inShift && (o.pay === "efectivo" || o.pay === "bizum") ? `<button type="button" class="btn" data-setpay="${o.id}" data-m="pendiente">No ha pagado</button>` : ""}
+        <button type="button" class="btn danger" data-cancel="${o.id}">Anular</button>`}</div>
+      ${!off && !inShift && !inv ? `<div class="mins" style="flex-basis:100%">Es de una caja ya cerrada: la forma de pago ya no se puede cambiar aquí.</div>` : ""}` : ""}
+    </div>`; }).join("");
+}
 function renderPending(){
   const list = orders.filter(o => o.status === "nuevo").sort((a,b) => a.createdAt-b.createdAt);
   $("#pendCount").textContent = list.length || "";
@@ -1599,13 +1684,8 @@ function renderPending(){
       <button type="button" class="btn small ${o.vasos ? "" : "primary"}" data-cups="${o.id}" aria-pressed="${!!o.vasos}">${o.vasos ? "Vasos en cafetera ✓" : "Vasos listos, pasar a cafetera"}</button>` : ""}
     </div>`; }).join("")
     : `<div class="empty">No hay pedidos esperando a la cafetera.</div>`;
-  // Entregados en los últimos 15 minutos, por si te equivocas al tocar
-  const done = orders.filter(o => o.status === "entregado" && (o.deliveredAt||0) > Date.now() - 15*60000).sort((a,b) => b.deliveredAt-a.deliveredAt).slice(0, 4);
-  $("#doneSec").hidden = !done.length;
-  $("#doneSum").textContent = `Entregados hace poco (${done.length})`;
   updateModeBadge();
-  $("#doneList").innerHTML = done.map(o => `<div class="pend"><span class="num">#${pad(o.num)}</span><span class="pname">${esc(o.customer)}</span>
-    <span class="mins">${hhmm(o.deliveredAt)}</span><button type="button" class="btn ghost small" data-undo="${o.id}">Deshacer</button></div>`).join("");
+  renderUnpaid(); renderFinished();
 }
 $("#menuGrid").addEventListener("click", e => {
   const b = e.target.closest("[data-add]"); if (!b) return;
@@ -1632,6 +1712,64 @@ let clientes = [], useNumber = false, deudas = [];
 const pendientes = () => deudas.filter(d => !d.pagado);
 const debtOf = name => { const k = slug(name); return pendientes().filter(d => slug(d.nombre) === k).reduce((a,d) => a + cents(d.importe), 0); };
 async function addDebt(d){ if (!db) throw new Error("sin db"); await db.collection("deudas").add({...d, nombre:String(d.nombre).trim(), importe:Math.round(Number(d.importe)*100)/100, pagado:false}); }
+/* ---------- CAJA FUERTE ----------
+   El cajón empieza siempre con el fondo; lo que sobra en cada cierre pasa a la caja fuerte y de ella salen los gastos.
+   El saldo se calcula solo: saldo contado + sobrante de cada cierre − gastos (los pagados desde el cajón no cuentan) ± lo apuntado a mano. */
+let fuerte = [];
+function safeMovs(){
+  const cf = config && config.cajaFuerte; if (!cf || isNaN(Number(cf.saldo))) return null;
+  const desde = Number(cf.desde) || 0, hab = cfg("fondoHabitual", 150), list = [{t:desde, c:cents(cf.saldo), txt:"Saldo contado", k:"saldo"}];
+  closes.filter(c => (c.closedAt||0) > desde && c.contado !== undefined && c.contado !== null && !isNaN(Number(c.contado)) && cents(c.contado) !== cents(hab)).forEach(c => { const d = cents(c.contado) - cents(hab);
+    list.push({t:c.closedAt, c:d, txt: d > 0 ? `Sobrante del cierre del ${dmy(c.closedAt)}` : `Para dejar el cajón en ${eurC(cents(hab))} tras el cierre del ${dmy(c.closedAt)}`, k:"cierre"}); });
+  gastos.filter(g => (g.t||0) > desde && g.origen !== "caja").forEach(g => list.push({t:g.t, c:-cents(g.importe), txt:`Gasto: ${g.concepto || g.categoria || ""}`, k:"gasto"}));
+  fuerte.filter(m => (m.t||0) > desde).forEach(m => list.push({t:m.t, c:(m.tipo === "salida" ? -1 : 1) * cents(m.importe), txt:m.concepto || (m.tipo === "salida" ? "Sale de la caja fuerte" : "Entra en la caja fuerte"), k:"manual", id:m.id}));
+  return list.sort((a,b) => b.t - a.t);
+}
+function renderSafe(){
+  const box = $("#safeBox"), movs = safeMovs();
+  if (document.activeElement && box.contains(document.activeElement) && document.activeElement.tagName === "INPUT") return;
+  if (!movs){
+    $("#safeTot").textContent = "";
+    box.innerHTML = `<div class="ticket"><p class="hint">Cuenta lo que hay ahora en la caja fuerte para empezar a llevarla.</p>
+      <form class="addform" id="safeInit"><div class="field"><label for="safeIni">Hay ahora (€)</label><input type="text" id="safeIni" inputmode="decimal" autocomplete="off" placeholder="Ej. 218"></div><button type="submit" class="btn primary">Empezar</button></form></div>`;
+    return;
+  }
+  const tot = movs.reduce((a,m) => a + m.c, 0), hab = cfg("fondoHabitual", 150);
+  $("#safeTot").textContent = eurC(tot);
+  box.innerHTML = `<div class="kpis"><div class="kpi key ${tot < 0 ? "neg" : ""}"><b>${eurC(tot)}</b><span>en la caja fuerte</span></div>
+      <div class="kpi"><b>${eurC(cents(hab))}</b><span>fondo fijo del cajón</span></div></div>
+    <p class="hint" style="margin:10px 0">El cajón empieza siempre con ${eurC(cents(hab))}. Al cerrar la caja, lo que sobra pasa aquí solo; los gastos que apuntas salen de aquí (los pagados desde el cajón, no).</p>
+    <div class="ticket">
+      <form class="addform" id="safeForm"><div class="field"><label for="safeAmt">Importe (€)</label><input type="text" id="safeAmt" inputmode="decimal" autocomplete="off"></div>
+        <div class="field"><label for="safeTxt">Concepto</label><input type="text" id="safeTxt" maxlength="60" autocomplete="off" placeholder="Ej. Sacamos beneficios"></div>
+        <div class="row"><button type="submit" class="btn" data-safe="salida">Sacar de la caja fuerte</button><button type="submit" class="btn" data-safe="entrada">Meter en la caja fuerte</button></div></form>
+    </div>
+    <details class="donebox" style="margin-top:10px"><summary>Movimientos (${movs.length})</summary>
+      <div class="pending" style="margin-top:8px">${movs.slice(0, 60).map(m => `<div class="pend"><span class="mins">${dmy(m.t)}</span><span class="pname" style="font-weight:500">${esc(m.txt)}</span><b style="color:${m.c < 0 ? "var(--danger)" : "var(--ready)"}">${m.c < 0 ? "−" : "+"}${eurC(Math.abs(m.c))}</b>${m.k === "manual" ? `<button type="button" class="btn ghost small danger" data-delsafe="${m.id}">Quitar</button>` : ""}</div>`).join("")}</div>
+    </details>
+    <details class="donebox" style="margin-top:10px"><summary>He contado la caja fuerte y no coincide</summary>
+      <form class="addform" id="safeInit" style="margin-top:8px"><div class="field"><label for="safeIni">Hay de verdad (€)</label><input type="text" id="safeIni" inputmode="decimal" autocomplete="off"></div><button type="submit" class="btn">Corregir el saldo</button></form>
+      <p class="hint">Se empieza a contar de nuevo desde este momento con la cantidad que pongas.</p></details>`;
+}
+let safeKind = "salida";
+$("#safeBox").addEventListener("click", e => {
+  const k = e.target.closest("[data-safe]"); if (k) safeKind = k.dataset.safe;
+  const d = e.target.closest("[data-delsafe]");
+  if (d && db) confirmTap(d, "ds" + d.dataset.delsafe, "¿Quitar?", async () => { try { await db.collection("fuerte").doc(d.dataset.delsafe).delete(); } catch(err){ toast("No se pudo quitar."); } });
+});
+$("#safeBox").addEventListener("submit", async e => {
+  e.preventDefault(); if (!db) return;
+  try {
+    if (e.target.id === "safeInit"){
+      const v = parseMoney($("#safeIni").value); if (isNaN(v) || v < 0){ toast("Escribe cuánto hay"); return; }
+      $("#safeIni").blur(); await setCfg({cajaFuerte:{saldo:Math.round(v*100)/100, desde:Date.now()}}, "Caja fuerte: saldo guardado");
+    } else {
+      const v = parseMoney($("#safeAmt").value), txt = $("#safeTxt").value.trim(); if (isNaN(v) || v <= 0){ toast("Escribe el importe"); $("#safeAmt").focus(); return; }
+      await db.collection("fuerte").add({t:Date.now(), tipo:safeKind, importe:Math.round(v*100)/100, concepto:txt || (safeKind === "salida" ? "Sale de la caja fuerte" : "Entra en la caja fuerte")});
+      $("#safeAmt").value = ""; $("#safeTxt").value = ""; document.activeElement && document.activeElement.blur(); toast(safeKind === "salida" ? "Apuntado: sale de la caja fuerte" : "Apuntado: entra en la caja fuerte"); renderSafe();
+    }
+  } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+});
 function renderDebts(){
   if (!$("#debtList")) return;
   const pend = pendientes(), by = new Map();
@@ -1709,8 +1847,11 @@ $("#useNum").addEventListener("click", () => {
   if (useNumber){ $("#cust").value = ""; $("#cust").placeholder = "Se usará el número del pedido"; } else $("#cust").placeholder = "Ej. Lucía";
   renderRegular();
 });
-$("#sendBtn").addEventListener("click", async () => {
+$("#sendBtn").addEventListener("click", () => sendOrder(false));
+$("#sendLater").addEventListener("click", () => sendOrder(true));
+async function sendOrder(unpaid){
   showErr("");
+  if (unpaid && invMode){ showErr("Una invitación no se cobra: envíala con el botón de arriba."); return; }
   if (!db){ showErr("No hay conexión con la base de datos. Abre la página con tu cuenta de claude.ai."); return; }
   if (!cart.size){ showErr("La comanda está vacía."); return; }
   const webO = webOrderId ? orders.find(x => x.id === webOrderId && x.status === "porcobrar") : null;
@@ -1730,20 +1871,21 @@ $("#sendBtn").addEventListener("click", async () => {
     return [{...base, qty:c.qty, price}];
   });
   const total = Math.round(items.reduce((s,i) => s + i.qty*i.price, 0)*100)/100;
-  const biz = payMethod === "bizum" && !invMode, debe = payMethod === "debe" && !invMode;
+  const biz = payMethod === "bizum" && !invMode && !unpaid, debe = payMethod === "debe" && !invMode && !unpaid;
   if (debe && (useNumber || !name || /^N[ºo°]\s?\d+$/i.test(name))){ showErr("Para apuntarlo como deuda escribe el nombre de quien lo debe."); $("#cust").focus(); return; }
-  const rc = invMode || debe ? (debe ? cents(total) : 0) : biz ? cents(total) : receivedCents(), tc = cents(total);
+  const tc = cents(total), rc = unpaid ? tc : invMode || debe ? (debe ? cents(total) : 0) : biz ? cents(total) : receivedCents();
   if (rc < tc){ showErr(`Faltan ${eurC(tc-rc)}. Revisa lo que te ha dado.`); $("#recv").focus(); return; }
-  const tip = !invMode && !biz && !debe && $("#tipChk").checked ? rc - tc : 0;
+  const tip = !unpaid && !invMode && !biz && !debe && $("#tipChk").checked ? rc - tc : 0;
   const hasBar = items.some(i => i.station !== "cocina");
   // Si lleva algo que preparas tú (matcha), queda en Para entregar; si es solo servir, se entrega en el acto
   const needsPrep = items.some(i => i.station === "cocina" && prepKind(itemMenu(i), i.name) === "matcha");
   const st = hasBar ? "nuevo" : needsPrep ? "listo" : "entregado";
   const num = nextNum;
   const now = Date.now();
-  const btn = $("#sendBtn"); btn.disabled = true;
+  const btn = unpaid ? $("#sendLater") : $("#sendBtn"); btn.disabled = true;
   try {
-    const fields = {num, customer:name, items, total, pay: biz ? "bizum" : debe ? "debe" : "efectivo", metodo: biz ? "bizum" : debe ? "debe" : "efectivo", received: debe ? 0 : rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
+    const pm = unpaid ? "pendiente" : biz ? "bizum" : debe ? "debe" : "efectivo";
+    const fields = {num, customer:name, items, total, pay: pm, metodo: pm, received: debe || unpaid ? 0 : rc/100, change:(rc-tc-tip)/100, propina:tip/100, invitacion:invMode||null,
       status: st, readyAt: hasBar ? null : now, deliveredAt: st === "entregado" ? now : null, entregados:[]};
     // Un pedido del móvil se cobra ahora: cuenta desde este momento (para la caja y la espera en barra)
     const res = webO
@@ -1756,11 +1898,11 @@ $("#sendBtn").addEventListener("click", async () => {
     useNumber = false; $("#useNum").setAttribute("aria-pressed","false"); renderRegular();
     renderMenuGrid(); renderCart();
     window.scrollTo({top:0, behavior:"smooth"});
-    toast(res === "queued" ? `#${pad(num)} ${name} · sin conexión: guardado, se envía solo al volver` : `#${pad(num)} ${name} · ${hasBar ? "enviado a cafetera" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}${tip ? " · propina " + eurC(tip) : ""}${shift && shift.open ? "" : " · ¡abre la caja!"}`);
+    toast(res === "queued" ? `#${pad(num)} ${name} · sin conexión: guardado, se envía solo al volver` : `#${pad(num)} ${name} · ${hasBar ? "enviado a cafetera" : st === "listo" ? "prepáralo y entrégalo" : "entregado"}${unpaid ? " · SIN COBRAR" : ""}${tip ? " · propina " + eurC(tip) : ""}${shift && shift.open ? "" : " · ¡abre la caja!"}`);
   } catch(err){
     showErr(saveErrMsg(err, "No se pudo enviar. Revisa la conexión y vuelve a intentarlo."));
   } finally { btn.disabled = false; }
-});
+}
 async function upd(id, data, okMsg){
   try { const r = await writeOrQueue({k:"update", col:"orders", id, data}); if (r === "queued") toast("Sin conexión: se guardará al volver"); else if (okMsg) toast(okMsg); }
   catch(e){ toast(saveErrMsg(e, "No se pudo guardar. Revisa la conexión.")); }
@@ -1812,15 +1954,21 @@ $("#v-pedidos").addEventListener("click", e => {
   const d = e.target.closest("[data-deliver]"), bk = e.target.closest("[data-back]"), cn = e.target.closest("[data-cancel]"), un = e.target.closest("[data-undo]");
   if (!db) return;
   const gv = e.target.closest("[data-give]"), ug = e.target.closest("[data-ungive]");
+  const chg = e.target.closest("[data-charge]"), sp = e.target.closest("[data-setpay]"), rs = e.target.closest("[data-restore]");
+  if (chg){ const o = orders.find(x => x.id === chg.dataset.charge); if (o) chargeOrder(o, chg.dataset.m, chg); return; }
+  if (sp){ const o = orders.find(x => x.id === sp.dataset.setpay), m = sp.dataset.m; if (!o) return;
+    confirmTap(sp, "sp" + o.id + m, "¿Seguro? Toca otra vez", () => upd(o.id, {pay:m, metodo:m, received:m === "pendiente" ? 0 : o.total, change:0, propina:m === "efectivo" ? (o.propina||0) : 0}, m === "pendiente" ? "Pasa a Sin cobrar" : `Corregido: ${m === "bizum" ? "Bizum" : "efectivo"}`)); return; }
+  if (rs){ upd(rs.dataset.restore, {status:"entregado", cancelledAt:null}, "Pedido recuperado"); return; }
   if (gv){ gv.disabled = true; giveItem(gv.dataset.give, Number(gv.dataset.i), true); return; }
   if (ug){ giveItem(ug.dataset.ungive, Number(ug.dataset.i), false); return; }
   if (d){ d.disabled = true; upd(d.dataset.deliver, {status:"entregado", deliveredAt:Date.now()}).then(backToCobrarIfDone); }
   else if (un){ upd(un.dataset.undo, {status:"listo", deliveredAt:null}, "Vuelve a Para entregar"); }
   else if (e.target.closest("[data-cups]")){ const b = e.target.closest("[data-cups]"); const o = orders.find(x => x.id === b.dataset.cups); if (o) upd(o.id, {vasos: !o.vasos}, o.vasos ? "" : "La barra ve que el vaso está listo"); }
   else if (bk){ upd(bk.dataset.back, {status:"nuevo", readyAt:null}, "Devuelto a la cafetera"); }
+  else if (!cn && e.target.closest("[data-fin]") && !e.target.closest("button")){ const id = e.target.closest("[data-fin]").dataset.fin; finOpen = finOpen === id ? null : id; renderFinished(); }
   else if (cn){ confirmTap(cn, "c"+cn.dataset.cancel, "¿Anular? Toca otra vez", async () => {
     const o = orders.find(x => x.id === cn.dataset.cancel);
-    try { await db.collection("orders").doc(cn.dataset.cancel).update({status:"anulado", cancelledAt:Date.now()}); toast(`Pedido anulado${o ? " · devuelve " + eur(o.total) : ""}`); } catch(e){ toast("No se pudo anular."); } }); }
+    try { await db.collection("orders").doc(cn.dataset.cancel).update({status:"anulado", cancelledAt:Date.now()}); toast(`Pedido anulado${o && o.pay !== "pendiente" && o.pay !== "debe" && !o.invitacion ? " · devuelve " + eur(o.total) : ""}`); } catch(e){ toast("No se pudo anular."); } }); }
 });
 // Notas rápidas para las bebidas
 const NOTE_CHIPS = ["Sin hielo", "Poco hielo", "Extra matcha", "Sin azúcar"];
@@ -2077,6 +2225,8 @@ function fondoAuto(){
   const hab = cfg("fondoHabitual", 150);
   if (!(c && c.contado !== undefined && c.contado !== null && !isNaN(Number(c.contado)))) return {v:hab, from:null};
   const cont = Number(c.contado);
+  // Con caja fuerte, el cajón empieza siempre con el fondo fijo: lo que sobra va a la caja fuerte y lo que falta sale de ella
+  if (config && config.cajaFuerte && cont < hab) return {v:hab, from:c, contado:cont};
   // Se empieza con el fondo habitual; si al cerrar quedó más, lo que sobra se saca
   return cont > hab ? {v:hab, from:c, contado:cont, sacar: Math.round((cont - hab)*100)/100} : {v:cont, from:c, contado:cont};
 }
@@ -2089,7 +2239,7 @@ function renderCaja(){
     // Se rellena solo si no lo has cambiado tú
     if (document.activeElement !== inp && (inp.value === "" || inp.value === fondoPrefill)){ inp.value = fmtIn(fa.v); fondoPrefill = inp.value; }
     $("#fondoHint").innerHTML = fa.from && fa.sacar
-      ? `Al cerrar el ${dmy(fa.from.closedAt)} contasteis <b>${eur(fa.contado)}</b>. Deja <b>${eur(fa.v)}</b> de fondo y saca <b>${eur(fa.sacar)}</b> del cajón.`
+      ? `Al cerrar el ${dmy(fa.from.closedAt)} contasteis <b>${eur(fa.contado)}</b>. Deja <b>${eur(fa.v)}</b> de fondo y ${config && config.cajaFuerte ? `pasa <b>${eur(fa.sacar)}</b> a la caja fuerte (ya está sumado allí).` : `saca <b>${eur(fa.sacar)}</b> del cajón.`}`
       : fa.from
       ? `Es lo que contasteis al cerrar el ${dmy(fa.from.closedAt)} a las ${hhmm(fa.from.closedAt)}: <b>${eur(fa.v)}</b>${fa.v < cfg("fondoHabitual", 150) ? `. Para llegar a los ${eur(cfg("fondoHabitual", 150))} de fondo faltan ${eur(cfg("fondoHabitual", 150) - fa.v)}` : ""}. Si sacasteis o metisteis dinero después, cámbialo antes de abrir.`
       : "Cuenta el cambio con el que empiezas el turno.";
@@ -2431,23 +2581,31 @@ $("#wbDrag").addEventListener("click", e => { e.preventDefault(); toast("Arrást
 let tPedidos = [], tCatalogo = null, tEstado = null, tAjustes = {}, tSeen = null;
 const tItemTxt = i => [i.nombre, i.f, i.m].filter(Boolean).join(" · ");
 const tNum = o => "nº " + String(o.num || 0).padStart(3, "0");
-function tWa(o, listo){
-  let d = String(o.tel || "").replace(/\D/g, ""); if (d.length === 9) d = "34" + d;
-  const txt = listo ? `Hola ${o.cliente}, tu pedido de Puchero (${tNum(o)}) ya está listo para recoger en Utopía Coffee Club. Son ${eur(o.total)}, que pagas al recogerlo. ¡Gracias!`
-                    : `Hola ${o.cliente}, hemos recibido tu pedido de Puchero (${tNum(o)}). Te avisamos en cuanto esté listo para recoger en Utopía Coffee Club.`;
-  return `https://wa.me/${d}?text=${encodeURIComponent(txt)}`;
+// Aviso al cliente: por correo si lo dejó; los pedidos antiguos con teléfono siguen yendo por WhatsApp
+function tMsg(o, listo){
+  return listo ? `Hola ${o.cliente}, tu pedido de Puchero (${tNum(o)}) ya está listo para recoger en Utopía Coffee Club. ${o.pagado ? "Ya está pagado." : `Son ${eur(o.total)}, que pagas al recogerlo.`} ¡Gracias!`
+               : `Hola ${o.cliente}, hemos recibido tu pedido de Puchero (${tNum(o)}). Te avisamos en cuanto esté listo para recoger en Utopía Coffee Club.`;
 }
+function tAviso(o, listo){
+  if (o.email) return {txt:"correo", href:`mailto:${encodeURIComponent(o.email)}?subject=${encodeURIComponent(listo ? `Tu pedido de Puchero ${tNum(o)} está listo` : `Hemos recibido tu pedido de Puchero ${tNum(o)}`)}&body=${encodeURIComponent(tMsg(o, listo))}`};
+  let d = String(o.tel || "").replace(/\D/g, ""); if (d.length === 9) d = "34" + d;
+  return d ? {txt:"WhatsApp", href:`https://wa.me/${d}?text=${encodeURIComponent(tMsg(o, listo))}`} : null;
+}
+const tPago = o => o.pago === "bizum" ? "Bizum" : "efectivo";
 function tCard(o){
-  const nuevo = o.status === "nuevo", listo = o.status === "preparado";
+  const nuevo = o.status === "nuevo", listo = o.status === "preparado", abierto = nuevo || listo, av = abierto ? tAviso(o, listo) : null;
+  const contacto = o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : o.tel ? `<a href="tel:${esc(o.tel)}">${esc(o.tel)}</a>` : "";
   return `<div class="card tp ${nuevo ? "new" : listo ? "rdy" : ""}">
     <div class="h"><b>${esc(o.cliente || "Sin nombre")}</b><span>${tNum(o)} · ${dmy(o.createdAt)} ${hhmm(o.createdAt)}</span></div>
     <ul>${(o.items || []).map(i => `<li><b>${i.qty}×</b><span>${esc(i.nombre)}<small> ${esc([i.f, i.m].filter(Boolean).join(" · "))}</small></span><span>${eur(i.qty * i.price)}</span></li>`).join("")}</ul>
     ${o.nota ? `<div class="nota">${esc(o.nota)}</div>` : ""}
-    <div class="h"><span class="tot">${eur(o.total)}</span><span>${o.status === "entregado" ? `Entregado ${dmy(o.deliveredAt || o.createdAt)} · ${o.pago === "bizum" ? "Bizum" : "efectivo"}` : o.status === "cancelado" ? "Cancelado" : `<a href="tel:${esc(o.tel)}">${esc(o.tel)}</a>`}</span></div>
-    ${nuevo ? `<div class="row"><button type="button" class="btn primary" data-tready="${o.id}" style="flex:1">Ya está preparado</button><a class="btn" target="_blank" rel="noopener" href="${tWa(o, false)}">WhatsApp</a><button type="button" class="btn ghost danger" data-tcancel="${o.id}">Cancelar</button></div>` : ""}
-    ${listo ? `<div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${tWa(o, true)}" style="flex:1;text-align:center">Avisar por WhatsApp de que está listo</a></div>
-      <div class="row"><button type="button" class="btn deliver" data-tpay="${o.id}" data-m="efectivo">Entregado · efectivo</button><button type="button" class="btn deliver" data-tpay="${o.id}" data-m="bizum">Entregado · Bizum</button></div>
-      <div class="row"><button type="button" class="btn ghost" data-tback="${o.id}">Aún no está preparado</button><button type="button" class="btn ghost danger" data-tcancel="${o.id}">Cancelar</button></div>` : ""}
+    <div class="h"><span class="tot">${eur(o.total)}</span><span>${o.status === "entregado" ? `Entregado ${dmy(o.deliveredAt || o.createdAt)} · ${tPago(o)}` : o.status === "cancelado" ? "Cancelado" : contacto}</span></div>
+    ${abierto ? `<div class="tpay ${o.pagado ? "ok" : ""}">${o.pagado ? `PAGADO · ${tPago(o)} · falta entregarlo` : "Sin pagar"}</div>` : ""}
+    ${abierto && !o.pagado ? `<div class="row"><button type="button" class="btn deliver" data-tcobrar="${o.id}" data-m="efectivo">Cobrar · efectivo</button><button type="button" class="btn deliver" data-tcobrar="${o.id}" data-m="bizum">Cobrar · Bizum</button></div>` : ""}
+    ${abierto && o.pagado ? `<div class="row"><button type="button" class="btn deliver" data-tentregar="${o.id}">Entregado al cliente</button></div>` : ""}
+    ${nuevo ? `<div class="row"><button type="button" class="btn primary" data-tready="${o.id}" style="flex:1">Ya está preparado</button>${av ? `<a class="btn" target="_blank" rel="noopener" href="${av.href}">Escribirle por ${av.txt}</a>` : ""}</div>` : ""}
+    ${listo && av ? `<div class="row"><a class="btn primary" target="_blank" rel="noopener" href="${av.href}" style="flex:1;text-align:center">Avisar por ${av.txt} de que está listo</a></div>` : ""}
+    ${abierto ? `<div class="row">${listo ? `<button type="button" class="btn ghost" data-tback="${o.id}">Aún no está preparado</button>` : ""}${o.pagado ? `<button type="button" class="btn ghost" data-tunpay="${o.id}">Quitar el cobro</button>` : ""}<button type="button" class="btn ghost danger" data-tcancel="${o.id}">Cancelar</button></div>` : ""}
   </div>`;
 }
 function renderShopBadge(){
@@ -2457,11 +2615,12 @@ function renderShopBadge(){
 function renderTienda(){
   renderShopBadge();
   const by = st => tPedidos.filter(o => o.status === st).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
-  const nuevos = by("nuevo"), listos = by("preparado"), mes = new Date().toISOString().slice(0, 7);
-  const ent = tPedidos.filter(o => o.status === "entregado"), entMes = ent.filter(o => new Date(o.deliveredAt || o.createdAt).toISOString().slice(0, 7) === mes);
+  const nuevos = by("nuevo"), listos = by("preparado"), mes = new Date().toISOString().slice(0, 7), pagSin = [...nuevos, ...listos].filter(o => o.pagado);
+  const ent = tPedidos.filter(o => o.status !== "cancelado" && (o.pagado || o.status === "entregado")), entMes = ent.filter(o => new Date(o.paidAt || o.deliveredAt || o.createdAt).toISOString().slice(0, 7) === mes);
   $("#tKpis").innerHTML = `<div class="kpi ${nuevos.length ? "key" : ""}"><b>${nuevos.length}</b><span>pedidos nuevos</span></div>
-    <div class="kpi"><b>${listos.length}</b><span>listos, esperando recogida · ${eur(listos.reduce((a, o) => a + (o.total || 0), 0))}</span></div>
-    <div class="kpi"><b>${eur(entMes.reduce((a, o) => a + (o.total || 0), 0))}</b><span>vendido este mes · ${entMes.length} ${entMes.length === 1 ? "pedido" : "pedidos"}</span></div>`;
+    <div class="kpi ${pagSin.length ? "key" : ""}"><b>${pagSin.length}</b><span>pagados sin entregar · ${eur(pagSin.reduce((a, o) => a + (o.total || 0), 0))}</span></div>
+    <div class="kpi"><b>${listos.length}</b><span>listos, esperando recogida</span></div>
+    <div class="kpi"><b>${eur(entMes.reduce((a, o) => a + (o.total || 0), 0))}</b><span>cobrado este mes · ${entMes.length} ${entMes.length === 1 ? "pedido" : "pedidos"}</span></div>`;
   $("#tNew").innerHTML = nuevos.length ? nuevos.map(tCard).join("") : `<p class="hint">No hay pedidos nuevos.</p>`;
   $("#tReady").innerHTML = listos.length ? `<h3 style="margin:6px 0 0">Listos para recoger</h3>` + listos.map(tCard).join("") : "";
   // lo que suman los pedidos nuevos
@@ -2492,15 +2651,27 @@ $("#v-tienda").addEventListener("click", async e => {
     if (b.dataset.tready){ await upd(b.dataset.tready, {status:"preparado", readyAt:Date.now()}); toast("Marcado como preparado: avisa al cliente"); }
     else if (b.dataset.tback){ await upd(b.dataset.tback, {status:"nuevo"}); }
     else if (b.dataset.tcancel){ confirmTap(b, "tc" + b.dataset.tcancel, "¿Cancelar pedido?", async () => { try { await upd(b.dataset.tcancel, {status:"cancelado", cancelledAt:Date.now()}); toast("Pedido cancelado"); } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); } }); }
-    else if (b.dataset.tpay){
-      const o = find(b.dataset.tpay), m = b.dataset.m; if (!o) return;
+    else if (b.dataset.tcobrar){
+      const o = find(b.dataset.tcobrar), m = b.dataset.m; if (!o || o.pagado) return;
       if (m === "efectivo" && !(shift && shift.open)){ toast("Abre la caja primero: el dinero tiene que entrar en el cuadre de hoy."); return; }
       confirmTap(b, "tp" + o.id + m, `¿Cobrado ${eur(o.total)}?`, async () => {
         try {
           const now = Date.now();
-          await upd(o.id, {status:"entregado", pago:m, deliveredAt:now});
-          if (m === "efectivo") await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"entrada", importe:o.total, concepto:`Tienda Puchero ${tNum(o)}: ${o.cliente}`, tienda:true}]});
-          toast(`Entregado a ${o.cliente} · ${eur(o.total)}${m === "efectivo" ? " · entra en la caja" : " por Bizum"}`);
+          await upd(o.id, {pagado:true, pago:m, paidAt:now});
+          if (m === "efectivo") await db.doc("turno/actual").update({movs:[...(Array.isArray(shift.movs) ? shift.movs : []), {t:now, tipo:"entrada", importe:o.total, concepto:`Tienda Puchero ${tNum(o)}: ${o.cliente}`, tienda:true, tiendaId:o.id}]});
+          toast(`Cobrado a ${o.cliente} · ${eur(o.total)}${m === "efectivo" ? " · entra en la caja" : " por Bizum"} · falta entregarlo`);
+        } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
+      });
+    }
+    else if (b.dataset.tentregar){ const o = find(b.dataset.tentregar); if (!o || !o.pagado) return; await upd(o.id, {status:"entregado", deliveredAt:Date.now()}); toast(`Entregado a ${o.cliente}`); }
+    else if (b.dataset.tunpay){
+      const o = find(b.dataset.tunpay); if (!o || !o.pagado) return;
+      confirmTap(b, "tu" + o.id, "¿Quitar el cobro?", async () => {
+        try {
+          const enCaja = o.pago === "efectivo" && shift && shift.open && (shift.movs || []).some(m => m.tiendaId === o.id);
+          if (enCaja) await db.doc("turno/actual").update({movs:(shift.movs || []).filter(m => m.tiendaId !== o.id)});
+          await upd(o.id, {pagado:false, pago:null, paidAt:null});
+          toast(o.pago === "efectivo" && !enCaja ? "Cobro quitado. Ojo: ese dinero entró en una caja ya cerrada, ajústalo a mano" : "Cobro quitado");
         } catch(err){ toast(saveErrMsg(err, "No se pudo guardar.")); }
       });
     }
@@ -2713,8 +2884,19 @@ function renderSupply(){
 /* ---------- ajustes ---------- */
 const parsePrice = v => { const n = parseMoney(v); return isNaN(n) ? NaN : Math.round(n*100)/100; };
 const cupOf = m => Number(m.receta?.["vaso-frio"]) > 0 ? "frio" : Number(m.receta?.["vaso-caliente"]) > 0 ? "caliente" : "";
+function renderLegal(){
+  const l = (config && config.legal) || {}, f = $("#legalForm");
+  if (f.contains(document.activeElement)) return;
+  $("#lgTit").value = l.titular || ""; $("#lgNif").value = l.nif || ""; $("#lgDir").value = l.direccion || ""; $("#lgMail").value = l.email || "";
+}
+$("#legalForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const legal = {titular:$("#lgTit").value.trim(), nif:$("#lgNif").value.trim().toUpperCase(), direccion:$("#lgDir").value.trim(), email:$("#lgMail").value.trim().toLowerCase()};
+  document.activeElement && document.activeElement.blur();
+  await setCfg({legal}, "Datos guardados: ya salen en la política de privacidad");
+});
 function renderAjustes(){
-  renderOrigen();
+  renderOrigen(); renderLegal();
   const box = $("#menuEdit");
   const sorted = sortMenu(menu);
   const groups = [...new Set([...GROUP_ORDER, ...menu.map(m => m.group).filter(Boolean)])];
@@ -3268,7 +3450,7 @@ function renderAll(){
   if (view === "pedidos"){ renderWeb(); renderWebCharging(); renderReady(); renderMenuGrid(); renderCart(); renderPending(); }
   else if (view === "barra") renderBarra();
   else if (view === "tienda") renderTienda();
-  else if (view === "caja"){ renderClaude(); renderCaja(); renderDebts(); }
+  else if (view === "caja"){ renderClaude(); renderSafe(); renderCaja(); renderDebts(); }
   else if (view === "gastos"){ renderGastos(); renderPrices(); }
   else if (view === "datos"){ renderDatos(); renderBox(); renderDur(); renderSlow(); renderCombos(); }
   else renderAjustes();
@@ -3577,7 +3759,7 @@ function saveErrMsg(err, fallback){
 /* ---------- conexión ---------- */
 async function prune(){
   const limit = Date.now() - 2*86400000;
-  const old = orders.filter(o => ((o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) < limit) || (o.status === "porcobrar" && (o.createdAt||0) < Date.now() - 86400000));
+  const old = orders.filter(o => ((o.status === "entregado" || o.status === "anulado") && (o.createdAt||0) < limit && !(o.pay === "pendiente" && o.status === "entregado")) || (o.status === "porcobrar" && (o.createdAt||0) < Date.now() - 86400000));
   for (const o of old){ try { await db.collection("orders").doc(o.id).delete(); } catch(e){ break; } }
 }
 async function boot(){
@@ -3631,12 +3813,13 @@ async function boot(){
     softRender();
   }, err => setNotice("No se pudo cargar la caja.", true));
   db.collection("cierres").orderBy("closedAt", "desc").limit(400).onSnapshot(snap => { closes = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
-  db.collection("gastos").orderBy("fecha", "desc").limit(800).onSnapshot(snap => { gastos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); }, err => {});
+  db.collection("gastos").orderBy("fecha", "desc").limit(800).onSnapshot(snap => { gastos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); if (view === "caja") renderSafe(); }, err => {});
   db.collection("fijos").onSnapshot(snap => { fijos = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "gastos") renderGastos(); }, err => {});
   db.collection("insumos").onSnapshot(snap => { insumos = snap.docs.map(d => ({id:d.id, ...d.data()})); softRender(); }, err => {});
   setTimeout(flushOutbox, 3000);
   db.collection("asistencia").onSnapshot(snap => { asistencia = snap.docs.map(d => ({id:d.id, ...d.data()})); if (boxDraftDay && !document.activeElement?.dataset?.bx) loadBoxDraft(boxDraftDay); if (view === "datos") renderBox(); }, err => {});
   db.collection("claude").onSnapshot(snap => { const d = snap.docs.find(x => x.id === "semana"); claudeDoc = d ? d.data() : null; renderClaude(); }, err => {});
+  db.collection("fuerte").onSnapshot(snap => { fuerte = snap.docs.map(d => ({id:d.id, ...d.data()})); if (view === "caja") renderSafe(); }, err => {});
   db.collection("tienda_pedidos").onSnapshot(snap => {
     tPedidos = snap.docs.map(d => ({id:d.id, ...d.data()}));
     const ids = new Set(tPedidos.filter(o => o.status === "nuevo").map(o => o.id));
